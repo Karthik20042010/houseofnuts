@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import { ShoppingBag } from "lucide-react";
@@ -14,7 +15,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <div className="flex flex-col group">
-      <div className="bg-clay-light p-4 md:p-6 aspect-square relative overflow-hidden flex items-center justify-center mb-4">
+      <Link to={`/product/${product.id}`} className="bg-clay-light p-4 md:p-6 aspect-square relative overflow-hidden flex items-center justify-center mb-4">
         <div className="absolute inset-3 md:inset-5 border border-foreground/5 z-10 pointer-events-none transition-all duration-500 group-hover:inset-2 group-hover:border-foreground/15" />
         <img
           src={product.image}
@@ -27,11 +28,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
             {product.badge}
           </div>
         )}
-      </div>
+      </Link>
 
-      <h3 className="font-display text-xl md:text-2xl mb-1 group-hover:text-accent transition-colors duration-300">
-        {product.name}
-      </h3>
+      <Link to={`/product/${product.id}`} className="hover:text-accent transition-colors duration-300">
+        <h3 className="font-display text-xl md:text-2xl mb-1">{product.name}</h3>
+      </Link>
       <p className="text-sm text-muted-foreground font-light tracking-wide mb-3 line-clamp-1">
         {product.description}
       </p>
