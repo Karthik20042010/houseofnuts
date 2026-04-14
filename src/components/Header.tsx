@@ -1,10 +1,13 @@
-import { ShoppingBag, Menu, X } from "lucide-react";
+import { ShoppingBag, Menu, X, Package } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 
 const Header = () => {
   const { totalItems, setIsCartOpen } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const isHome = location.pathname === "/";
 
   const scrollToProducts = () => {
     document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
@@ -19,12 +22,19 @@ const Header = () => {
   return (
     <header className="flex items-center justify-between px-6 md:px-8 py-5 border-b border-border sticky top-0 bg-background/90 backdrop-blur-md z-50">
       <nav className="hidden md:flex gap-10 text-xs uppercase tracking-[0.15em] font-medium font-body">
-        <button onClick={scrollToProducts} className="hover:text-accent transition-colors duration-300">
-          Shop
-        </button>
-        <button onClick={scrollToContact} className="hover:text-accent transition-colors duration-300">
-          Wholesale
-        </button>
+        {isHome ? (
+          <button onClick={scrollToProducts} className="hover:text-accent transition-colors duration-300">Shop</button>
+        ) : (
+          <Link to="/" className="hover:text-accent transition-colors duration-300">Shop</Link>
+        )}
+        <Link to="/orders" className="hover:text-accent transition-colors duration-300">
+          <span className="flex items-center gap-1.5"><Package size={14} /> My Orders</span>
+        </Link>
+        {isHome ? (
+          <button onClick={scrollToContact} className="hover:text-accent transition-colors duration-300">Wholesale</button>
+        ) : (
+          <Link to="/#contact" className="hover:text-accent transition-colors duration-300">Wholesale</Link>
+        )}
       </nav>
 
       <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -51,12 +61,19 @@ const Header = () => {
       {/* Mobile menu */}
       {mobileMenuOpen && (
         <div className="absolute top-full left-0 right-0 bg-background border-b border-border p-6 flex flex-col gap-4 md:hidden">
-          <button onClick={scrollToProducts} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">
-            Shop
-          </button>
-          <button onClick={scrollToContact} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">
-            Wholesale Enquiry
-          </button>
+          {isHome ? (
+            <button onClick={scrollToProducts} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Shop</button>
+          ) : (
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Shop</Link>
+          )}
+          <Link to="/orders" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2 flex items-center gap-2">
+            <Package size={16} /> My Orders
+          </Link>
+          {isHome ? (
+            <button onClick={scrollToContact} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Wholesale Enquiry</button>
+          ) : (
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Wholesale Enquiry</Link>
+          )}
         </div>
       )}
     </header>
