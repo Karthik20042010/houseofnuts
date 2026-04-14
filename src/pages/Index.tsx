@@ -106,14 +106,14 @@ const Index = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="tel:+919876543210"
+              href="tel:+919652526920"
               className="flex items-center justify-center gap-3 border border-primary-foreground/30 px-8 py-4 text-[11px] uppercase tracking-[0.2em] font-body font-medium hover:bg-accent hover:text-accent-foreground hover:border-accent transition-all duration-300"
             >
               <Phone size={16} />
               Call Us
             </a>
             <a
-              href="https://wa.me/919876543210?text=Hi, I'm interested in wholesale pricing"
+              href="https://wa.me/919652526920?text=Hi, I'm interested in wholesale pricing"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-3 bg-accent text-accent-foreground px-8 py-4 text-[11px] uppercase tracking-[0.2em] font-body font-medium hover:bg-primary-foreground hover:text-primary transition-all duration-300"

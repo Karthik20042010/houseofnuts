@@ -3,7 +3,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 
-const GOOGLE_SHEET_URL = ""; // User will set this
+const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"; // Will be set after Apps Script deployment
 
 const CheckoutPage = () => {
   const { items, totalPrice, clearCart } = useCart();
@@ -192,14 +192,14 @@ const CheckoutPage = () => {
           {/* UPI QR - using UPI deep link format */}
           <div className="bg-clay-light p-8 inline-block mb-6">
             <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=yourupi@bank&pn=HouseOfNuts&am=${totalPrice}&cu=INR&tn=Order-${Date.now()}`}
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=863932789@okbizaxis&pn=HouseOfNuts&am=${totalPrice}&cu=INR&tn=Order-${Date.now()}`}
               alt="UPI QR Code"
               className="w-[250px] h-[250px]"
             />
           </div>
 
           <p className="text-sm text-muted-foreground font-body mb-2">
-            Or pay via UPI ID: <span className="text-foreground font-medium select-all">yourupi@bank</span>
+            Or pay via UPI ID: <span className="text-foreground font-medium select-all">863932789@okbizaxis</span>
           </p>
           <p className="text-xs text-muted-foreground font-body mb-8">
             Amount: ₹{totalPrice}
