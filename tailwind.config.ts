@@ -13,12 +13,23 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        display: ["'Fraunces'", "serif"],
+        body: ["'Work Sans'", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        linen: "hsl(var(--linen))",
+        earth: "hsl(var(--earth))",
+        sun: "hsl(var(--sun))",
+        clay: {
+          DEFAULT: "hsl(var(--clay))",
+          light: "hsl(var(--clay-light))",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
