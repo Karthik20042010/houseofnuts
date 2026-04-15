@@ -8,7 +8,7 @@ const UPI_ID = "863932789@okbizaxis";
 const UPI_NAME = "HouseOfNuts";
 
 const CheckoutPage = () => {
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice, subtotal, appliedDiscount, discountAmount, clearCart } = useCart();
   const navigate = useNavigate();
   const [step, setStep] = useState<"details" | "payment" | "done">("details");
   const [submitting, setSubmitting] = useState(false);
