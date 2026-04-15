@@ -10,6 +10,8 @@ import ProductDetail from "./pages/ProductDetail.tsx";
 import Orders from "./pages/Orders.tsx";
 import OrderDetail from "./pages/OrderDetail.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import WhatsAppButton from "./components/WhatsAppButton.tsx";
+import Chatbot from "./components/Chatbot.tsx";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +31,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        <WhatsAppButton />
+        <Chatbot />
       </CartProvider>
     </TooltipProvider>
   </QueryClientProvider>
