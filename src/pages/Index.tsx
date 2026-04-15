@@ -16,6 +16,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <PromoBanner />
       <Header />
       <CartDrawer />
 
