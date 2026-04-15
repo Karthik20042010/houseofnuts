@@ -2,6 +2,7 @@ import { ShoppingBag, Menu, X, Package } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
+import SearchBar from "@/components/SearchBar";
 
 const Header = () => {
   const { totalItems, setIsCartOpen } = useCart();
@@ -45,10 +46,12 @@ const Header = () => {
         House of Nuts
       </div>
 
-      <button
-        onClick={() => setIsCartOpen(true)}
-        className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] font-medium font-body hover:text-accent transition-colors duration-300"
-      >
+      <div className="flex items-center gap-5">
+        <SearchBar />
+        <button
+          onClick={() => setIsCartOpen(true)}
+          className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] font-medium font-body hover:text-accent transition-colors duration-300"
+        >
         <ShoppingBag size={20} />
         <span className="hidden md:inline">Basket</span>
         {totalItems > 0 && (
@@ -56,7 +59,8 @@ const Header = () => {
             {totalItems}
           </span>
         )}
-      </button>
+        </button>
+      </div>
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
