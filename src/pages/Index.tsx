@@ -5,6 +5,7 @@ import ProductCard from "@/components/ProductCard";
 import { products, categories } from "@/data/products";
 import { Phone, MessageCircle } from "lucide-react";
 import heroImage from "@/assets/hero-nuts.jpg";
+import PromoBanner from "@/components/PromoBanner";
 
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState("all");

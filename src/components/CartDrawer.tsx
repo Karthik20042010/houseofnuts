@@ -1,10 +1,30 @@
-import { X, Plus, Minus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { X, Plus, Minus, Trash2, Tag, Check } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 
 const CartDrawer = () => {
-  const { items, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity, totalPrice, totalItems } = useCart();
+  const {
+    items, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity,
+    subtotal, totalPrice, totalItems, appliedDiscount, discountAmount,
+    applyDiscount, removeDiscount,
+  } = useCart();
   const navigate = useNavigate();
+  const [promoInput, setPromoInput] = useState("");
+  const [promoError, setPromoError] = useState("");
+  const [promoSuccess, setPromoSuccess] = useState(false);
+
+  const handleApplyPromo = () => {
+    setPromoError("");
+    setPromoSuccess(false);
+    const result = applyDiscount(promoInput);
+    if (result.success) {
+      setPromoSuccess(true);
+      setPromoInput("");
+    } else {
+      setPromoError(result.error || "Invalid code");
+    }
+  };
 
   if (!isCartOpen) return null;
 
@@ -34,27 +54,17 @@ const CartDrawer = () => {
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {items.map((item) => (
                 <div key={item.variant.id} className="flex gap-4 py-4 border-b border-border last:border-0">
-                  <img
-                    src={item.product.image}
-                    alt={item.product.name}
-                    className="w-20 h-20 object-cover bg-clay-light"
-                  />
+                  <img src={item.product.image} alt={item.product.name} className="w-20 h-20 object-cover bg-clay-light" />
                   <div className="flex-1 flex flex-col">
                     <h4 className="font-display text-lg leading-tight">{item.product.name}</h4>
                     <p className="text-xs text-muted-foreground font-body">{item.variant.size}</p>
                     <div className="flex items-center justify-between mt-auto">
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => updateQuantity(item.variant.id, item.quantity - 1)}
-                          className="size-7 border border-border flex items-center justify-center hover:bg-clay-light transition-colors"
-                        >
+                        <button onClick={() => updateQuantity(item.variant.id, item.quantity - 1)} className="size-7 border border-border flex items-center justify-center hover:bg-clay-light transition-colors">
                           <Minus size={12} />
                         </button>
                         <span className="text-sm tabular-nums font-body w-6 text-center">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.variant.id, item.quantity + 1)}
-                          className="size-7 border border-border flex items-center justify-center hover:bg-clay-light transition-colors"
-                        >
+                        <button onClick={() => updateQuantity(item.variant.id, item.quantity + 1)} className="size-7 border border-border flex items-center justify-center hover:bg-clay-light transition-colors">
                           <Plus size={12} />
                         </button>
                       </div>
@@ -71,10 +81,64 @@ const CartDrawer = () => {
             </div>
 
             <div className="p-6 border-t border-border space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground font-body text-sm uppercase tracking-[0.1em]">Total</span>
-                <span className="font-display text-3xl">₹{totalPrice}</span>
+              {/* Discount code input */}
+              {!appliedDiscount ? (
+                <div>
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        value={promoInput}
+                        onChange={(e) => { setPromoInput(e.target.value); setPromoError(""); setPromoSuccess(false); }}
+                        placeholder="Discount code"
+                        className="w-full border border-border bg-background pl-9 pr-3 py-2.5 font-body text-xs uppercase tracking-wider focus:outline-none focus:border-accent transition-colors"
+                        onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
+                      />
+                    </div>
+                    <button
+                      onClick={handleApplyPromo}
+                      disabled={!promoInput.trim()}
+                      className="px-4 py-2.5 bg-accent text-accent-foreground text-xs uppercase tracking-wider font-body font-medium hover:bg-primary transition-colors disabled:opacity-40"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {promoError && <p className="text-xs text-destructive font-body mt-1.5">{promoError}</p>}
+                  {promoSuccess && <p className="text-xs text-accent font-body mt-1.5 flex items-center gap-1"><Check size={12} /> Code applied!</p>}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between bg-accent/10 border border-accent/20 px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <Tag size={14} className="text-accent" />
+                    <span className="text-xs font-body font-medium uppercase tracking-wider">{appliedDiscount.code}</span>
+                    <span className="text-xs text-muted-foreground font-body">— {appliedDiscount.description}</span>
+                  </div>
+                  <button onClick={removeDiscount} className="text-muted-foreground hover:text-destructive transition-colors">
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+
+              {/* Totals */}
+              <div className="space-y-2">
+                {appliedDiscount && (
+                  <>
+                    <div className="flex justify-between text-sm font-body text-muted-foreground">
+                      <span>Subtotal</span>
+                      <span className="tabular-nums">₹{subtotal}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-body text-accent">
+                      <span>Discount ({appliedDiscount.code})</span>
+                      <span className="tabular-nums">-₹{discountAmount}</span>
+                    </div>
+                  </>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground font-body text-sm uppercase tracking-[0.1em]">Total</span>
+                  <span className="font-display text-3xl">₹{totalPrice}</span>
+                </div>
               </div>
+
               <button
                 onClick={() => {
                   setIsCartOpen(false);
