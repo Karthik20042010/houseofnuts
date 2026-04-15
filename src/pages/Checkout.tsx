@@ -139,6 +139,18 @@ const CheckoutPage = () => {
                 <span className="tabular-nums">₹{item.variant.price * item.quantity}</span>
               </div>
             ))}
+            {appliedDiscount && (
+              <>
+                <div className="border-t border-border pt-3 flex justify-between text-sm font-body text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span className="tabular-nums">₹{subtotal}</span>
+                </div>
+                <div className="flex justify-between text-sm font-body text-accent">
+                  <span>Discount ({appliedDiscount.code})</span>
+                  <span className="tabular-nums">-₹{discountAmount}</span>
+                </div>
+              </>
+            )}
             <div className="border-t border-border pt-3 flex justify-between font-medium font-body">
               <span>Total</span>
               <span className="tabular-nums text-lg">₹{totalPrice}</span>
