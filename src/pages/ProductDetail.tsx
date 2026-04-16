@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { products } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
 import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf } from "lucide-react";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 
 const sampleReviews = [
   { id: 1, name: "Priya S.", rating: 5, text: "Absolutely fresh and premium quality! The taste is amazing.", date: "2 weeks ago" },
@@ -19,8 +20,13 @@ const ProductDetail = () => {
   const { addToCart } = useCart();
   const [selectedVariant, setSelectedVariant] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const { addViewed } = useRecentlyViewed();
 
   const product = products.find((p) => p.id === id);
+
+  useEffect(() => {
+    if (product) addViewed(product.id);
+  }, [product?.id]);
 
   if (!product) {
     return (
