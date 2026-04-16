@@ -1,18 +1,44 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
+import RecentlyViewed from "@/components/RecentlyViewed";
 import { products, categories } from "@/data/products";
-import { Phone, MessageCircle } from "lucide-react";
+import { Phone, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import heroImage from "@/assets/hero-nuts.jpg";
 import PromoBanner from "@/components/PromoBanner";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
+
+const ITEMS_PER_PAGE = 8;
 
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const { viewedIds } = useRecentlyViewed();
 
-  const filtered = activeCategory === "all"
-    ? products
-    : products.filter((p) => p.category === activeCategory);
+  const filtered = useMemo(
+    () =>
+      activeCategory === "all"
+        ? products
+        : products.filter((p) => p.category === activeCategory),
+    [activeCategory]
+  );
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginated = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handleCategoryChange = (catId: string) => {
+    setActiveCategory(catId);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <div className="min-h-screen">
@@ -65,18 +91,26 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Recently Viewed */}
+      <RecentlyViewed viewedIds={viewedIds} />
+
       {/* Products */}
       <section id="products" className="bg-clay-light/50 px-6 md:px-12 py-20 border-t border-border">
         <div className="max-w-[1600px] mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b border-border pb-8 gap-6">
-            <h2 className="font-display text-4xl md:text-5xl tracking-tight">Our Collection</h2>
+            <div>
+              <h2 className="font-display text-4xl md:text-5xl tracking-tight">Our Collection</h2>
+              <p className="text-sm text-muted-foreground font-body mt-2">
+                {filtered.length} product{filtered.length !== 1 ? "s" : ""}
+              </p>
+            </div>
 
             {/* Category filters */}
             <div className="flex gap-3 flex-wrap">
               {categories.map((cat) => (
                 <button
                   key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
+                  onClick={() => handleCategoryChange(cat.id)}
                   className={`text-[11px] uppercase tracking-[0.15em] px-4 py-2 border transition-colors duration-200 font-body font-medium ${
                     activeCategory === cat.id
                       ? "bg-primary text-primary-foreground border-primary"
@@ -89,11 +123,48 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-            {filtered.map((product) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 transition-opacity duration-300">
+            {paginated.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-12 pt-8 border-t border-border">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="flex items-center gap-1.5 px-4 py-2.5 border border-border text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-foreground/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={14} />
+                Prev
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`w-10 h-10 flex items-center justify-center text-sm font-body font-medium border transition-all duration-200 ${
+                    page === currentPage
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border hover:border-foreground/30"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-1.5 px-4 py-2.5 border border-border text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-foreground/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Next
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
