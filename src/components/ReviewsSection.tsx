@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Star } from "lucide-react";
+import { Star, BadgeCheck } from "lucide-react";
 import { Review, getReviews, addReview } from "@/lib/reviews";
 import { useToast } from "@/hooks/use-toast";
 
@@ -115,10 +115,21 @@ const ReviewsSection = ({ productId }: ReviewsSectionProps) => {
       <div className="grid md:grid-cols-3 gap-6">
         {reviews.map((review) => (
           <div key={review.id} className="bg-clay-light/50 p-6 border border-border">
-            <div className="flex items-center gap-1 mb-3">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={14} className={i < review.rating ? "fill-accent text-accent" : "text-border"} />
-              ))}
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={14} className={i < review.rating ? "fill-accent text-accent" : "text-border"} />
+                ))}
+              </div>
+              {review.verified && (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.12em] text-accent font-body font-medium"
+                  title="This reviewer purchased this product from our store"
+                >
+                  <BadgeCheck size={14} className="fill-accent/15 text-accent" />
+                  Verified
+                </span>
+              )}
             </div>
             <p className="font-body text-sm leading-relaxed mb-4">{review.text}</p>
             <div className="flex justify-between text-xs text-muted-foreground font-body">
