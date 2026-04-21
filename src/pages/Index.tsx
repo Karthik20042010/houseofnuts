@@ -11,18 +11,44 @@ import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 
 const ITEMS_PER_PAGE = 8;
 
+type SortOption = "default" | "price-asc" | "price-desc" | "name-asc" | "name-desc";
+
+const sortOptions: { value: SortOption; label: string }[] = [
+  { value: "default", label: "Featured" },
+  { value: "price-asc", label: "Price: Low to High" },
+  { value: "price-desc", label: "Price: High to Low" },
+  { value: "name-asc", label: "Name: A-Z" },
+  { value: "name-desc", label: "Name: Z-A" },
+];
+
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<SortOption>("default");
   const { viewedIds } = useRecentlyViewed();
 
-  const filtered = useMemo(
-    () =>
+  const filtered = useMemo(() => {
+    const base =
       activeCategory === "all"
-        ? products
-        : products.filter((p) => p.category === activeCategory),
-    [activeCategory]
-  );
+        ? [...products]
+        : products.filter((p) => p.category === activeCategory);
+
+    const getMinPrice = (p: typeof products[0]) =>
+      Math.min(...p.variants.map((v) => v.price));
+
+    switch (sortBy) {
+      case "price-asc":
+        return base.sort((a, b) => getMinPrice(a) - getMinPrice(b));
+      case "price-desc":
+        return base.sort((a, b) => getMinPrice(b) - getMinPrice(a));
+      case "name-asc":
+        return base.sort((a, b) => a.name.localeCompare(b.name));
+      case "name-desc":
+        return base.sort((a, b) => b.name.localeCompare(a.name));
+      default:
+        return base;
+    }
+  }, [activeCategory, sortBy]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice(
