@@ -131,21 +131,42 @@ const Index = () => {
               </p>
             </div>
 
-            {/* Category filters */}
-            <div className="flex gap-3 flex-wrap">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCategoryChange(cat.id)}
-                  className={`text-[11px] uppercase tracking-[0.15em] px-4 py-2 border transition-colors duration-200 font-body font-medium ${
-                    activeCategory === cat.id
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border hover:border-foreground/30"
-                  }`}
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              {/* Sort */}
+              <div className="flex items-center gap-2">
+                <label className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground font-body font-medium whitespace-nowrap">Sort:</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => {
+                    setSortBy(e.target.value as SortOption);
+                    setCurrentPage(1);
+                  }}
+                  className="text-[11px] uppercase tracking-[0.15em] px-3 py-2 border border-border bg-background hover:border-foreground/30 transition-colors font-body font-medium cursor-pointer focus:outline-none focus:border-foreground/40"
                 >
-                  {cat.label}
-                </button>
-              ))}
+                  {sortOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Category filters */}
+              <div className="flex gap-3 flex-wrap">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleCategoryChange(cat.id)}
+                    className={`text-[11px] uppercase tracking-[0.15em] px-4 py-2 border transition-colors duration-200 font-body font-medium ${
+                      activeCategory === cat.id
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border hover:border-foreground/30"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
