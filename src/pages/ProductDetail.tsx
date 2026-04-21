@@ -7,12 +7,8 @@ import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
 import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
-
-const sampleReviews = [
-  { id: 1, name: "Priya S.", rating: 5, text: "Absolutely fresh and premium quality! The taste is amazing.", date: "2 weeks ago" },
-  { id: 2, name: "Rahul M.", rating: 4, text: "Good packaging and fast delivery. Will order again.", date: "1 month ago" },
-  { id: 3, name: "Anita K.", rating: 5, text: "Best quality I've found online. My family loved it!", date: "3 weeks ago" },
-];
+import ReviewsSection from "@/components/ReviewsSection";
+import { getAverageRating } from "@/lib/reviews";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -44,7 +40,7 @@ const ProductDetail = () => {
 
   const variant = product.variants[selectedVariant];
   const relatedProducts = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
-  const avgRating = (sampleReviews.reduce((s, r) => s + r.rating, 0) / sampleReviews.length).toFixed(1);
+  const { avg: avgRating, count: reviewCount } = getAverageRating(product.id);
 
   return (
     <div className="min-h-screen">
@@ -83,10 +79,10 @@ const ProductDetail = () => {
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={16} className={i < Math.round(Number(avgRating)) ? "fill-accent text-accent" : "text-border"} />
+                    <Star key={i} size={16} className={i < Math.round(avgRating) ? "fill-accent text-accent" : "text-border"} />
                   ))}
                 </div>
-                <span className="text-sm text-muted-foreground font-body">({sampleReviews.length} reviews)</span>
+                <span className="text-sm text-muted-foreground font-body">{avgRating.toFixed(1)} ({reviewCount} reviews)</span>
               </div>
               <p className="text-muted-foreground font-body leading-relaxed text-lg">{product.description}</p>
             </div>
@@ -151,25 +147,7 @@ const ProductDetail = () => {
         </div>
 
         {/* Reviews Section */}
-        <section className="mb-20">
-          <h2 className="font-display text-3xl mb-8 border-b border-border pb-4">Customer Reviews</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            {sampleReviews.map((review) => (
-              <div key={review.id} className="bg-clay-light/50 p-6 border border-border">
-                <div className="flex items-center gap-1 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={14} className={i < review.rating ? "fill-accent text-accent" : "text-border"} />
-                  ))}
-                </div>
-                <p className="font-body text-sm leading-relaxed mb-4">{review.text}</p>
-                <div className="flex justify-between text-xs text-muted-foreground font-body">
-                  <span className="font-medium text-foreground">{review.name}</span>
-                  <span>{review.date}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        <ReviewsSection productId={product.id} />
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
