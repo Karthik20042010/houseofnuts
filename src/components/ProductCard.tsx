@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Star } from "lucide-react";
+import { getAverageRating } from "@/lib/reviews";
 
 interface ProductCardProps {
   product: Product;
@@ -12,6 +13,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const [selectedVariant, setSelectedVariant] = useState(0);
   const { addToCart } = useCart();
   const variant = product.variants[selectedVariant];
+  const { avg, count } = getAverageRating(product.id);
 
   return (
     <div className="flex flex-col group">
@@ -33,6 +35,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
       <Link to={`/product/${product.id}`} className="hover:text-accent transition-colors duration-300">
         <h3 className="font-display text-xl md:text-2xl mb-1">{product.name}</h3>
       </Link>
+      <div className="flex items-center gap-1.5 mb-2">
+        <div className="flex">
+          {[...Array(5)].map((_, i) => (
+            <Star key={i} size={11} className={i < Math.round(avg) ? "fill-accent text-accent" : "text-border"} />
+          ))}
+        </div>
+        <span className="text-[11px] text-muted-foreground font-body">({count})</span>
+      </div>
       <p className="text-sm text-muted-foreground font-light tracking-wide mb-3 line-clamp-1">
         {product.description}
       </p>
