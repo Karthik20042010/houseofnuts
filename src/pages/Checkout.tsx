@@ -12,6 +12,7 @@ const UPI_NAME = "HouseOfNuts";
 const CheckoutPage = () => {
   const { items, totalPrice, subtotal, appliedDiscount, discountAmount, clearCart } = useCart();
   const navigate = useNavigate();
+  const { refresh: refreshInventory } = useInventory();
   const [step, setStep] = useState<"details" | "payment" | "done">("details");
   const [submitting, setSubmitting] = useState(false);
   const [timer, setTimer] = useState(300); // 5 min countdown
