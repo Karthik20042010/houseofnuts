@@ -32,9 +32,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
           className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
           loading="lazy"
         />
-        {product.badge && (
+        {product.badge && !allOos && (
           <div className="absolute top-0 right-0 bg-accent text-accent-foreground px-3 py-1.5 m-4 md:m-6 text-[10px] uppercase tracking-[0.2em] font-medium z-20 shadow-sm font-body">
             {product.badge}
+          </div>
+        )}
+        {allOos && (
+          <div className="absolute top-0 right-0 bg-foreground/85 text-background px-3 py-1.5 m-4 md:m-6 text-[10px] uppercase tracking-[0.2em] font-medium z-20 shadow-sm font-body">
+            Sold Out
           </div>
         )}
       </Link>
