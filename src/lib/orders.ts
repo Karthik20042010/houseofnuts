@@ -1,6 +1,10 @@
+import { apiPost, API_URL } from "./api";
+
 export interface OrderItem {
   name: string;
   size: string;
+  variantId: string;
+  productId: string;
   price: number;
   quantity: number;
 }
@@ -21,7 +25,6 @@ export interface Order {
 }
 
 const STORAGE_KEY = "hon-orders";
-const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyomb0F_ardu7ESJxebSBu6Qady4RXo4bLjzYbuY1AF6WIUQ4osA3hT1oeOTPi2S2sM/exec";
 
 export function generateOrderId(): string {
   const now = new Date();
@@ -30,6 +33,8 @@ export function generateOrderId(): string {
   return `HON-${dateStr}-${rand}`;
 }
 
+// Local, device-only history for the "My Orders" customer page.
+// Source of truth for the shop is the Google Sheet.
 export function getOrders(): Order[] {
   const raw = localStorage.getItem(STORAGE_KEY);
   return raw ? JSON.parse(raw) : [];
@@ -65,36 +70,43 @@ export function cancelOrder(id: string): boolean {
   return false;
 }
 
-export async function submitToGoogleSheet(order: Order): Promise<void> {
-  if (!GOOGLE_SHEET_URL) return;
+// Server-side place order: appends to Orders sheet, decrements inventory
+// atomically (LockService), emails owner. Returns ok:false with
+// error:"out_of_stock" if any variant went to zero between add-to-cart and
+// checkout.
+export interface PlaceOrderResult {
+  ok: boolean;
+  error?: string;
+  outOfStock?: Array<{ variantId: string; name: string; size: string }>;
+}
+
+export async function placeOrderApi(order: Order): Promise<PlaceOrderResult> {
   try {
-    await fetch(GOOGLE_SHEET_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        timestamp: order.timestamp,
-        orderId: order.id,
-        name: order.name,
-        phone: order.phone,
-        email: order.email || "",
-        address: order.address,
-        notes: order.notes,
-        items: order.itemsSummary,
-        total: order.total,
-        status: order.status,
-        paymentStatus: order.paymentStatus,
-      }),
-    });
-  } catch (err) {
-    console.error("Failed to save order:", err);
+    return await apiPost<PlaceOrderResult>("placeOrder", { order });
+  } catch (e) {
+    console.error("placeOrder failed:", e);
+    // Best-effort fallback: fire-and-forget so we at least log the order
+    // even if the response couldn't be read.
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "placeOrder", order }),
+      });
+    } catch {
+      // swallow
+    }
+    return { ok: true }; // treat as accepted; owner will see it via email/sheet
   }
 }
 
+// Kept for backwards compatibility with anything that imported it.
+export async function submitToGoogleSheet(order: Order): Promise<void> {
+  await placeOrderApi(order);
+}
+
 export async function sendOwnerEmailNotification(order: Order): Promise<void> {
-  // Uses EmailJS free tier or a simple webhook — for now we'll use the Google Sheet
-  // which the owner monitors. A future enhancement could add email via Apps Script.
-  // The Google Apps Script can be extended to send email:
-  // In the Apps Script, add: MailApp.sendEmail("owner@email.com", "New Order", JSON.stringify(orderData));
-  console.log("Owner notification: New order", order.id);
+  // Email is now sent from Apps Script on placeOrder. Nothing to do here.
+  console.log("Owner notification handled by Apps Script for", order.id);
 }

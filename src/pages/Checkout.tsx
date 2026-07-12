@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useCart } from "@/contexts/CartContext";
+import { useInventory } from "@/contexts/InventoryContext";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle, Clock, Smartphone } from "lucide-react";
-import { generateOrderId, saveOrder, submitToGoogleSheet, type Order } from "@/lib/orders";
+import { generateOrderId, saveOrder, placeOrderApi, type Order } from "@/lib/orders";
+import { toast } from "sonner";
 
 const UPI_ID = "863932789@okbizaxis";
 const UPI_NAME = "HouseOfNuts";
@@ -10,6 +12,7 @@ const UPI_NAME = "HouseOfNuts";
 const CheckoutPage = () => {
   const { items, totalPrice, subtotal, appliedDiscount, discountAmount, clearCart } = useCart();
   const navigate = useNavigate();
+  const { refresh: refreshInventory } = useInventory();
   const [step, setStep] = useState<"details" | "payment" | "done">("details");
   const [submitting, setSubmitting] = useState(false);
   const [timer, setTimer] = useState(300); // 5 min countdown
@@ -52,6 +55,8 @@ const CheckoutPage = () => {
       items: items.map((i) => ({
         name: i.product.name,
         size: i.variant.size,
+        variantId: i.variant.id,
+        productId: i.product.id,
         price: i.variant.price,
         quantity: i.quantity,
       })),
@@ -61,13 +66,23 @@ const CheckoutPage = () => {
       paymentStatus: "paid",
     };
 
-    saveOrder(order);
-    await submitToGoogleSheet(order);
+    const result = await placeOrderApi(order);
 
+    if (!result.ok && result.error === "out_of_stock") {
+      const names = (result.outOfStock || []).map((v) => `${v.name} (${v.size})`).join(", ");
+      toast.error(`Sorry, out of stock: ${names || "some items"}. Please adjust your cart.`);
+      await refreshInventory();
+      setSubmitting(false);
+      setStep("details");
+      return;
+    }
+
+    saveOrder(order);
     clearCart();
+    await refreshInventory();
     setStep("done");
     setSubmitting(false);
-  }, [orderId, form, items, totalPrice, clearCart]);
+  }, [orderId, form, items, totalPrice, clearCart, refreshInventory]);
 
   if (items.length === 0 && step !== "done") {
     return (
