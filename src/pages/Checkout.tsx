@@ -55,6 +55,8 @@ const CheckoutPage = () => {
       items: items.map((i) => ({
         name: i.product.name,
         size: i.variant.size,
+        variantId: i.variant.id,
+        productId: i.product.id,
         price: i.variant.price,
         quantity: i.quantity,
       })),
@@ -64,13 +66,23 @@ const CheckoutPage = () => {
       paymentStatus: "paid",
     };
 
-    saveOrder(order);
-    await submitToGoogleSheet(order);
+    const result = await placeOrderApi(order);
 
+    if (!result.ok && result.error === "out_of_stock") {
+      const names = (result.outOfStock || []).map((v) => `${v.name} (${v.size})`).join(", ");
+      toast.error(`Sorry, out of stock: ${names || "some items"}. Please adjust your cart.`);
+      await refreshInventory();
+      setSubmitting(false);
+      setStep("details");
+      return;
+    }
+
+    saveOrder(order);
     clearCart();
+    await refreshInventory();
     setStep("done");
     setSubmitting(false);
-  }, [orderId, form, items, totalPrice, clearCart]);
+  }, [orderId, form, items, totalPrice, clearCart, refreshInventory]);
 
   if (items.length === 0 && step !== "done") {
     return (
