@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
+import { useInventory } from "@/contexts/InventoryContext";
+import { isLowStock, isOutOfStock, stockOf } from "@/lib/inventory";
 import { ShoppingBag, Star } from "lucide-react";
 import { getAverageRating } from "@/lib/reviews";
 
@@ -12,8 +14,13 @@ interface ProductCardProps {
 const ProductCard = ({ product }: ProductCardProps) => {
   const [selectedVariant, setSelectedVariant] = useState(0);
   const { addToCart } = useCart();
+  const { stock } = useInventory();
   const variant = product.variants[selectedVariant];
   const { avg, count } = getAverageRating(product.id);
+  const oos = isOutOfStock(stock, variant.id);
+  const low = isLowStock(stock, variant.id);
+  const remaining = stockOf(stock, variant.id);
+  const allOos = product.variants.every((v) => isOutOfStock(stock, v.id));
 
   return (
     <div className="flex flex-col group">
