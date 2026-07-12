@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useCart } from "@/contexts/CartContext";
+import { useInventory } from "@/contexts/InventoryContext";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle, Clock, Smartphone } from "lucide-react";
-import { generateOrderId, saveOrder, submitToGoogleSheet, type Order } from "@/lib/orders";
+import { generateOrderId, saveOrder, placeOrderApi, type Order } from "@/lib/orders";
+import { toast } from "sonner";
 
 const UPI_ID = "863932789@okbizaxis";
 const UPI_NAME = "HouseOfNuts";
