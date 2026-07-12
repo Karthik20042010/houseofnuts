@@ -61,29 +61,38 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
       {/* Size selector */}
       <div className="flex gap-2 mb-3 flex-wrap">
-        {product.variants.map((v, i) => (
-          <button
-            key={v.id}
-            onClick={() => setSelectedVariant(i)}
-            className={`text-[11px] px-3 py-1.5 border transition-colors duration-200 font-body tracking-wide ${
-              i === selectedVariant
-                ? "bg-primary text-primary-foreground border-primary"
-                : "border-border hover:border-foreground/30"
-            }`}
-          >
-            {v.size}
-          </button>
-        ))}
+        {product.variants.map((v, i) => {
+          const vOos = isOutOfStock(stock, v.id);
+          return (
+            <button
+              key={v.id}
+              onClick={() => setSelectedVariant(i)}
+              className={`text-[11px] px-3 py-1.5 border transition-colors duration-200 font-body tracking-wide ${
+                i === selectedVariant
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-border hover:border-foreground/30"
+              } ${vOos ? "line-through opacity-50" : ""}`}
+              title={vOos ? "Out of stock" : undefined}
+            >
+              {v.size}
+            </button>
+          );
+        })}
       </div>
+
+      {low && !oos && remaining !== null && (
+        <p className="text-[11px] font-body text-accent mb-2">Only {remaining} left</p>
+      )}
 
       <div className="flex justify-between items-center mt-auto pt-3 border-t border-border">
         <span className="tabular-nums font-medium text-lg font-body">₹{variant.price}</span>
         <button
           onClick={() => addToCart(product, variant)}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-accent transition-colors duration-300 font-body"
+          disabled={oos}
+          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-accent transition-colors duration-300 font-body disabled:bg-muted-foreground/40 disabled:cursor-not-allowed disabled:hover:bg-muted-foreground/40"
         >
           <ShoppingBag size={14} />
-          Add
+          {oos ? "Sold Out" : "Add"}
         </button>
       </div>
     </div>
@@ -91,3 +100,4 @@ const ProductCard = ({ product }: ProductCardProps) => {
 };
 
 export default ProductCard;
+
