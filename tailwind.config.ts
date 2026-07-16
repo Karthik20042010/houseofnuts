@@ -67,7 +67,9 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+        },
         status: {
+
           pending: { DEFAULT: "hsl(var(--status-pending))", foreground: "hsl(var(--status-pending-fg))" },
           confirmed: { DEFAULT: "hsl(var(--status-confirmed))", foreground: "hsl(var(--status-confirmed-fg))" },
           shipped: { DEFAULT: "hsl(var(--status-shipped))", foreground: "hsl(var(--status-shipped-fg))" },
