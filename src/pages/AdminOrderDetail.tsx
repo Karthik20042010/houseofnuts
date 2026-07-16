@@ -1,56 +1,72 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
-import { adminFetchOrders, adminUpdateOrder, isAdminLoggedIn } from "@/lib/admin";
+import {
+  ArrowLeft,
+  Ban,
+  CheckCircle2,
+  Copy,
+  Loader2,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Printer,
+  Truck,
+  IndianRupee,
+} from "lucide-react";
+import { adminFetchOrders, adminUpdateOrder } from "@/lib/admin";
 import type { Order } from "@/lib/orders";
+import { StatusTimeline } from "@/components/admin/StatusTimeline";
+import { PaymentPill, StatusPill } from "@/components/admin/StatusPill";
+import { toast } from "sonner";
+import { products } from "@/data/products";
+
+const productImage = (productId?: string) =>
+  productId ? products.find((p) => p.id === productId)?.image : undefined;
 
 const AdminOrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
-  const [status, setStatus] = useState<Order["status"]>("pending");
-  const [paymentStatus, setPaymentStatus] = useState<Order["paymentStatus"]>("pending");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    try {
+      const list = await adminFetchOrders();
+      const o = list.find((x) => x.id === id);
+      setOrder(o || null);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    if (!isAdminLoggedIn()) {
-      navigate("/admin/login", { replace: true });
-      return;
-    }
-    (async () => {
-      try {
-        const list = await adminFetchOrders();
-        const o = list.find((x) => x.id === id);
-        if (o) {
-          setOrder(o);
-          setStatus(o.status);
-          setPaymentStatus(o.paymentStatus);
-        }
-      } catch (e) {
-        setMsg((e as Error).message);
-      }
-      setLoading(false);
-    })();
-  }, [id, navigate]);
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
-  const save = async () => {
+  const update = async (patch: { status?: Order["status"]; paymentStatus?: Order["paymentStatus"] }) => {
     if (!order) return;
-    setSaving(true);
-    setMsg("");
+    setBusy(true);
     try {
-      await adminUpdateOrder(order.id, { status, paymentStatus });
-      setMsg("Saved ✓");
+      await adminUpdateOrder(order.id, patch);
+      setOrder({ ...order, ...patch });
+      toast.success("Updated");
     } catch (e) {
-      setMsg((e as Error).message);
+      toast.error((e as Error).message);
     }
-    setSaving(false);
+    setBusy(false);
+  };
+
+  const copy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied`);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="p-20 flex justify-center">
         <Loader2 className="animate-spin text-muted-foreground" />
       </div>
     );
@@ -58,104 +74,225 @@ const AdminOrderDetail = () => {
 
   if (!order) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6">
+      <div className="p-20 flex flex-col items-center gap-3">
         <p className="text-muted-foreground font-body">Order not found</p>
         <Link to="/admin" className="text-accent underline font-body text-sm">Back to admin</Link>
       </div>
     );
   }
 
+  const phoneDigits = (order.phone || "").replace(/\D/g, "");
+  const waMsg = encodeURIComponent(`Hi ${order.name}, regarding your order ${order.id}.`);
+
   return (
-    <div className="min-h-screen bg-clay-light">
-      <div className="max-w-3xl mx-auto p-6">
-        <Link to="/admin" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 font-body">
-          <ArrowLeft size={16} /> All Orders
-        </Link>
+    <div className="max-w-6xl mx-auto p-4 md:p-6 print-area">
+      <Link
+        to="/admin"
+        className="no-print flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 font-body"
+      >
+        <ArrowLeft size={16} /> All Orders
+      </Link>
 
-        <div className="bg-background border border-border p-6 mb-4">
-          <h1 className="font-display text-2xl mb-1">{order.id}</h1>
-          <p className="text-sm text-muted-foreground font-body">
-            {new Date(order.timestamp).toLocaleString("en-IN")}
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4 mb-4">
-          <div className="bg-background border border-border p-6">
-            <h3 className="font-display text-lg mb-3">Customer</h3>
-            <div className="space-y-1 text-sm font-body">
-              <div><span className="text-muted-foreground">Name:</span> {order.name}</div>
-              <div><span className="text-muted-foreground">Phone:</span> {order.phone}</div>
-              {order.email && <div><span className="text-muted-foreground">Email:</span> {order.email}</div>}
-              <div><span className="text-muted-foreground">Address:</span> {order.address}</div>
-              {order.notes && <div><span className="text-muted-foreground">Notes:</span> {order.notes}</div>}
+      <div className="grid lg:grid-cols-[1fr_320px] gap-4">
+        <div className="space-y-4 min-w-0">
+          {/* Header card */}
+          <div className="bg-background border border-border rounded-sm p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-display text-2xl">{order.id}</h1>
+                  <button
+                    onClick={() => copy(order.id, "Order ID")}
+                    className="no-print text-muted-foreground hover:text-foreground"
+                  >
+                    <Copy size={14} />
+                  </button>
+                </div>
+                <p className="text-sm text-muted-foreground font-body mt-1">
+                  {new Date(order.timestamp).toLocaleString("en-IN")}
+                </p>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <StatusPill status={order.status} />
+                <PaymentPill status={order.paymentStatus} />
+              </div>
             </div>
+            <StatusTimeline status={order.status} />
           </div>
 
-          <div className="bg-background border border-border p-6">
-            <h3 className="font-display text-lg mb-3">Items</h3>
-            <div className="space-y-2 text-sm font-body">
-              {(order.items || []).map((it, i) => (
-                <div key={i} className="flex justify-between">
-                  <span>{it.name} ({it.size}) × {it.quantity}</span>
-                  <span className="tabular-nums">₹{it.price * it.quantity}</span>
+          {/* Customer */}
+          <div className="bg-background border border-border rounded-sm p-6">
+            <h3 className="font-display text-lg mb-3">Customer</h3>
+            <div className="grid sm:grid-cols-2 gap-3 text-sm font-body">
+              <Field label="Name" value={order.name} onCopy={() => copy(order.name, "Name")} />
+              <Field label="Phone" value={order.phone} onCopy={() => copy(order.phone, "Phone")} />
+              {order.email && <Field label="Email" value={order.email} onCopy={() => copy(order.email!, "Email")} />}
+              <Field
+                label="Address"
+                value={order.address}
+                onCopy={() => copy(order.address, "Address")}
+                extra={
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(order.address)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="no-print inline-flex items-center gap-1 text-accent hover:underline text-xs"
+                  >
+                    <MapPin size={12} /> Map
+                  </a>
+                }
+              />
+              {order.notes && (
+                <div className="sm:col-span-2">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Notes</div>
+                  <div>{order.notes}</div>
                 </div>
-              ))}
-              <div className="border-t border-border pt-2 mt-2 flex justify-between font-medium">
-                <span>Total</span>
-                <span className="tabular-nums">₹{order.total}</span>
-              </div>
-              {(!order.items || order.items.length === 0) && (
-                <p className="text-muted-foreground text-xs">{order.itemsSummary}</p>
               )}
             </div>
           </div>
+
+          {/* Items */}
+          <div className="bg-background border border-border rounded-sm p-6">
+            <h3 className="font-display text-lg mb-3">Items</h3>
+            <div className="divide-y divide-border">
+              {(order.items || []).map((it, i) => (
+                <div key={i} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                  {productImage(it.productId) && (
+                    <img src={productImage(it.productId)} alt={it.name} className="size-12 object-cover rounded-sm" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-body text-sm truncate">{it.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {it.size} · ₹{it.price} × {it.quantity}
+                    </div>
+                  </div>
+                  <div className="tabular-nums font-medium text-sm">₹{it.price * it.quantity}</div>
+                </div>
+              ))}
+              {(!order.items || order.items.length === 0) && (
+                <p className="text-muted-foreground text-xs font-body py-2">{order.itemsSummary}</p>
+              )}
+            </div>
+            <div className="border-t border-border mt-3 pt-3 flex justify-between font-medium font-body">
+              <span>Total</span>
+              <span className="tabular-nums text-lg">₹{order.total}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="bg-background border border-border p-6">
-          <h3 className="font-display text-lg mb-4">Update Status</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs uppercase tracking-wider text-muted-foreground font-body block mb-2">Order Status</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as Order["status"])}
-                className="w-full border border-border bg-background px-3 py-2 text-sm font-body focus:outline-none focus:border-accent"
+        {/* Sticky actions */}
+        <aside className="no-print lg:sticky lg:top-20 self-start space-y-3">
+          <div className="bg-background border border-border rounded-sm p-4 space-y-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-body mb-1">Quick actions</div>
+            {order.paymentStatus !== "paid" && (
+              <ActionBtn onClick={() => update({ paymentStatus: "paid" })} busy={busy} icon={<IndianRupee size={14} />}>
+                Mark Paid
+              </ActionBtn>
+            )}
+            {order.status === "pending" && (
+              <ActionBtn onClick={() => update({ status: "confirmed" })} busy={busy} icon={<CheckCircle2 size={14} />}>
+                Confirm
+              </ActionBtn>
+            )}
+            {(order.status === "pending" || order.status === "confirmed") && (
+              <ActionBtn onClick={() => update({ status: "shipped" })} busy={busy} icon={<Truck size={14} />}>
+                Mark Shipped
+              </ActionBtn>
+            )}
+            {order.status === "shipped" && (
+              <ActionBtn onClick={() => update({ status: "delivered" })} busy={busy} icon={<CheckCircle2 size={14} />}>
+                Mark Delivered
+              </ActionBtn>
+            )}
+            {order.status !== "cancelled" && order.status !== "delivered" && (
+              <ActionBtn
+                onClick={() => update({ status: "cancelled" })}
+                busy={busy}
+                icon={<Ban size={14} />}
+                variant="destructive"
               >
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="shipped">Shipped</option>
-                <option value="delivered">Delivered</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wider text-muted-foreground font-body block mb-2">Payment Status</label>
-              <select
-                value={paymentStatus}
-                onChange={(e) => setPaymentStatus(e.target.value as Order["paymentStatus"])}
-                className="w-full border border-border bg-background px-3 py-2 text-sm font-body focus:outline-none focus:border-accent"
-              >
-                <option value="pending">Pending</option>
-                <option value="paid">Paid</option>
-                <option value="refunded">Refunded</option>
-              </select>
-            </div>
+                Cancel Order
+              </ActionBtn>
+            )}
           </div>
-          <div className="flex items-center gap-4 mt-6">
-            <button
-              onClick={save}
-              disabled={saving}
-              className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 uppercase tracking-[0.15em] text-xs font-medium font-body hover:bg-accent transition-colors disabled:opacity-50"
+
+          <div className="bg-background border border-border rounded-sm p-4 space-y-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-body mb-1">Contact</div>
+            <a
+              href={`https://wa.me/${phoneDigits}?text=${waMsg}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 border border-border px-3 py-2 rounded-sm text-sm font-body hover:bg-[#25D366] hover:text-white hover:border-[#25D366]"
             >
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              Save Changes
+              <MessageCircle size={14} /> WhatsApp
+            </a>
+            <a
+              href={`tel:${order.phone}`}
+              className="flex items-center gap-2 border border-border px-3 py-2 rounded-sm text-sm font-body hover:bg-clay-light"
+            >
+              <Phone size={14} /> Call
+            </a>
+            <button
+              onClick={() => window.print()}
+              className="w-full flex items-center gap-2 border border-border px-3 py-2 rounded-sm text-sm font-body hover:bg-clay-light"
+            >
+              <Printer size={14} /> Print invoice
             </button>
-            {msg && <span className="text-sm font-body text-muted-foreground">{msg}</span>}
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );
 };
+
+const Field = ({
+  label,
+  value,
+  onCopy,
+  extra,
+}: {
+  label: string;
+  value: string;
+  onCopy: () => void;
+  extra?: React.ReactNode;
+}) => (
+  <div>
+    <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-2">
+      {label}
+      <button onClick={onCopy} className="no-print hover:text-foreground">
+        <Copy size={10} />
+      </button>
+      {extra}
+    </div>
+    <div className="break-words">{value}</div>
+  </div>
+);
+
+const ActionBtn = ({
+  children,
+  onClick,
+  busy,
+  icon,
+  variant = "primary",
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  busy?: boolean;
+  icon?: React.ReactNode;
+  variant?: "primary" | "destructive";
+}) => (
+  <button
+    onClick={onClick}
+    disabled={busy}
+    className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-sm text-xs uppercase tracking-[0.15em] font-medium font-body transition-colors disabled:opacity-50 ${
+      variant === "destructive"
+        ? "border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+        : "bg-primary text-primary-foreground hover:bg-accent"
+    }`}
+  >
+    {icon}
+    {children}
+  </button>
+);
 
 export default AdminOrderDetail;

@@ -1,85 +1,72 @@
+# Admin Dashboard Improvements
 
-# House of Nuts — Go-Live Plan (100% Google Sheets)
+Focus is entirely on the `/admin` area (login, dashboard, order detail, inventory). Storefront is untouched. All work is presentation + workflow polish — no backend/Apps Script changes.
 
-Everything stays free. We extend your existing Apps Script into a small JSON API that the site reads and writes. No database, no server.
+## 1. Shared admin shell with sidebar
+Wrap all admin routes in a new `AdminLayout` using shadcn `Sidebar` (collapsible to icon rail):
 
-## 1. Upgrade the Google Apps Script (you paste, I guide)
+- Sidebar sections: **Orders**, **Inventory**, **Storefront ↗**, **Logout** (bottom).
+- Top bar with `SidebarTrigger`, current page title, quick refresh, and a live "last synced" timestamp.
+- Consistent earthy palette (clay-light bg, Fraunces headings) matching site brand.
+- Highlights active route via `NavLink`.
 
-Your current Sheet gets **3 tabs**:
+New file: `src/components/admin/AdminLayout.tsx` + `AdminSidebar.tsx`. `AdminDashboard`, `AdminOrderDetail`, `AdminInventory` become the layout's children (route restructure in `App.tsx`).
 
-- `Orders` — already exists (order log)
-- `Inventory` — new: one row per size variant (`productId`, `variantId`, `size`, `stock`)
-- `Config` — new: single row with `ownerEmail`, `adminPasswordHash`
+## 2. Dashboard (orders list) upgrades
 
-The Apps Script gets new actions (dispatched by a `?action=` param):
+Visual & workflow polish:
 
-| action | method | purpose |
-|---|---|---|
-| `getInventory` | GET | Returns stock for all variants (site reads on load) |
-| `placeOrder` | POST | Appends to `Orders`, decrements `Inventory`, emails you |
-| `getOrders` | GET | Returns all orders (admin dashboard) — requires token |
-| `updateOrder` | POST | Change status / paymentStatus — requires token |
-| `adminLogin` | POST | Verifies password, returns a signed token |
+- **Stat cards**: add Revenue Today, Pending Payment count, low-stock count; add trend delta (vs previous 7 days). Use accent icons and tabular numerals.
+- **Filters row**: keep search + status; add **date range** (Today / 7d / 30d / All) and **payment status** filter; add "Unpaid only" quick toggle.
+- **Table**:
+  - Sortable columns (date, total, status) with header click.
+  - Row hover shows quick actions: mark **Confirmed**, mark **Paid**, **WhatsApp** the customer (opens `wa.me/<phone>` with a prewritten message including order id + total).
+  - Colored status pills already exist — swap to design-token classes so they respect theme.
+  - Sticky header; zebra rows; mobile card fallback under `md`.
+- **Empty / error / loading** states get proper illustrations and retry buttons.
+- **Export CSV** button (client-side, from current filtered set).
+- **Pagination** (25/page) so large sheets stay fast.
+- Auto-refresh every 60s with a toggle.
 
-I'll give you the full Apps Script code to paste and redeploy. You keep the same web-app URL.
+## 3. Order detail upgrades
 
-## 2. Inventory sync on the storefront
+- Two-column layout with a sticky right-side "Actions" panel.
+- **Status timeline** (Placed → Confirmed → Shipped → Delivered) — visual stepper matching customer's `OrderDetail`.
+- **Quick action buttons**: Mark Paid, Mark Shipped, Mark Delivered, Cancel — one click updates and toasts, no dropdown save trip.
+- **Customer card**: click-to-copy phone/email, WhatsApp + Call links, Google-Maps link on address.
+- **Items card**: product thumbnails, per-line subtotal, itemized total block with tax/discount lines.
+- **Print / Invoice** button opens a print-styled invoice view (uses `window.print()` with print CSS).
+- Save state uses toast (sonner) instead of inline text.
 
-- On app load, fetch `getInventory` once (cached ~2 min).
-- `ProductCard` and `ProductDetail` show `Out of stock` and disable "Add" when `stock <= 0`.
-- Low-stock badge ("Only 3 left") when `stock <= 5`.
-- On successful checkout, Apps Script decrements stock atomically. If a variant went out of stock between add-to-cart and checkout, the API returns `{ error: "out_of_stock", variant: "..." }` and checkout shows a clear message.
+## 4. Inventory page upgrades
 
-## 3. Admin dashboard (`/admin`)
+- **Search + category filter** at top.
+- **Bulk actions**: "Set all to ∞", "Set all to 0", "Fill from CSV" (optional; scoped simple).
+- Per-variant row shows: thumbnail, name, size, current stock input, low-stock warning chip when ≤5, out-of-stock chip when 0.
+- **+ / − steppers** next to number input for fast edits on mobile.
+- **Dirty indicator** on changed rows and a sticky "Save (N changes)" bar so admin knows what will be pushed.
+- Group by product with collapsible sections; sticky product header.
 
-Single-owner login gated by password (verified server-side in Apps Script — the password is stored **only in the Sheet**, never in the code).
+## 5. Login polish
 
-Pages:
+- Centered card with soft gradient/texture background, brand mark, subtle motion on submit.
+- Show/hide password toggle.
+- Better error copy for network vs wrong password.
 
-- `/admin/login` — password form
-- `/admin` — orders table with filters (status, date, search by name/phone/orderId), click row → detail
-- `/admin/orders/:id` — full order, change **Order Status** (pending → confirmed → shipped → delivered → cancelled) and **Payment Status** (pending → paid → refunded). Updates write back to the Sheet.
-- `/admin/inventory` — table of every variant with editable stock number; save writes to `Inventory` tab.
+## 6. Design tokens & consistency
 
-Session token stored in `sessionStorage`, expires after 8h. Logout button clears it.
-
-```text
-┌─ /admin ─────────────────────────────────┐
-│ Orders  Inventory       [Logout]         │
-│ Filter: [All ▾] [Search…]                │
-│ ┌──────────────────────────────────────┐ │
-│ │ HON-… │ Ravi │ ₹1240 │ Pending │ →  │ │
-│ │ HON-… │ Sita │ ₹  680│ Shipped │ →  │ │
-│ └──────────────────────────────────────┘ │
-└──────────────────────────────────────────┘
-```
-
-## 4. Email notification on new order
-
-Add one line to the Apps Script `placeOrder` handler:
-
-```js
-MailApp.sendEmail(config.ownerEmail, "New Order " + orderId, summary);
-```
-
-You'll get an email the moment a customer checks out.
-
-## 5. Publish
-
-After the above ships, publish to `houseofnuts.lovable.app`. Custom domain can be connected later from Project Settings → Domains.
-
----
+- Replace ad-hoc `bg-yellow-100`/`bg-blue-100` status colors with new semantic tokens in `index.css` (`--status-pending`, `--status-shipped`, etc.) and matching Tailwind classes so dark mode / theme changes work.
+- Standardize spacing scale, use `rounded-sm` corners consistently, unify button variants via existing `buttonVariants`.
 
 ## Technical details
 
-- **New files:** `src/lib/inventory.ts`, `src/lib/admin.ts`, `src/pages/AdminLogin.tsx`, `src/pages/AdminDashboard.tsx`, `src/pages/AdminOrderDetail.tsx`, `src/pages/AdminInventory.tsx`, `src/contexts/InventoryContext.tsx`.
-- **Edits:** `src/App.tsx` (routes), `src/components/ProductCard.tsx` + `src/pages/ProductDetail.tsx` (stock UI), `src/pages/Checkout.tsx` (call `placeOrder` instead of just append; handle `out_of_stock`), `src/lib/orders.ts` (route through new API), `src/data/products.ts` (ensure every variant has a stable `variantId`).
-- **Security note (honest):** Since there's no real backend, the admin password check happens inside Apps Script but the endpoint URL is public. We mitigate by (a) requiring password on every login, (b) short-lived session token, (c) rate-limit-friendly single-owner use. This is fine for a small shop; if you ever want stronger auth we'd move to Lovable Cloud.
-- **Concurrency:** Apps Script uses `LockService` around inventory decrements so two simultaneous orders can't oversell.
-- **Existing localStorage orders** stay as a customer-facing "My Orders" history (device-local). The Sheet is the source of truth.
+- **New files**: `src/components/admin/AdminLayout.tsx`, `src/components/admin/AdminSidebar.tsx`, `src/components/admin/StatusPill.tsx`, `src/components/admin/StatusTimeline.tsx`, `src/components/admin/InvoicePrint.tsx`, `src/lib/adminCsv.ts` (CSV export helper).
+- **Edited**: `src/App.tsx` (nest admin routes inside `AdminLayout` via `<Outlet/>`), `src/pages/AdminDashboard.tsx`, `src/pages/AdminOrderDetail.tsx`, `src/pages/AdminInventory.tsx`, `src/pages/AdminLogin.tsx`, `src/index.css` (status tokens), `tailwind.config.ts` (register tokens).
+- No changes to `src/lib/admin.ts`, `src/lib/orders.ts`, `docs/apps-script.js`, or any storefront code.
+- Uses existing shadcn primitives (`sidebar`, `button`, `input`, `select`, `dialog`, `sonner`) — no new deps.
 
-## What I need from you after building
+## Out of scope
 
-1. Replace your Apps Script with the new version I'll provide (copy-paste, then Deploy → New version → same access "Anyone").
-2. In the Sheet, add the two new tabs (`Inventory`, `Config`) — I'll give you the exact headers and a starter row.
-3. Set the admin password and your notification email in the `Config` tab.
+- Storefront visual polish, checkout flow, product detail improvements (can be a follow-up plan).
+- Apps Script or Sheet schema changes.
+- Auth hardening (still password-in-Sheet model).
