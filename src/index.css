@@ -43,9 +43,34 @@
     --clay: 30 25% 85%;
     --clay-light: 30 25% 92%;
 
+    /* Order/payment status tokens (HSL) */
+    --status-pending: 38 92% 50%;
+    --status-pending-fg: 30 60% 15%;
+    --status-confirmed: 210 80% 45%;
+    --status-confirmed-fg: 210 60% 98%;
+    --status-shipped: 265 55% 55%;
+    --status-shipped-fg: 265 60% 98%;
+    --status-delivered: 145 55% 38%;
+    --status-delivered-fg: 145 60% 98%;
+    --status-cancelled: 0 70% 50%;
+    --status-cancelled-fg: 0 60% 98%;
+    --status-paid: 145 55% 38%;
+    --status-refunded: 25 70% 50%;
+
+    /* Sidebar tokens */
+    --sidebar-background: 30 25% 94%;
+    --sidebar-foreground: 18 28% 17%;
+    --sidebar-primary: 18 28% 17%;
+    --sidebar-primary-foreground: 36 33% 96%;
+    --sidebar-accent: 30 25% 88%;
+    --sidebar-accent-foreground: 18 28% 17%;
+    --sidebar-border: 18 15% 82%;
+    --sidebar-ring: 27 55% 52%;
+
     --font-display: 'Fraunces', serif;
     --font-body: 'Work Sans', sans-serif;
   }
+
 
   .dark {
     --background: 18 28% 10%;
@@ -84,3 +109,11 @@
     font-family: var(--font-display);
   }
 }
+
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+  .no-print { display: none !important; }
+}
+

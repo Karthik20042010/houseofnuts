@@ -67,8 +67,17 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+        status: {
+          pending: { DEFAULT: "hsl(var(--status-pending))", foreground: "hsl(var(--status-pending-fg))" },
+          confirmed: { DEFAULT: "hsl(var(--status-confirmed))", foreground: "hsl(var(--status-confirmed-fg))" },
+          shipped: { DEFAULT: "hsl(var(--status-shipped))", foreground: "hsl(var(--status-shipped-fg))" },
+          delivered: { DEFAULT: "hsl(var(--status-delivered))", foreground: "hsl(var(--status-delivered-fg))" },
+          cancelled: { DEFAULT: "hsl(var(--status-cancelled))", foreground: "hsl(var(--status-cancelled-fg))" },
+          paid: { DEFAULT: "hsl(var(--status-paid))", foreground: "hsl(var(--status-delivered-fg))" },
+          refunded: { DEFAULT: "hsl(var(--status-refunded))", foreground: "hsl(var(--status-shipped-fg))" },
         },
       },
+
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
