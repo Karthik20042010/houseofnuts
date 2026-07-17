@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import { getOrders, type Order } from "@/lib/orders";
-import { Package, Truck, CheckCircle, XCircle, Search, ArrowRight } from "lucide-react";
+import { Package, Truck, CheckCircle, XCircle, Search, ArrowRight, MessageCircle } from "lucide-react";
 
 const steps = [
   { key: "pending", label: "Order Placed", icon: Package },
