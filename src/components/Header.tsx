@@ -74,6 +74,7 @@ const Header = () => {
           <Link to="/orders" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2 flex items-center gap-2">
             <Package size={16} /> My Orders
           </Link>
+          <Link to="/track" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Track Order</Link>
           {isHome ? (
             <button onClick={scrollToContact} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Wholesale Enquiry</button>
           ) : (
