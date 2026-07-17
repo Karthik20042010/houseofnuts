@@ -10,6 +10,7 @@ import Checkout from "./pages/Checkout.tsx";
 import ProductDetail from "./pages/ProductDetail.tsx";
 import Orders from "./pages/Orders.tsx";
 import OrderDetail from "./pages/OrderDetail.tsx";
+import TrackOrder from "./pages/TrackOrder.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import AdminOrderDetail from "./pages/AdminOrderDetail.tsx";
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/track" element={<TrackOrder />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route element={<AdminLayout />}>
                 <Route path="/admin" element={<AdminDashboard />} />
