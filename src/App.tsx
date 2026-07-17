@@ -10,6 +10,7 @@ import Checkout from "./pages/Checkout.tsx";
 import ProductDetail from "./pages/ProductDetail.tsx";
 import Orders from "./pages/Orders.tsx";
 import OrderDetail from "./pages/OrderDetail.tsx";
+import TrackOrder from "./pages/TrackOrder.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import AdminOrderDetail from "./pages/AdminOrderDetail.tsx";
