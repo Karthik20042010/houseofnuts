@@ -46,17 +46,22 @@ const AdminOrderDetail = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const update = async (patch: { status?: Order["status"]; paymentStatus?: Order["paymentStatus"] }) => {
+  const update = async (patch: { status?: Order["status"]; paymentStatus?: Order["paymentStatus"]; tracking?: string }) => {
     if (!order) return;
     setBusy(true);
     try {
       await adminUpdateOrder(order.id, patch);
       setOrder({ ...order, ...patch });
-      toast.success("Updated");
+      toast.success(patch.status === "shipped" || patch.status === "delivered" ? "Updated — customer notified" : "Updated");
     } catch (e) {
       toast.error((e as Error).message);
     }
     setBusy(false);
+  };
+
+  const markShipped = async () => {
+    const tracking = window.prompt("Enter tracking number (optional). Leave blank to skip.") || "";
+    await update({ status: "shipped", tracking: tracking.trim() });
   };
 
   const copy = (text: string, label: string) => {
