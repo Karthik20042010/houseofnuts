@@ -68,7 +68,7 @@ export async function adminFetchOrders(): Promise<Order[]> {
 
 export async function adminUpdateOrder(
   orderId: string,
-  updates: { status?: Order["status"]; paymentStatus?: Order["paymentStatus"] },
+  updates: { status?: Order["status"]; paymentStatus?: Order["paymentStatus"]; tracking?: string },
 ): Promise<void> {
   const password = requireAuth();
   const res = await apiPost<{ ok: boolean; error?: string }>("updateOrder", {
