@@ -193,12 +193,145 @@ function updateOrder(body) {
   header.forEach(function (h, i) { idx[String(h)] = i; });
   for (var i = 1; i < values.length; i++) {
     if (values[i][idx.orderId] === body.orderId) {
-      if (body.status) sh.getRange(i + 1, idx.status + 1).setValue(body.status);
-      if (body.paymentStatus) sh.getRange(i + 1, idx.paymentStatus + 1).setValue(body.paymentStatus);
+      var prevStatus = String(values[i][idx.status] || "");
+      var prevPay    = String(values[i][idx.paymentStatus] || "");
+      if (body.status)         sh.getRange(i + 1, idx.status + 1).setValue(body.status);
+      if (body.paymentStatus)  sh.getRange(i + 1, idx.paymentStatus + 1).setValue(body.paymentStatus);
+
+      // Build a minimal order snapshot for notifications
+      var order = {
+        id:     values[i][idx.orderId],
+        name:   values[i][idx.name] || "",
+        phone:  values[i][idx.phone] || "",
+        email:  values[i][idx.email] || "",
+        total:  Number(values[i][idx.total]) || 0,
+        items:  values[i][idx.items] || "",
+        status: body.status || prevStatus,
+        paymentStatus: body.paymentStatus || prevPay,
+      };
+
+      try {
+        if (body.status && body.status !== prevStatus) {
+          notifyCustomer(order, body.status, body.tracking || "");
+        }
+        if (body.paymentStatus && body.paymentStatus !== prevPay && body.paymentStatus === "paid") {
+          notifyCustomer(order, "paid", "");
+        }
+      } catch (nerr) {
+        // never fail the update because of a notification hiccup
+      }
       return { ok: true };
     }
   }
   return { ok: false, error: "not found" };
+}
+
+// -------- Customer notifications (email + optional SMS) --------
+
+function notifyCustomer(order, event, tracking) {
+  var msg = buildStatusMessage(order, event, tracking);
+
+  // Email (free, always on when the customer left an email)
+  if (order.email) {
+    try {
+      MailApp.sendEmail({
+        to: order.email,
+        subject: msg.subject,
+        htmlBody: msg.html,
+        body: msg.text,
+        name: "House of Nuts",
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+  // SMS via Fast2SMS — activates only if FAST2SMS_API_KEY is set in
+  // Apps Script → Project Settings → Script Properties.
+  try {
+    var key = PropertiesService.getScriptProperties().getProperty("FAST2SMS_API_KEY");
+    if (key && order.phone) {
+      var phone = String(order.phone).replace(/\D/g, "").slice(-10);
+      if (phone.length === 10) {
+        var url = "https://www.fast2sms.com/dev/bulkV2"
+          + "?authorization=" + encodeURIComponent(key)
+          + "&route=q"
+          + "&message=" + encodeURIComponent(msg.sms)
+          + "&numbers=" + phone;
+        UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+      }
+    }
+  } catch (e) { /* ignore */ }
+}
+
+function buildStatusMessage(order, event, tracking) {
+  var brand = "House of Nuts";
+  var id = order.id;
+  var name = order.name || "there";
+  var trackLine = tracking ? ("\nTracking: " + tracking) : "";
+
+  var map = {
+    confirmed: {
+      subject: brand + " — Order " + id + " confirmed",
+      line: "Good news, " + name + "! Your order is confirmed and being packed with care.",
+      sms: brand + ": Order " + id + " confirmed. We're packing it now. Total \u20B9" + order.total + ".",
+    },
+    shipped: {
+      subject: brand + " — Order " + id + " shipped",
+      line: "Your order is on the way! " + (tracking ? "Tracking: " + tracking : ""),
+      sms: brand + ": Order " + id + " shipped." + (tracking ? " Track: " + tracking : "") + " Thank you!",
+    },
+    delivered: {
+      subject: brand + " — Order " + id + " delivered",
+      line: "Your order has been delivered. We hope you enjoy every bite — a quick review would mean the world.",
+      sms: brand + ": Order " + id + " delivered. Enjoy! Reply here if anything's off.",
+    },
+    cancelled: {
+      subject: brand + " — Order " + id + " cancelled",
+      line: "Your order has been cancelled. Any payment made will be refunded within 3–5 business days.",
+      sms: brand + ": Order " + id + " cancelled. Refunds (if any) in 3-5 business days.",
+    },
+    paid: {
+      subject: brand + " — Payment received for " + id,
+      line: "We've received your payment. Thank you! We'll dispatch your order shortly.",
+      sms: brand + ": Payment received for order " + id + ". Thank you!",
+    },
+  };
+  var m = map[event] || {
+    subject: brand + " — Order " + id + " update",
+    line: "Your order status is now: " + event + ".",
+    sms: brand + ": Order " + id + " update — " + event + ".",
+  };
+
+  var text = [
+    "Hi " + name + ",",
+    "",
+    m.line + trackLine,
+    "",
+    "Order ID: " + id,
+    "Items: " + (order.items || ""),
+    "Total: \u20B9" + order.total,
+    "",
+    "Track your order any time: https://houseofnuts.lovable.app/track",
+    "",
+    "— " + brand,
+    "+91 96525 26920",
+  ].join("\n");
+
+  var html =
+    '<div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:24px;color:#2b2419;background:#faf7f2;">'
+    + '<h2 style="font-family:Georgia,serif;font-weight:normal;letter-spacing:.5px;margin:0 0 8px;">' + brand + '</h2>'
+    + '<p style="margin:0 0 16px;color:#8a7860;font-size:12px;letter-spacing:2px;text-transform:uppercase;">Order ' + id + '</p>'
+    + '<p style="font-size:16px;line-height:1.6;">Hi ' + name + ',</p>'
+    + '<p style="font-size:16px;line-height:1.6;">' + m.line + '</p>'
+    + (tracking ? '<p style="font-size:14px;background:#fff;border:1px solid #e6dfd2;padding:12px 16px;">Tracking: <b>' + tracking + '</b></p>' : '')
+    + '<table style="width:100%;border-top:1px solid #e6dfd2;margin-top:16px;font-size:14px;">'
+    + '<tr><td style="padding:8px 0;color:#8a7860;">Items</td><td style="padding:8px 0;text-align:right;">' + (order.items || '') + '</td></tr>'
+    + '<tr><td style="padding:8px 0;color:#8a7860;">Total</td><td style="padding:8px 0;text-align:right;"><b>\u20B9' + order.total + '</b></td></tr>'
+    + '</table>'
+    + '<p style="margin-top:24px;"><a href="https://houseofnuts.lovable.app/track" style="background:#3a2e20;color:#faf7f2;padding:12px 24px;text-decoration:none;letter-spacing:2px;font-size:12px;text-transform:uppercase;">Track Order</a></p>'
+    + '<p style="margin-top:32px;color:#8a7860;font-size:12px;">Questions? WhatsApp or call +91 96525 26920.</p>'
+    + '</div>';
+
+  return { subject: m.subject, text: text, html: html, sms: m.sms };
 }
 
 // -------- Inventory --------
