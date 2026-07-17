@@ -159,12 +159,22 @@ const TrackOrder = () => {
                   </div>
                 ))}
               </div>
-              <Link
-                to={`/orders/${order.id}`}
-                className="mt-5 inline-flex items-center gap-2 text-xs uppercase tracking-[0.15em] font-medium font-body text-accent hover:underline"
-              >
-                View full details <ArrowRight size={14} />
-              </Link>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <Link
+                  to={`/orders/${order.id}`}
+                  className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.15em] font-medium font-body text-accent hover:underline"
+                >
+                  View full details <ArrowRight size={14} />
+                </Link>
+                <a
+                  href={`https://wa.me/919652526920?text=${encodeURIComponent(`Hi House of Nuts, I'd like an update on my order ${order.id} (status: ${order.status}). Thank you!`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-auto inline-flex items-center gap-2 bg-[#25D366] text-white px-4 py-2.5 uppercase tracking-[0.15em] text-[11px] font-medium font-body hover:opacity-90 transition-opacity"
+                >
+                  <MessageCircle size={14} /> Chat on WhatsApp
+                </a>
+              </div>
             </div>
           </div>
         )}
