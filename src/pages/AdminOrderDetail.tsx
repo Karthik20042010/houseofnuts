@@ -200,7 +200,7 @@ const AdminOrderDetail = () => {
               </ActionBtn>
             )}
             {(order.status === "pending" || order.status === "confirmed") && (
-              <ActionBtn onClick={() => update({ status: "shipped" })} busy={busy} icon={<Truck size={14} />}>
+              <ActionBtn onClick={markShipped} busy={busy} icon={<Truck size={14} />}>
                 Mark Shipped
               </ActionBtn>
             )}
