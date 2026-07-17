@@ -31,6 +31,7 @@ const Header = () => {
         <Link to="/orders" className="hover:text-accent transition-colors duration-300">
           <span className="flex items-center gap-1.5"><Package size={14} /> My Orders</span>
         </Link>
+        <Link to="/track" className="hover:text-accent transition-colors duration-300">Track</Link>
         {isHome ? (
           <button onClick={scrollToContact} className="hover:text-accent transition-colors duration-300">Wholesale</button>
         ) : (
