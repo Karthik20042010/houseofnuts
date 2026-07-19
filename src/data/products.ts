@@ -7,7 +7,7 @@ export interface ProductVariant {
 export interface Product {
   id: string;
   name: string;
-  category: "nuts" | "dry-fruits" | "spices" | "honey";
+  category: "nuts" | "dry-fruits" | "spices" | "honey" | "solar-dried" | "seeds";
   description: string;
   image: string;
   variants: ProductVariant[];
@@ -18,6 +18,8 @@ export const categories = [
   { id: "all", label: "All" },
   { id: "nuts", label: "Nuts" },
   { id: "dry-fruits", label: "Dry Fruits" },
+  { id: "solar-dried", label: "Solar Dried" },
+  { id: "seeds", label: "Seeds" },
   { id: "spices", label: "Spices" },
   { id: "honey", label: "Honey" },
 ] as const;
