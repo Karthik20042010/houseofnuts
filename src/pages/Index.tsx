@@ -218,7 +218,86 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Wholesale / Contact */}
+      {/* Grand Opening */}
+      <section id="grand-opening" className="relative px-6 md:px-12 py-20 bg-clay-light border-t border-border overflow-hidden">
+        <div className="max-w-[1600px] mx-auto grid md:grid-cols-2 gap-12 md:gap-16 items-center">
+          <div className="order-2 md:order-1">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="h-[1px] w-12 bg-accent" />
+              <p className="text-accent uppercase tracking-[0.2em] text-xs font-medium font-body">
+                Visit Our Store
+              </p>
+            </div>
+            <h2 className="font-display text-4xl md:text-6xl leading-[0.95] tracking-tight mb-6">
+              Grand <span className="text-accent italic font-light">Opening</span>
+            </h2>
+            <div className="flex items-baseline gap-4 mb-6 font-body">
+              <span className="font-display text-6xl md:text-7xl text-accent">17</span>
+              <div className="flex flex-col">
+                <span className="uppercase tracking-[0.2em] text-sm font-medium">Dec 2025</span>
+                <span className="uppercase tracking-[0.2em] text-xs text-muted-foreground">Wednesday · 9 AM</span>
+              </div>
+            </div>
+            <p className="font-body text-muted-foreground leading-relaxed mb-2">
+              10-155/2, KK Street, Gandhi Road
+            </p>
+            <p className="font-body text-muted-foreground leading-relaxed mb-8">
+              Proddatur — 516360
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <a
+                href="https://maps.google.com/?q=10-155/2+KK+Street+Gandhi+Road+Proddatur+516360"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-primary text-primary-foreground px-8 py-4 uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-300 font-body text-center"
+              >
+                Get Directions
+              </a>
+              <a
+                href="tel:+919652526920"
+                className="border border-foreground/20 px-8 py-4 uppercase tracking-[0.15em] text-xs font-medium hover:border-accent hover:text-accent transition-colors duration-300 font-body text-center"
+              >
+                +91 96525 26920
+              </a>
+            </div>
+          </div>
+          <div className="order-1 md:order-2 relative">
+            <div className="aspect-[3/4] max-w-md mx-auto bg-background shadow-[0_24px_48px_-12px_rgba(59,38,29,0.25)] overflow-hidden">
+              <img
+                src={grandOpeningAsset.url}
+                alt="House of Nuts Grand Opening — 17 December 2025 at KK Street, Gandhi Road, Proddatur"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Festive Banner */}
+      <section className="relative h-[45vh] md:h-[55vh] overflow-hidden">
+        <img
+          src={festiveAsset.url}
+          alt="Festive assortment of premium nuts and dry fruits"
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/70 via-primary/40 to-transparent" />
+        <div className="relative h-full flex items-center px-6 md:px-16 max-w-[1600px] mx-auto">
+          <div className="max-w-xl text-primary-foreground">
+            <p className="text-accent uppercase tracking-[0.2em] text-xs font-medium font-body mb-4">
+              Gifting Season
+            </p>
+            <h3 className="font-display text-3xl md:text-5xl leading-tight mb-4">
+              Hampers crafted with <span className="italic text-accent">care</span>.
+            </h3>
+            <p className="font-body font-light text-primary-foreground/80 leading-relaxed">
+              Custom festive boxes for Diwali, weddings & corporate gifting. WhatsApp us to design yours.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section id="contact" className="bg-primary text-primary-foreground py-20 px-6 md:px-12">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="font-display text-4xl md:text-5xl mb-6 text-accent">Wholesale Enquiry</h2>
