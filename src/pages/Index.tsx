@@ -5,7 +5,10 @@ import ProductCard from "@/components/ProductCard";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import { products, categories } from "@/data/products";
 import { Phone, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
-import heroImage from "@/assets/hero-nuts.jpg";
+import heroAsset from "@/assets/assortment-bowl.jpg.asset.json";
+import grandOpeningAsset from "@/assets/grand-opening.jpg.asset.json";
+import festiveAsset from "@/assets/festive-triptych.jpg.asset.json";
+const heroImage = heroAsset.url;
 import PromoBanner from "@/components/PromoBanner";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 
