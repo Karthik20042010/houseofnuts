@@ -328,8 +328,31 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-primary text-primary-foreground/50 py-8 px-6 text-center border-t border-primary-foreground/10">
-        <p className="text-xs font-body tracking-wide">
+      <footer className="bg-primary text-primary-foreground/60 py-12 px-6 border-t border-primary-foreground/10">
+        <div className="max-w-[1600px] mx-auto grid md:grid-cols-3 gap-8 text-center md:text-left">
+          <div>
+            <h4 className="font-display text-xl text-primary-foreground mb-3">House of Nuts</h4>
+            <p className="text-xs font-body leading-relaxed">
+              Premium nuts, dry fruits, spices & honey — sourced with care, delivered fresh.
+            </p>
+          </div>
+          <div>
+            <h4 className="text-[11px] uppercase tracking-[0.2em] text-accent font-body font-medium mb-3">Visit</h4>
+            <p className="text-xs font-body leading-relaxed">
+              10-155/2, KK Street<br />
+              Gandhi Road, Proddatur<br />
+              Andhra Pradesh — 516360
+            </p>
+          </div>
+          <div>
+            <h4 className="text-[11px] uppercase tracking-[0.2em] text-accent font-body font-medium mb-3">Contact</h4>
+            <p className="text-xs font-body leading-relaxed">
+              <a href="tel:+919652526920" className="hover:text-accent transition-colors">+91 96525 26920</a><br />
+              <a href="https://wa.me/919652526920" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors">WhatsApp Support</a>
+            </p>
+          </div>
+        </div>
+        <p className="text-[11px] font-body tracking-wide text-center mt-10 pt-6 border-t border-primary-foreground/10">
           © {new Date().getFullYear()} House of Nuts. All rights reserved.
         </p>
       </footer>
