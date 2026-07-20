@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Store, LogOut, Nut } from "lucide-react";
+import { LayoutDashboard, Package, Store, LogOut, Nut, Image as ImageIcon } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -18,6 +18,7 @@ import { adminLogout } from "@/lib/admin";
 const items = [
   { title: "Orders", url: "/admin", icon: LayoutDashboard, end: true },
   { title: "Inventory", url: "/admin/inventory", icon: Package, end: false },
+  { title: "Images", url: "/admin/images", icon: ImageIcon, end: false },
 ];
 
 export function AdminSidebar() {

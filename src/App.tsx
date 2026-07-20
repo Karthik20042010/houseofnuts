@@ -15,6 +15,7 @@ import AdminLogin from "./pages/AdminLogin.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import AdminOrderDetail from "./pages/AdminOrderDetail.tsx";
 import AdminInventory from "./pages/AdminInventory.tsx";
+import AdminImages from "./pages/AdminImages.tsx";
 import AdminLayout from "./components/admin/AdminLayout.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import WhatsAppButton from "./components/WhatsAppButton.tsx";
@@ -42,6 +43,7 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
                 <Route path="/admin/inventory" element={<AdminInventory />} />
+                <Route path="/admin/images" element={<AdminImages />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -6,6 +6,7 @@ import { useInventory } from "@/contexts/InventoryContext";
 import { isLowStock, isOutOfStock, stockOf } from "@/lib/inventory";
 import { ShoppingBag, Star } from "lucide-react";
 import { getAverageRating } from "@/lib/reviews";
+import { useProductImage } from "@/lib/productImages";
 
 interface ProductCardProps {
   product: Product;
@@ -17,6 +18,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const { stock } = useInventory();
   const variant = product.variants[selectedVariant];
   const { avg, count } = getAverageRating(product.id);
+  const imageSrc = useProductImage(product);
   const oos = isOutOfStock(stock, variant.id);
   const low = isLowStock(stock, variant.id);
   const remaining = stockOf(stock, variant.id);
@@ -27,7 +29,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
       <Link to={`/product/${product.id}`} className="bg-clay-light p-4 md:p-6 aspect-square relative overflow-hidden flex items-center justify-center mb-4">
         <div className="absolute inset-3 md:inset-5 border border-foreground/5 z-10 pointer-events-none transition-all duration-500 group-hover:inset-2 group-hover:border-foreground/15" />
         <img
-          src={product.image}
+          src={imageSrc}
           alt={product.name}
           className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
           loading="lazy"

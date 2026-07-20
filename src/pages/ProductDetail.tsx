@@ -9,6 +9,7 @@ import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf } from "lucide-react"
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import ReviewsSection from "@/components/ReviewsSection";
 import { getAverageRating } from "@/lib/reviews";
+import { getProductImageSrc } from "@/lib/productImages";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -61,7 +62,7 @@ const ProductDetail = () => {
         <div className="grid md:grid-cols-2 gap-8 md:gap-16 mb-20">
           {/* Image */}
           <div className="bg-clay-light p-6 md:p-10 aspect-square relative overflow-hidden flex items-center justify-center">
-            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+            <img src={getProductImageSrc(product)} alt={product.name} className="w-full h-full object-cover" />
             {product.badge && (
               <div className="absolute top-0 right-0 bg-accent text-accent-foreground px-4 py-2 m-6 text-[10px] uppercase tracking-[0.2em] font-medium z-20 font-body">
                 {product.badge}

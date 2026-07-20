@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Search, X } from "lucide-react";
 import { products } from "@/data/products";
 import { Link } from "react-router-dom";
+import { getProductImageSrc } from "@/lib/productImages";
 
 const SearchBar = () => {
   const [query, setQuery] = useState("");
@@ -67,7 +68,7 @@ const SearchBar = () => {
                     className="flex items-center gap-4 px-4 py-3 hover:bg-clay-light transition-colors duration-200 border-b border-border/50 last:border-0"
                   >
                     <img
-                      src={product.image}
+                      src={getProductImageSrc(product)}
                       alt={product.name}
                       className="w-12 h-12 object-cover rounded-sm"
                     />
