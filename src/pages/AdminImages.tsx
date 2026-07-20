@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Image as ImageIcon, Link2, RotateCcw, Search, Upload } from "lucide-react";
+import { Cloud, Image as ImageIcon, Link2, Loader2, RotateCcw, Search, Upload } from "lucide-react";
 import { products, categories } from "@/data/products";
 import {
   clearProductImage,
@@ -8,6 +8,7 @@ import {
   setProductImage,
   useProductImage,
 } from "@/lib/productImages";
+import { adminUploadImage } from "@/lib/admin";
 import type { Product } from "@/data/products";
 
 const MAX_INLINE_BYTES = 1_500_000; // ~1.5MB — beyond this we warn but still allow
@@ -16,7 +17,9 @@ function ProductRow({ product }: { product: Product }) {
   const currentSrc = useProductImage(product);
   const isOverridden = currentSrc !== product.image;
   const [url, setUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const driveRef = useRef<HTMLInputElement>(null);
 
   const onUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -52,6 +55,24 @@ function ProductRow({ product }: { product: Product }) {
   const onReset = () => {
     clearProductImage(product.id);
     toast.success(`Reset to default · ${product.name}`);
+  };
+
+  const onDriveUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file");
+      return;
+    }
+    setUploading(true);
+    const t = toast.loading(`Uploading ${file.name} to Drive…`);
+    try {
+      const publicUrl = await adminUploadImage(product.id, file);
+      setProductImage(product.id, publicUrl);
+      toast.success(`Saved to Drive · ${product.name}`, { id: t });
+    } catch (e) {
+      toast.error((e as Error).message || "Drive upload failed", { id: t });
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -99,7 +120,7 @@ function ProductRow({ product }: { product: Product }) {
             </button>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <input
               ref={fileRef}
               type="file"
@@ -111,15 +132,37 @@ function ProductRow({ product }: { product: Product }) {
                 e.target.value = "";
               }}
             />
+            <input
+              ref={driveRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onDriveUpload(f);
+                e.target.value = "";
+              }}
+            />
+            <button
+              onClick={() => driveRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body bg-accent text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50"
+              title="Upload to Google Drive & publish a public link"
+            >
+              {uploading ? <Loader2 size={13} className="animate-spin" /> : <Cloud size={13} />}
+              {uploading ? "Uploading" : "Drive"}
+            </button>
             <button
               onClick={() => fileRef.current?.click()}
-              className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body border border-border hover:border-foreground/40 transition-colors"
+              disabled={uploading}
+              className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body border border-border hover:border-foreground/40 transition-colors disabled:opacity-50"
+              title="Preview locally on this browser only"
             >
-              <Upload size={13} /> Upload
+              <Upload size={13} /> Local
             </button>
             <button
               onClick={onReset}
-              disabled={!isOverridden}
+              disabled={!isOverridden || uploading}
               className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body border border-border hover:border-foreground/40 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               title="Reset to default"
             >
@@ -152,8 +195,10 @@ const AdminImages = () => {
         <h2 className="font-display text-2xl">Product Images</h2>
       </div>
       <p className="text-sm text-muted-foreground font-body mb-6">
-        Swap the picture shown on the storefront for any SKU. Paste a hosted image URL for a change
-        that sticks across devices, or upload a file to preview it instantly on this browser.
+        <span className="font-medium text-foreground">Drive</span> uploads the file to your Google Drive
+        ("House of Nuts - Product Images" folder), publishes a public link, and saves it for this SKU so
+        every visitor sees it. <span className="font-medium text-foreground">Local</span> previews on this
+        browser only. You can also paste any hosted image URL.
       </p>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">

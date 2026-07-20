@@ -86,3 +86,32 @@ export async function adminUpdateInventory(
   const res = await apiPost<{ ok: boolean; error?: string }>("updateInventory", { password, items });
   if (!res.ok) throw new Error(res.error || "Update failed");
 }
+
+// Uploads an image file to the shop owner's Google Drive via Apps Script and
+// returns a public URL suitable for <img src>. The file is base64-encoded on
+// the client (Apps Script has no multipart body helper worth using).
+export async function adminUploadImage(
+  productId: string,
+  file: File,
+): Promise<string> {
+  const password = requireAuth();
+  const dataBase64 = await new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const s = String(r.result);
+      const i = s.indexOf(",");
+      resolve(i >= 0 ? s.slice(i + 1) : s);
+    };
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+  const res = await apiPost<{ ok: boolean; url?: string; error?: string }>("uploadImage", {
+    password,
+    productId,
+    filename: file.name,
+    mimeType: file.type || "image/jpeg",
+    dataBase64,
+  });
+  if (!res.ok || !res.url) throw new Error(res.error || "Upload failed");
+  return res.url;
+}

@@ -38,6 +38,7 @@ function doPost(e) {
     if (action === "getOrders")      { requireAuth(body.password); return json({ ok: true, orders: readOrders() }); }
     if (action === "updateOrder")    { requireAuth(body.password); return json(updateOrder(body)); }
     if (action === "updateInventory"){ requireAuth(body.password); return json(setInventory(body.items || [])); }
+    if (action === "uploadImage")    { requireAuth(body.password); return json(uploadImage(body)); }
 
     return json({ ok: false, error: "unknown action" });
   } catch (err) {
