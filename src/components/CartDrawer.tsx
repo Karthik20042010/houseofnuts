@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Plus, Minus, Trash2, Tag, Check } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
+import { getProductImageSrc } from "@/lib/productImages";
 
 const CartDrawer = () => {
   const {

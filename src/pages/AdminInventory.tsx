@@ -4,6 +4,7 @@ import { adminUpdateInventory } from "@/lib/admin";
 import { fetchInventory, StockMap } from "@/lib/inventory";
 import { products, categories } from "@/data/products";
 import { toast } from "sonner";
+import { getProductImageSrc } from "@/lib/productImages";
 
 const UNTRACKED = -1;
 

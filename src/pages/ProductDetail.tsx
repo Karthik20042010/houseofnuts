@@ -9,6 +9,7 @@ import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf } from "lucide-react"
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import ReviewsSection from "@/components/ReviewsSection";
 import { getAverageRating } from "@/lib/reviews";
+import { getProductImageSrc } from "@/lib/productImages";
 
 const ProductDetail = () => {
   const { id } = useParams();

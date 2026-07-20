@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Search, X } from "lucide-react";
 import { products } from "@/data/products";
 import { Link } from "react-router-dom";
+import { getProductImageSrc } from "@/lib/productImages";
 
 const SearchBar = () => {
   const [query, setQuery] = useState("");

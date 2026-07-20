@@ -6,6 +6,7 @@ import { isAdminLoggedIn } from "@/lib/admin";
 
 const titleFor = (path: string) => {
   if (path.startsWith("/admin/inventory")) return "Inventory";
+  if (path.startsWith("/admin/images")) return "Product Images";
   if (path.startsWith("/admin/orders/")) return "Order Detail";
   return "Orders";
 };
