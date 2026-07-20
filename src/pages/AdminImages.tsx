@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Image as ImageIcon, Link2, RotateCcw, Search, Upload } from "lucide-react";
+import { Cloud, Image as ImageIcon, Link2, Loader2, RotateCcw, Search, Upload } from "lucide-react";
 import { products, categories } from "@/data/products";
 import {
   clearProductImage,
@@ -8,6 +8,7 @@ import {
   setProductImage,
   useProductImage,
 } from "@/lib/productImages";
+import { adminUploadImage } from "@/lib/admin";
 import type { Product } from "@/data/products";
 
 const MAX_INLINE_BYTES = 1_500_000; // ~1.5MB — beyond this we warn but still allow
@@ -16,7 +17,9 @@ function ProductRow({ product }: { product: Product }) {
   const currentSrc = useProductImage(product);
   const isOverridden = currentSrc !== product.image;
   const [url, setUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const driveRef = useRef<HTMLInputElement>(null);
 
   const onUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
