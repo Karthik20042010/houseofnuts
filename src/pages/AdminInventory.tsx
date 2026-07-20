@@ -140,7 +140,7 @@ const AdminInventory = () => {
         {filteredProducts.map((p) => (
           <div key={p.id} className="bg-background border border-border rounded-sm overflow-hidden">
             <div className="flex items-center gap-3 p-3 border-b border-border bg-clay-light/40">
-              <img src={p.image} alt={p.name} className="size-10 object-cover rounded-sm" />
+              <img src={getProductImageSrc(p)} alt={p.name} className="size-10 object-cover rounded-sm" />
               <div className="flex-1 min-w-0">
                 <div className="font-body font-medium text-sm truncate">{p.name}</div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{p.category.replace("-", " ")}</div>

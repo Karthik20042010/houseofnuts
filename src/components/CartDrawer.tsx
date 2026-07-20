@@ -54,7 +54,7 @@ const CartDrawer = () => {
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {items.map((item) => (
                 <div key={item.variant.id} className="flex gap-4 py-4 border-b border-border last:border-0">
-                  <img src={item.product.image} alt={item.product.name} className="w-20 h-20 object-cover bg-clay-light" />
+                  <img src={getProductImageSrc(item.product)} alt={item.product.name} className="w-20 h-20 object-cover bg-clay-light" />
                   <div className="flex-1 flex flex-col">
                     <h4 className="font-display text-lg leading-tight">{item.product.name}</h4>
                     <p className="text-xs text-muted-foreground font-body">{item.variant.size}</p>
