@@ -124,6 +124,51 @@ const Index = () => {
       {/* Recently Viewed */}
       <RecentlyViewed viewedIds={viewedIds} />
 
+      {/* Shop by Category */}
+      <section className="px-6 md:px-12 py-16 md:py-20 border-t border-border">
+        <div className="max-w-[1600px] mx-auto">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="h-[1px] w-12 bg-accent" />
+            <p className="text-accent uppercase tracking-[0.2em] text-xs font-medium font-body">Browse</p>
+          </div>
+          <div className="flex flex-col md:flex-row justify-between md:items-end mb-10 gap-4">
+            <h2 className="font-display text-4xl md:text-5xl tracking-tight">Shop by Category</h2>
+            <Link to="/shop" className="text-[11px] uppercase tracking-[0.2em] font-body font-medium hover:text-accent transition-colors flex items-center gap-2">
+              View all products <ArrowRight size={14} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+            {categories.filter((c) => c.id !== "all").map((c) => {
+              const count = products.filter((p) => p.category === c.id).length;
+              const sample = products.find((p) => p.category === c.id);
+              return (
+                <Link
+                  key={c.id}
+                  to={`/category/${c.id}`}
+                  className="group relative aspect-square bg-clay-light overflow-hidden flex flex-col justify-end p-4 md:p-6 border border-border hover:border-accent transition-colors"
+                >
+                  {sample && (
+                    <img
+                      src={sample.image}
+                      alt={c.label}
+                      className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 group-hover:scale-105 transition-all duration-700"
+                      loading="lazy"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/50 to-transparent" />
+                  <div className="relative">
+                    <h3 className="font-display text-2xl md:text-3xl text-primary-foreground leading-tight">{c.label}</h3>
+                    <p className="text-[10px] uppercase tracking-[0.2em] font-body text-primary-foreground/80 mt-1">{count} item{count !== 1 ? "s" : ""}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+
+
       {/* Products */}
       <section id="products" className="bg-clay-light/50 px-6 md:px-12 py-20 border-t border-border">
         <div className="max-w-[1600px] mx-auto">
