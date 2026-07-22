@@ -8,6 +8,7 @@ import { InventoryProvider } from "@/contexts/InventoryContext";
 import Index from "./pages/Index.tsx";
 import Checkout from "./pages/Checkout.tsx";
 import ProductDetail from "./pages/ProductDetail.tsx";
+import Category from "./pages/Category.tsx";
 import Orders from "./pages/Orders.tsx";
 import OrderDetail from "./pages/OrderDetail.tsx";
 import TrackOrder from "./pages/TrackOrder.tsx";
@@ -35,6 +36,8 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/shop" element={<Category />} />
+              <Route path="/category/:slug" element={<Category />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
               <Route path="/track" element={<TrackOrder />} />
