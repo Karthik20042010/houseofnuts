@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, ChevronRight as Crumb } from "lucide-react";
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
@@ -21,7 +21,9 @@ const sortOptions: { value: SortOption; label: string }[] = [
 
 const Category = () => {
   const { slug } = useParams<{ slug: string }>();
-  const cat = categories.find((c) => c.id === slug);
+  const location = useLocation();
+  const effectiveSlug = location.pathname === "/shop" ? "all" : slug;
+  const cat = categories.find((c) => c.id === effectiveSlug);
   const [sortBy, setSortBy] = useState<SortOption>("default");
   const [currentPage, setCurrentPage] = useState(1);
 
