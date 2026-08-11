@@ -38,6 +38,12 @@ function doGet(e) {
 function doPost(e) {
   try {
     var body = JSON.parse(e.postData.contents);
+    if (body.enc) {
+      var decrypted = deobfuscatePayload(body.enc);
+      if (decrypted && decrypted.action) {
+        body = decrypted;
+      }
+    }
     var action = body.action;
 
     // Rate Limiting Protection against automated attacker brute-force & spamming
@@ -90,6 +96,23 @@ function checkServerRateLimit(action, maxAttempts) {
     // Ignore cache glitches
   }
   return null;
+}
+
+var SECRET_SALT = "HON_SECURE_PAYLOAD_2026_PROD_KEY";
+
+function deobfuscatePayload(scrambledStr) {
+  try {
+    var decodedBytes = Utilities.base64Decode(scrambledStr);
+    var rawCharStr = Utilities.newBlob(decodedBytes).getDataAsString();
+    var decoded = "";
+    for (var i = 0; i < rawCharStr.length; i++) {
+      var charCode = rawCharStr.charCodeAt(i) ^ SECRET_SALT.charCodeAt(i % SECRET_SALT.length);
+      decoded += String.fromCharCode(charCode);
+    }
+    return JSON.parse(decoded);
+  } catch (e) {
+    return null;
+  }
 }
 
 // -------- Sheet 1: Config Tab --------

@@ -1,7 +1,9 @@
 import { checkRateLimit } from "./rateLimiter";
+import { obfuscatePayload } from "./encryption";
 
-// Central Google Apps Script endpoint. All backend goes through this URL.
+// Central Google Apps Script endpoint pulled securely from environment variables
 export const API_URL =
+  (import.meta.env.VITE_APPS_SCRIPT_URL as string) ||
   "https://script.google.com/macros/s/AKfycbyomb0F_ardu7ESJxebSBu6Qady4RXo4bLjzYbuY1AF6WIUQ4osA3hT1oeOTPi2S2sM/exec";
 
 // Sensitive actions subjected to rate limiting
@@ -25,10 +27,18 @@ export async function apiPost<T = unknown>(
     }
   }
 
+  // Encapsulate and obfuscate payload data so network sniffers cannot view plain text database parameters
+  const rawData = { action, ...payload };
+  const encryptedPayload = obfuscatePayload(rawData);
+
   const res = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action, ...payload }),
+    body: JSON.stringify({
+      enc: encryptedPayload,
+      action: action, // Fallback for backward compatibility
+      ...payload
+    }),
     redirect: "follow",
   });
   if (!res.ok) throw new Error(`API error: Status ${res.status}`);

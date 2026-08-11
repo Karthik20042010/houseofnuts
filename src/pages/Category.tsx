@@ -9,6 +9,8 @@ import { categories, products, Product } from "@/data/products";
 import { useInventory } from "@/contexts/InventoryContext";
 import { isOutOfStock } from "@/lib/inventory";
 
+import CategoryStrip from "@/components/CategoryStrip";
+
 const ITEMS_PER_PAGE = 8;
 
 type SortOption = "default" | "price-asc" | "price-desc" | "name-asc" | "name-desc";
@@ -147,6 +149,7 @@ const Category = () => {
     <div className="min-h-screen">
       <PromoBanner />
       <Header />
+      <CategoryStrip />
       <CartDrawer />
 
       {/* Breadcrumb + title */}

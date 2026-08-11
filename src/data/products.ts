@@ -7,7 +7,7 @@ export interface ProductVariant {
 export interface Product {
   id: string;
   name: string;
-  category: "nuts" | "dry-fruits" | "spices" | "honey" | "solar-dried" | "seeds";
+  category: "nuts" | "dry-fruits" | "spices" | "honey" | "solar-dried" | "seeds" | "chocolates";
   description: string;
   image: string;
   variants: ProductVariant[];
@@ -18,10 +18,11 @@ export const categories = [
   { id: "all", label: "All" },
   { id: "nuts", label: "Nuts" },
   { id: "dry-fruits", label: "Dry Fruits" },
-  { id: "solar-dried", label: "Solar Dried" },
-  { id: "seeds", label: "Seeds" },
+  { id: "chocolates", label: "Chocolates" },
   { id: "spices", label: "Spices" },
   { id: "honey", label: "Honey" },
+  { id: "seeds", label: "Seeds" },
+  { id: "solar-dried", label: "Solar Dried" },
 ] as const;
 
 export const products: Product[] = [
@@ -367,6 +368,52 @@ export const products: Product[] = [
       { id: "sd-melon-250", size: "250g", price: 110 },
       { id: "sd-melon-500", size: "500g", price: 210 },
       { id: "sd-melon-1kg", size: "1 Kg", price: 400 },
+    ],
+  },
+  {
+    id: "almond-dark-chocolate",
+    name: "Almond Dark Chocolate Rocks",
+    category: "chocolates",
+    description: "Handcrafted 70% dark Belgian chocolate with slow-roasted Mamra almonds",
+    image: "https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600&h=600&fit=crop",
+    badge: "Artisanal",
+    variants: [
+      { id: "choco-alm-200", size: "200g", price: 399 },
+      { id: "choco-alm-400", size: "400g", price: 749 },
+    ],
+  },
+  {
+    id: "hazelnut-cocoa-clusters",
+    name: "Hazelnut Cocoa Clusters",
+    category: "chocolates",
+    description: "Roasted hazelnuts enrobed in smooth cocoa cream & sea salt",
+    image: "https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=600&h=600&fit=crop",
+    variants: [
+      { id: "choco-haz-200", size: "200g", price: 449 },
+      { id: "choco-haz-400", size: "400g", price: 849 },
+    ],
+  },
+  {
+    id: "cashew-milk-chocolate",
+    name: "Cashew Milk Chocolate Bark",
+    category: "chocolates",
+    description: "Creamy Swiss milk chocolate slab studded with jumbo salted cashews",
+    image: "https://images.unsplash.com/photo-1511381939415-e44015466834?w=600&h=600&fit=crop",
+    variants: [
+      { id: "choco-cas-200", size: "200g", price: 349 },
+      { id: "choco-cas-400", size: "400g", price: 649 },
+    ],
+  },
+  {
+    id: "pistachio-saffron-chocolate",
+    name: "Pistachio Saffron Truffles",
+    category: "chocolates",
+    description: "Luxury white chocolate truffles infused with Iranian pistachios & Kashmiri saffron",
+    image: "https://images.unsplash.com/photo-1582293041079-7814c2f12063?w=600&h=600&fit=crop",
+    badge: "Luxury",
+    variants: [
+      { id: "choco-pst-200", size: "200g", price: 499 },
+      { id: "choco-pst-400", size: "400g", price: 949 },
     ],
   },
 ];

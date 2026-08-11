@@ -11,6 +11,7 @@ import grandOpeningAsset from "@/assets/grand-opening.jpg.asset.json";
 import festiveAsset from "@/assets/festive-triptych.jpg.asset.json";
 const heroImage = heroAsset.url;
 import PromoBanner from "@/components/PromoBanner";
+import CategoryStrip from "@/components/CategoryStrip";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 
 const ITEMS_PER_PAGE = 8;
@@ -74,6 +75,7 @@ const Index = () => {
     <div className="min-h-screen">
       <PromoBanner />
       <Header />
+      <CategoryStrip />
       <CartDrawer />
 
       {/* Hero */}
