@@ -256,7 +256,13 @@ function BulkUploader({ onClose }: { onClose: () => void }) {
                   className="w-12 h-12 object-cover rounded-sm bg-clay-light shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-body truncate">{row.file.name}</div>
+                  <div className="text-xs font-body truncate flex items-center gap-2">
+                    <span className="truncate">{row.file.name}</span>
+                    {fromCsv(csvMap, row.file.name) && (
+                      <span className="shrink-0 text-[9px] uppercase tracking-wider bg-accent/15 text-accent px-1.5 py-0.5 rounded-sm">CSV</span>
+                    )}
+                  </div>
+
                   <div className="mt-1">
                     <select
                       value={row.override || row.match?.id || ""}
