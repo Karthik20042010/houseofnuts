@@ -31,7 +31,7 @@ export const products: Product[] = [
     name: "Mamra Almonds",
     category: "nuts",
     description: "Premium oil-rich almonds from high-altitude valleys",
-    image: "https://images.unsplash.com/photo-1608797178974-15b35a64ede9?w=600&h=600&fit=crop",
+    image: "/images/nuts/mamra-almonds.png",
     badge: "Bestseller",
     variants: [
       { id: "mamra-250", size: "250g", price: 499 },
@@ -44,7 +44,7 @@ export const products: Product[] = [
     name: "Jumbo Cashews W320",
     category: "nuts",
     description: "Whole premium cashews, lightly roasted & salted",
-    image: "https://images.unsplash.com/photo-1604068549290-dea0e4a305ca?w=600&h=600&fit=crop",
+    image: "/images/nuts/jumbo-cashews.png",
     variants: [
       { id: "cashew-250", size: "250g", price: 349 },
       { id: "cashew-500", size: "500g", price: 649 },
@@ -56,7 +56,7 @@ export const products: Product[] = [
     name: "Iranian Pistachios",
     category: "nuts",
     description: "Naturally opened, roasted with a hint of saffron",
-    image: "https://images.unsplash.com/photo-1525706553905-3b80e5e4e042?w=600&h=600&fit=crop",
+    image: "/images/nuts/pistachios-iranian.png",
     badge: "Premium",
     variants: [
       { id: "pista-250", size: "250g", price: 449 },
@@ -375,7 +375,7 @@ export const products: Product[] = [
     name: "Almond Dark Chocolate Rocks",
     category: "chocolates",
     description: "Handcrafted 70% dark Belgian chocolate with slow-roasted Mamra almonds",
-    image: "https://images.unsplash.com/photo-1548907040-4baa42d10919?w=600&h=600&fit=crop",
+    image: "/images/chocolates/dark-chocolate-rocks.png",
     badge: "Artisanal",
     variants: [
       { id: "choco-alm-200", size: "200g", price: 399 },
