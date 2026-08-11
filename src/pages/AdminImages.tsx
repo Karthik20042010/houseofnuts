@@ -51,16 +51,59 @@ function BulkUploader({ onClose }: { onClose: () => void }) {
   const [rows, setRows] = useState<BulkRow[]>([]);
   const [target, setTarget] = useState<BulkTarget>("drive");
   const [running, setRunning] = useState(false);
+  // Explicit filename -> SKU map from an uploaded CSV. Takes priority over
+  // filename auto-matching, but a manual per-row override still wins.
+  const [csvMap, setCsvMap] = useState<Record<string, string>>({});
+  const [csvName, setCsvName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const csvRef = useRef<HTMLInputElement>(null);
 
-  const addFiles = (files: FileList | null) => {
+  const validIds = useMemo(() => new Set(products.map((p) => p.id)), []);
+
+  const fromCsv = (map: Record<string, string>, filename: string) => {
+    const id = map[filename.toLowerCase()];
+    return id && validIds.has(id) ? id : undefined;
+  };
+
+  const addFiles = (files: FileList | null, map = csvMap) => {
     if (!files) return;
     const next: BulkRow[] = [];
     for (const f of Array.from(files)) {
       if (!f.type.startsWith("image/")) continue;
-      next.push({ file: f, match: matchProduct(f.name), status: "pending" });
+      next.push({ file: f, match: matchProduct(f.name), override: fromCsv(map, f.name), status: "pending" });
     }
     setRows((r) => [...r, ...next]);
+  };
+
+  const loadCsv = async (file: File) => {
+    try {
+      const text = await file.text();
+      const { map, count } = parseSkuMappingCsv(text);
+      if (!count) {
+        toast.error("No filename/SKU pairs found in that CSV");
+        return;
+      }
+      const unknown = Object.values(map).filter((id) => !validIds.has(id));
+      setCsvMap(map);
+      setCsvName(file.name);
+      // Re-apply mapping to already-added files.
+      setRows((r) => r.map((row) => ({ ...row, override: fromCsv(map, row.file.name) ?? row.override })));
+      toast.success(`Mapping loaded · ${count} row${count === 1 ? "" : "s"}`, {
+        description: unknown.length ? `${unknown.length} unknown SKU(s) ignored: ${unknown.slice(0, 3).join(", ")}` : undefined,
+      });
+    } catch {
+      toast.error("Could not read that CSV");
+    }
+  };
+
+  const clearCsv = () => {
+    setCsvMap({});
+    setCsvName(null);
+  };
+
+  const downloadTemplate = () => {
+    const csv = ["filename,sku", ...products.slice(0, 5).map((p) => `${p.id}.jpg,${p.id}`)].join("\n");
+    downloadCsv("sku-image-mapping-template.csv", csv);
   };
 
   const remove = (i: number) => setRows((r) => r.filter((_, idx) => idx !== i));
@@ -69,6 +112,7 @@ function BulkUploader({ onClose }: { onClose: () => void }) {
 
   const matched = rows.filter((r) => r.override || r.match).length;
   const unmatched = rows.length - matched;
+
 
   const runAll = async () => {
     setRunning(true);
