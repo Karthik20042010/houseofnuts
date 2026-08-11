@@ -28,8 +28,8 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
       toast.success(`Signed in as ${gName} (${gEmail})`);
       onSuccess?.();
       onClose();
-    } catch (err: any) {
-      toast.error("Google Sign-In failed. Please try again.");
+    } catch (err: unknown) {
+      toast.error("We couldn't save your details. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -38,7 +38,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
   const handleCustomFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.includes("@")) {
-      toast.error("Please enter a valid Google Mail address.");
+      toast.error("Please enter a valid email address.");
       return;
     }
     const derivedName = name.trim() || email.split("@")[0].replace(/[._]/g, " ");
@@ -61,19 +61,19 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
           <div className="size-12 rounded-full bg-accent/10 text-accent grid place-items-center mx-auto mb-2">
             <Mail size={24} />
           </div>
-          <h2 className="font-display text-xl sm:text-2xl font-semibold">Sign in to Checkout</h2>
+          <h2 className="font-display text-xl sm:text-2xl font-semibold">Your checkout details</h2>
           <p className="text-xs text-muted-foreground font-body">
-            Please sign in with your <span className="font-medium text-foreground">Google Mail</span> account to complete your order.
+            Save your email and name so we can send your order updates and receipt.
           </p>
         </div>
 
-        {/* 1-Click Google Sign-In Button */}
+        {/* Customer details */}
         <div className="space-y-3 pt-2">
           <button
             type="button"
             disabled={loading}
-            onClick={() => handleQuickGoogleSignIn("customer@gmail.com", "House of Nuts Customer")}
-            className="w-full flex items-center justify-center gap-3 bg-white text-gray-800 border border-gray-300 py-3 px-4 rounded-sm shadow-xs hover:bg-gray-50 transition-all font-body text-sm font-medium disabled:opacity-50"
+            onClick={() => handleQuickGoogleSignIn("customer@example.com", "House of Nuts Customer")}
+            className="hidden"
           >
             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
               <path
@@ -93,27 +93,27 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
               />
             </svg>
-            {loading ? <Loader2 size={16} className="animate-spin" /> : "Continue with Google Mail"}
+            {loading ? <Loader2 size={16} className="animate-spin" /> : "Use sample details"}
           </button>
 
           <div className="relative flex py-2 items-center">
             <div className="flex-grow border-t border-border"></div>
             <span className="flex-shrink mx-3 text-[10px] uppercase tracking-wider text-muted-foreground font-mono">
-              or enter email
+              Enter your details
             </span>
             <div className="flex-grow border-t border-border"></div>
           </div>
 
-          {/* Manual Google Email Input Form */}
+          {/* Customer details form */}
           <form onSubmit={handleCustomFormSubmit} className="space-y-3">
             <div>
               <label className="block text-xs uppercase tracking-wider text-muted-foreground font-body mb-1">
-                Your Google Email
+                Email address
               </label>
               <input
                 type="email"
                 required
-                placeholder="yourname@gmail.com"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full border border-border bg-background px-3.5 py-2.5 text-sm font-body focus:outline-none focus:border-accent rounded-sm"
@@ -136,7 +136,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
               disabled={loading}
               className="w-full bg-primary text-primary-foreground py-2.5 uppercase tracking-[0.15em] text-xs font-medium font-body hover:bg-accent transition-colors flex items-center justify-center gap-2 rounded-sm disabled:opacity-50"
             >
-              Sign In & Continue Order <ArrowRight size={14} />
+              Continue to checkout <ArrowRight size={14} />
             </button>
           </form>
         </div>
@@ -144,7 +144,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
         {/* Footer Note */}
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-body pt-2 border-t border-border">
           <ShieldCheck size={14} className="text-accent shrink-0" />
-          <span>Your order details & receipt will be synced directly to your Google email.</span>
+          <span>Your details are used only for your order updates and receipt.</span>
         </div>
       </div>
     </div>

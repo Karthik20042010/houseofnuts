@@ -1,13 +1,15 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { categories, products } from "@/data/products";
-import { Nut, Cookie, Sparkles, Flame, Droplets, Sun, Sprout, LayoutGrid } from "lucide-react";
+import { Nut, Cookie, Sparkles, Flame, Droplets, Sun, Sprout, LayoutGrid, Gift, Zap, LucideIcon } from "lucide-react";
 
-const CATEGORY_ICONS: Record<string, any> = {
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
   all: LayoutGrid,
   nuts: Nut,
   "dry-fruits": Cookie,
   chocolates: Sparkles,
+  mixes: Zap,
+  gifting: Gift,
   spices: Flame,
   honey: Droplets,
   seeds: Sprout,

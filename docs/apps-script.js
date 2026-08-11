@@ -48,7 +48,12 @@ function doPost(e) {
 
     // Rate Limiting Protection against automated attacker brute-force & spamming
     if (action === "adminLogin" || action === "placeOrder") {
-      var rateLimitErr = checkServerRateLimit(action, 6);
+      // Scope the limit to the caller rather than blocking all customers after
+      // a handful of orders. This is still only one layer of abuse protection.
+      var rateKey = action === "placeOrder"
+        ? String(body.order && body.order.phone || "anonymous")
+        : String(body.email || "admin");
+      var rateLimitErr = checkServerRateLimit(action + "_" + rateKey, 6);
       if (rateLimitErr) return json({ ok: false, error: rateLimitErr });
     }
 
@@ -122,8 +127,8 @@ function getConfig() {
   if (!sh) {
     sh = SpreadsheetApp.getActive().insertSheet("Config");
     sh.appendRow(["key", "value"]);
-    sh.appendRow(["adminPassword", "hon2026admin"]);
-    sh.appendRow(["ownerEmail", "owner@houseofnuts.com"]);
+    sh.appendRow(["adminPassword", ""]);
+    sh.appendRow(["ownerEmail", ""]);
     sh.appendRow(["siteUrl", "https://houseofnuts.in"]);
   }
   var rows = sh.getDataRange().getValues();
@@ -136,6 +141,7 @@ function getConfig() {
 
 function checkPassword(pw) {
   var cfg = getConfig();
+  if (!cfg.adminPassword) throw new Error("Admin password is not configured. Set it in the Config sheet before using admin tools.");
   return !!pw && !!cfg.adminPassword && String(pw) === cfg.adminPassword;
 }
 
@@ -150,10 +156,6 @@ function ensureUsersSheet() {
   if (!sh) {
     sh = SpreadsheetApp.getActive().insertSheet("Users");
     sh.appendRow(["userId", "email", "name", "phone", "role", "password", "createdAt"]);
-    // Seed default roles
-    sh.appendRow(["usr_admin", "admin@houseofnuts.com", "Super Admin", "+91 96525 26920", "admin", "hon2026admin", new Date().toISOString()]);
-    sh.appendRow(["usr_dev", "dev@houseofnuts.com", "Lead Developer", "+91 96525 26920", "developer", "dev2026", new Date().toISOString()]);
-    sh.appendRow(["usr_staff", "staff@houseofnuts.com", "Store Staff", "+91 96525 26920", "staff", "staff2026", new Date().toISOString()]);
   }
   return sh;
 }
@@ -374,6 +376,9 @@ function placeOrder(order) {
   var lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
+    // Retrying after a lost response must not create a second order or
+    // decrement inventory twice.
+    if (orderExists(order.id)) return { ok: true, duplicate: true };
     // Check and update inventory
     var inv = readInventoryRows();
     var outOfStock = [];
@@ -427,6 +432,15 @@ function placeOrder(order) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function orderExists(orderId) {
+  var sh = ensureOrdersSheet();
+  var lastRow = sh.getLastRow();
+  if (lastRow < 2) return false;
+  return sh.getRange(2, 2, lastRow - 1, 1).getValues().some(function(row) {
+    return String(row[0]) === String(orderId);
+  });
 }
 
 function readOrders() {

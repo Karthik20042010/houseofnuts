@@ -156,7 +156,7 @@ export async function adminUpdateProductPrice(
 
 export async function adminFetchUsers(): Promise<Array<{ userId: string; email: string; name: string; phone: string; role: UserRole; createdAt: string }>> {
   const password = requireAuth();
-  const res = await apiPost<{ ok: boolean; users?: any[]; error?: string }>("getUsers", { password });
+  const res = await apiPost<{ ok: boolean; users?: Array<{ userId: string; email: string; name: string; phone: string; role: UserRole; createdAt: string }>; error?: string }>("getUsers", { password });
   if (!res.ok) throw new Error(res.error || "Failed to load users");
   return res.users || [];
 }

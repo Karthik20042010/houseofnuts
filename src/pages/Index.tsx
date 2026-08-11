@@ -6,12 +6,19 @@ import ProductCard from "@/components/ProductCard";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import { products, categories } from "@/data/products";
 import { Phone, MessageCircle, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
-import heroAsset from "@/assets/assortment-bowl.jpg.asset.json";
-import grandOpeningAsset from "@/assets/grand-opening.jpg.asset.json";
-import festiveAsset from "@/assets/festive-triptych.jpg.asset.json";
-const heroImage = heroAsset.url;
+const heroImage = "/images/branding/cinematic-store-banner.jpg";
+const festiveImage = "https://images.unsplash.com/photo-1548907040-4baa42d10919?w=1440&h=800&fit=crop";
+const grandOpeningImage = "/images/branding/grand-opening-banner.jpg";
+const categoryImages: Record<string, string> = {
+  nuts: "/images/reference-site/cats/nuts.jpg",
+  "dry-fruits": "/images/reference-site/cats/dry-fruits.jpg",
+  seeds: "/images/reference-site/cats/seeds.jpg",
+  mixes: "/images/reference-site/cats/mixes.jpg",
+};
 import PromoBanner from "@/components/PromoBanner";
 import CategoryStrip from "@/components/CategoryStrip";
+import BuildBox from "@/components/BuildBox";
+import NutNinjaGame from "@/components/NutNinjaGame";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 
 const ITEMS_PER_PAGE = 8;
@@ -30,6 +37,7 @@ const Index = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<SortOption>("default");
+  const [gameOpen, setGameOpen] = useState(false);
   const { viewedIds } = useRecentlyViewed();
 
   const filtered = useMemo(() => {
@@ -97,14 +105,20 @@ const Index = () => {
             ground under heavy stone. We bring nature's finest directly to your
             table.
           </p>
-          <div className="pt-2">
+          <div className="pt-2 flex flex-wrap items-center gap-3">
             <button
               onClick={() =>
                 document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })
               }
-              className="bg-primary text-primary-foreground px-10 py-4 uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-500 font-body"
+              className="bg-primary text-primary-foreground px-8 py-4 uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-500 font-body"
             >
-              Explore Our Collection
+              Explore Collection
+            </button>
+            <button
+              onClick={() => setGameOpen(true)}
+              className="bg-accent text-accent-foreground px-6 py-4 uppercase tracking-[0.15em] text-xs font-semibold hover:bg-primary hover:text-primary-foreground transition-colors duration-300 font-body flex items-center gap-2"
+            >
+              🎮 Play & Win 20% OFF
             </button>
           </div>
         </div>
@@ -119,6 +133,28 @@ const Index = () => {
           <div className="absolute -bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 bg-background px-6 py-3 border border-border shadow-lg whitespace-nowrap z-10">
             <span className="font-display italic text-muted-foreground mr-2">Fresh stock:</span>
             <span className="font-medium tracking-wide font-body">Kashmiri Walnuts & Saffron</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Value Propositions / Brand Pillars */}
+      <section className="bg-primary text-primary-foreground py-12 px-6 md:px-12 border-t border-b border-primary-foreground/10">
+        <div className="max-w-[1600px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 font-body">
+          <div className="p-4 border-r border-primary-foreground/10 last:border-r-0">
+            <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1">100% Natural</h4>
+            <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">No oils, no additives, no shortcuts. Pure farm origin.</p>
+          </div>
+          <div className="p-4 border-r border-primary-foreground/10 last:border-r-0">
+            <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1">Small-Batch Roasted</h4>
+            <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">Roasted fresh to order so every nut snaps with crunch.</p>
+          </div>
+          <div className="p-4 border-r border-primary-foreground/10 last:border-r-0">
+            <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1">Responsibly Sourced</h4>
+            <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">Direct partner farms across Kashmir, Iran & California.</p>
+          </div>
+          <div className="p-4">
+            <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1">Zero Preservatives</h4>
+            <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">Vacuum-sealed at peak freshness to lock in flavor.</p>
           </div>
         </div>
       </section>
@@ -143,15 +179,16 @@ const Index = () => {
             {categories.filter((c) => c.id !== "all").map((c) => {
               const count = products.filter((p) => p.category === c.id).length;
               const sample = products.find((p) => p.category === c.id);
+              const categoryImage = categoryImages[c.id] ?? sample?.image;
               return (
                 <Link
                   key={c.id}
                   to={`/category/${c.id}`}
                   className="group relative aspect-square bg-clay-light overflow-hidden flex flex-col justify-end p-4 md:p-6 border border-border hover:border-accent transition-colors"
                 >
-                  {sample && (
+                  {categoryImage && (
                     <img
-                      src={sample.image}
+                      src={categoryImage}
                       alt={c.label}
                       className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 group-hover:scale-105 transition-all duration-700"
                       loading="lazy"
@@ -266,6 +303,34 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Freshness story */}
+      <section className="bg-primary px-6 py-16 text-primary-foreground md:px-12 md:py-24">
+        <div className="mx-auto grid max-w-[1600px] gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16">
+          <div className="overflow-hidden rounded-sm">
+            <img
+              src="/images/reference-site/promise-a.jpg"
+              alt="A freshly roasted assortment of premium nuts and dry fruits"
+              className="h-[300px] w-full object-cover md:h-[440px]"
+              loading="lazy"
+            />
+          </div>
+          <div>
+            <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-accent font-body">Farm to your table</p>
+            <h2 className="max-w-[12ch] font-display text-4xl leading-[0.95] md:text-6xl">Freshness you can see, taste and trust.</h2>
+            <p className="mt-6 max-w-xl font-body leading-relaxed text-primary-foreground/75">
+              We choose whole ingredients for their crunch, colour and natural flavour, then pack them carefully so they arrive ready to share.
+            </p>
+            <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-6 border-t border-primary-foreground/15 pt-7 sm:grid-cols-4">
+              {["Whole ingredients", "Packed with care", "Small-batch quality", "Delivered fresh"].map((promise) => (
+                <p key={promise} className="text-xs font-medium uppercase tracking-[0.12em] text-primary-foreground/90 font-body">
+                  {promise}
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Grand Opening */}
       <section id="grand-opening" className="relative px-6 md:px-12 py-20 bg-clay-light border-t border-border overflow-hidden">
         <div className="max-w-[1600px] mx-auto grid md:grid-cols-2 gap-12 md:gap-16 items-center">
@@ -294,7 +359,7 @@ const Index = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <a
-                href="https://maps.google.com/?q=10-155/2+KK+Street+Gandhi+Road+Proddatur+516360"
+                href="https://maps.app.goo.gl/yLEXVbZopiYoc6GfA"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-primary text-primary-foreground px-8 py-4 uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-300 font-body text-center"
@@ -312,7 +377,7 @@ const Index = () => {
           <div className="order-1 md:order-2 relative">
             <div className="aspect-[3/4] max-w-md mx-auto bg-background shadow-[0_24px_48px_-12px_rgba(59,38,29,0.25)] overflow-hidden">
               <img
-                src={grandOpeningAsset.url}
+                src={grandOpeningImage}
                 alt="House of Nuts Grand Opening — 17 December 2025 at KK Street, Gandhi Road, Proddatur"
                 className="w-full h-full object-cover"
                 loading="lazy"
@@ -325,7 +390,7 @@ const Index = () => {
       {/* Festive Banner */}
       <section className="relative h-[45vh] md:h-[55vh] overflow-hidden">
         <img
-          src={festiveAsset.url}
+          src={festiveImage}
           alt="Festive assortment of premium nuts and dry fruits"
           className="absolute inset-0 w-full h-full object-cover"
           loading="lazy"
@@ -345,6 +410,12 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Interactive Custom Box Builder */}
+      <BuildBox />
+
+      {/* Gamified Play & Win Modal */}
+      <NutNinjaGame isOpen={gameOpen} onClose={() => setGameOpen(false)} />
 
       <section id="contact" className="bg-primary text-primary-foreground py-20 px-6 md:px-12">
         <div className="max-w-4xl mx-auto text-center">

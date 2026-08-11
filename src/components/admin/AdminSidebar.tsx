@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Store, LogOut, Nut, Image as ImageIcon, Terminal, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Package, Store, LogOut, Nut, Image as ImageIcon, Terminal, ShieldCheck, LucideIcon } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,7 +20,7 @@ import { ROLE_BADGES, ROLE_LABELS, UserRole } from "@/types/auth";
 interface NavItem {
   title: string;
   url: string;
-  icon: any;
+  icon: LucideIcon;
   end?: boolean;
   allowedRoles?: UserRole[];
 }

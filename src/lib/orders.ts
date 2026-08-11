@@ -85,19 +85,9 @@ export async function placeOrderApi(order: Order): Promise<PlaceOrderResult> {
     return await apiPost<PlaceOrderResult>("placeOrder", { order });
   } catch (e) {
     console.error("placeOrder failed:", e);
-    // Best-effort fallback: fire-and-forget so we at least log the order
-    // even if the response couldn't be read.
-    try {
-      await fetch(API_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "placeOrder", order }),
-      });
-    } catch {
-      // swallow
-    }
-    return { ok: true }; // treat as accepted; owner will see it via email/sheet
+    // A no-cors retry cannot confirm whether the backend accepted an order.
+    // Never report success until the store has returned an authoritative result.
+    return { ok: false, error: "network_error" };
   }
 }
 
@@ -108,5 +98,5 @@ export async function submitToGoogleSheet(order: Order): Promise<void> {
 
 export async function sendOwnerEmailNotification(order: Order): Promise<void> {
   // Email is now sent from Apps Script on placeOrder. Nothing to do here.
-  console.log("Owner notification handled by Apps Script for", order.id);
+  void order;
 }

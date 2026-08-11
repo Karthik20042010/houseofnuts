@@ -38,6 +38,8 @@ const Header = () => {
 
       <nav className="hidden md:flex gap-8 text-xs uppercase tracking-[0.15em] font-medium font-body items-center">
         <Link to="/shop" className="hover:text-accent transition-colors duration-300">Shop</Link>
+        <Link to="/gifting" className="hover:text-accent transition-colors duration-300">Gifting</Link>
+        <Link to="/journal" className="hover:text-accent transition-colors duration-300">Journal</Link>
         <div className="relative group">
           <button className="flex items-center gap-1 hover:text-accent transition-colors duration-300">
             Categories <ChevronDown size={12} />
@@ -172,6 +174,8 @@ const Header = () => {
       {mobileMenuOpen && (
         <div className="absolute top-full left-0 right-0 bg-background border-b border-border p-6 flex flex-col gap-4 md:hidden max-h-[80vh] overflow-auto">
           <Link to="/shop" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Shop All</Link>
+          <Link to="/gifting" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Gifting</Link>
+          <Link to="/journal" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Journal</Link>
           <div className="border-l-2 border-accent pl-3 flex flex-col gap-2">
             <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-body">Categories</span>
             {categories.filter((c) => c.id !== "all").map((c) => (

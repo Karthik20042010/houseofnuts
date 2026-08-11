@@ -32,8 +32,9 @@ export const DeveloperConsole: React.FC = () => {
       const orders = await adminFetchOrders();
       addLog(`Admin getOrders payload OK: Received ${orders.length} orders`);
       setStatus("success");
-    } catch (err: any) {
-      addLog(`API Health Check Failed: ${err.message || String(err)}`);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      addLog(`API Health Check Failed: ${errMsg}`);
       setStatus("error");
     } finally {
       setLoading(false);

@@ -24,7 +24,7 @@ const ProductDetail = () => {
 
   useEffect(() => {
     if (product) addViewed(product.id);
-  }, [product?.id]);
+  }, [product, addViewed]);
 
   if (!product) {
     return (

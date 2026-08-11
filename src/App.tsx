@@ -23,6 +23,9 @@ const OrderDetail = lazy(() => import("./pages/OrderDetail.tsx"));
 const TrackOrder = lazy(() => import("./pages/TrackOrder.tsx"));
 const AccountProfile = lazy(() => import("./pages/AccountProfile.tsx"));
 const Wishlist = lazy(() => import("./pages/Wishlist.tsx"));
+const Gifting = lazy(() => import("./pages/Gifting.tsx"));
+const Journal = lazy(() => import("./pages/Journal.tsx"));
+const StoreInfo = lazy(() => import("./pages/StoreInfo.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
 const AdminOrderDetail = lazy(() => import("./pages/AdminOrderDetail.tsx"));
@@ -67,6 +70,14 @@ const App = () => (
                       <Route path="/track" element={<TrackOrder />} />
                       <Route path="/account" element={<AccountProfile />} />
                       <Route path="/wishlist" element={<Wishlist />} />
+                      <Route path="/gifting" element={<Gifting />} />
+                      <Route path="/journal" element={<Journal />} />
+                      <Route path="/faq" element={<StoreInfo />} />
+                      <Route path="/shipping" element={<StoreInfo />} />
+                      <Route path="/returns" element={<StoreInfo />} />
+                      <Route path="/privacy" element={<StoreInfo />} />
+                      <Route path="/terms" element={<StoreInfo />} />
+                      <Route path="/contact" element={<StoreInfo />} />
 
                       {/* Authentication Login Route */}
                       <Route path="/admin/login" element={<AdminLogin />} />

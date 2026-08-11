@@ -89,7 +89,9 @@ const CheckoutPage = () => {
       itemsSummary: items.map((i) => `${i.product.name} (${i.variant.size}) x${i.quantity}`).join(", "),
       total: totalPrice,
       status: "pending",
-      paymentStatus: "paid",
+      // A UPI deep link cannot prove a payment was completed. The backend/store
+      // must verify it before this order is marked paid.
+      paymentStatus: "pending",
     };
 
     const result = await placeOrderApi(order);
@@ -100,6 +102,12 @@ const CheckoutPage = () => {
       await refreshInventory();
       setSubmitting(false);
       setStep("details");
+      return;
+    }
+
+    if (!result.ok) {
+      toast.error("We couldn't place your order. Your cart is still saved—please try again.");
+      setSubmitting(false);
       return;
     }
 
@@ -125,10 +133,10 @@ const CheckoutPage = () => {
     return (
       <div className="min-h-[60vh] flex items-center justify-center flex-col gap-6 px-6 text-center">
         <CheckCircle size={64} className="text-accent" />
-        <h2 className="font-display text-4xl">Order Placed!</h2>
+        <h2 className="font-display text-4xl">Order Received!</h2>
         <p className="text-muted-foreground font-body max-w-md">
           Thank you, {form.name}! Order <span className="font-medium text-foreground">{orderId}</span> has been placed.
-          We'll send order updates & tracking to <span className="font-semibold text-foreground">{form.email}</span>.
+          We’ll verify your payment and send order updates & tracking to <span className="font-semibold text-foreground">{form.email}</span>.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
           <button onClick={() => navigate(`/orders/${orderId}`)} className="bg-accent text-accent-foreground px-8 py-3 uppercase tracking-[0.15em] text-xs font-medium font-body">
