@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Cloud, Image as ImageIcon, Link2, Loader2, RotateCcw, Search, Upload, Layers, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { Cloud, Image as ImageIcon, Link2, Loader2, RotateCcw, Search, Upload, Layers, X, CheckCircle2, AlertCircle, FileSpreadsheet, Download } from "lucide-react";
 import { products, categories } from "@/data/products";
 import {
   clearProductImage,
@@ -9,7 +9,9 @@ import {
   useProductImage,
 } from "@/lib/productImages";
 import { adminUploadImage } from "@/lib/admin";
+import { parseSkuMappingCsv, downloadCsv } from "@/lib/adminCsv";
 import type { Product } from "@/data/products";
+
 
 const MAX_INLINE_BYTES = 1_500_000; // ~1.5MB — beyond this we warn but still allow
 
