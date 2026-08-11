@@ -44,6 +44,10 @@ const ProductDetail = () => {
   const relatedProducts = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
   const { avg: avgRating, count: reviewCount } = getAverageRating(product.id);
 
+  const handleAdd = () => {
+    for (let i = 0; i < quantity; i++) addToCart(product, variant);
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
