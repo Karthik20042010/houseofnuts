@@ -58,9 +58,9 @@ const Header = () => {
         {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      <div className="font-display text-2xl md:text-4xl font-normal tracking-tight flex-1 text-center md:flex-none">
+      <Link to="/" className="font-display text-2xl md:text-4xl font-normal tracking-tight flex-1 text-center md:flex-none hover:text-accent transition-colors">
         House of Nuts
-      </div>
+      </Link>
 
       <div className="flex items-center gap-5">
         <SearchBar />

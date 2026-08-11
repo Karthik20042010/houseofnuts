@@ -302,6 +302,9 @@ function buildStatusMessage(order, event, tracking) {
     sms: brand + ": Order " + id + " update — " + event + ".",
   };
 
+  var siteUrl = getConfig("siteUrl", "https://houseofnuts.in");
+  var trackLink = siteUrl.replace(/\/$/, "") + "/track";
+
   var text = [
     "Hi " + name + ",",
     "",
@@ -311,7 +314,7 @@ function buildStatusMessage(order, event, tracking) {
     "Items: " + (order.items || ""),
     "Total: \u20B9" + order.total,
     "",
-    "Track your order any time: https://houseofnuts.lovable.app/track",
+    "Track your order any time: " + trackLink,
     "",
     "— " + brand,
     "+91 96525 26920",
@@ -328,7 +331,7 @@ function buildStatusMessage(order, event, tracking) {
     + '<tr><td style="padding:8px 0;color:#8a7860;">Items</td><td style="padding:8px 0;text-align:right;">' + (order.items || '') + '</td></tr>'
     + '<tr><td style="padding:8px 0;color:#8a7860;">Total</td><td style="padding:8px 0;text-align:right;"><b>\u20B9' + order.total + '</b></td></tr>'
     + '</table>'
-    + '<p style="margin-top:24px;"><a href="https://houseofnuts.lovable.app/track" style="background:#3a2e20;color:#faf7f2;padding:12px 24px;text-decoration:none;letter-spacing:2px;font-size:12px;text-transform:uppercase;">Track Order</a></p>'
+    + '<p style="margin-top:24px;"><a href="' + trackLink + '" style="background:#3a2e20;color:#faf7f2;padding:12px 24px;text-decoration:none;letter-spacing:2px;font-size:12px;text-transform:uppercase;">Track Order</a></p>'
     + '<p style="margin-top:32px;color:#8a7860;font-size:12px;">Questions? WhatsApp or call +91 96525 26920.</p>'
     + '</div>';
 

@@ -160,9 +160,7 @@ const ProductDetail = () => {
             <h2 className="font-display text-3xl mb-8 border-b border-border pb-4">You May Also Like</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
               {relatedProducts.map((p) => (
-                <Link key={p.id} to={`/product/${p.id}`} className="contents">
-                  <ProductCard product={p} />
-                </Link>
+                <ProductCard key={p.id} product={p} />
               ))}
             </div>
           </section>

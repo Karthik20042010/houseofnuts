@@ -44,6 +44,10 @@ const CheckoutPage = () => {
   const handlePaymentDone = useCallback(async () => {
     setSubmitting(true);
 
+    const noteParts = [];
+    if (appliedDiscount) noteParts.push(`[Promo: ${appliedDiscount.code} (-₹${discountAmount})]`);
+    if (form.notes.trim()) noteParts.push(form.notes.trim());
+
     const order: Order = {
       id: orderId,
       timestamp: new Date().toISOString(),
@@ -51,7 +55,7 @@ const CheckoutPage = () => {
       phone: form.phone,
       email: form.email,
       address: form.address,
-      notes: form.notes,
+      notes: noteParts.join(" "),
       items: items.map((i) => ({
         name: i.product.name,
         size: i.variant.size,

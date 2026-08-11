@@ -50,11 +50,24 @@ The first time Apps Script runs it will ask for permission to send email
 - You'll see the order in the dashboard. Click it, change status to "shipped", save. Confirm the Sheet reflects it.
 - Go to `/admin/inventory`, set stock for a variant to `2`, save. Reload the storefront — "Only 2 left" badge should appear.
 
-## 6. Publish
+## 6. Publish / Hosting
 
-Click **Publish** in the Lovable editor. Your site goes live at
-`https://houseofnuts.lovable.app`. Add a custom domain later via **Project
-Settings ➜ Domains**.
+You can host **House of Nuts** on any static host or platform:
+
+### Option A: Vercel / Netlify / Cloudflare Pages
+- Connect this GitHub repository to Vercel or Netlify.
+- Framework Preset: **Vite**.
+- Build Command: `npm run build`.
+- Output Directory: `dist`.
+- Set your custom domain (e.g. `houseofnuts.in` or `houseofnuts.com`).
+
+### Option B: Lovable Editor
+- Click **Publish** in the Lovable editor to publish immediately to your custom domain or project URL. Add a custom domain under **Project Settings ➜ Domains**.
+
+### Setting your domain in Google Sheet:
+In your Google Sheet's `Config` tab, add a row:
+`siteUrl` | `https://yourdomain.com`
+This ensures customer status update emails link directly to your custom domain's `/track` page.
 
 ---
 
