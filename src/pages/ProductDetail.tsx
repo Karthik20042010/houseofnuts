@@ -10,6 +10,7 @@ import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import ReviewsSection from "@/components/ReviewsSection";
 import { getAverageRating } from "@/lib/reviews";
 import { getProductImageSrc } from "@/lib/productImages";
+import ProductImage from "@/components/ProductImage";
 
 const ProductDetail = () => {
   const { id } = useParams();
