@@ -169,8 +169,22 @@ const ProductDetail = () => {
         )}
       </div>
 
+      {/* Sticky mobile add-to-basket bar */}
+      <div className="md:hidden fixed bottom-14 left-0 right-0 z-[55] bg-background/95 backdrop-blur-md border-t border-border px-4 py-3 flex items-center gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-body">{variant.size}</p>
+          <p className="font-display text-xl leading-none">₹{variant.price * quantity}</p>
+        </div>
+        <button
+          onClick={handleAdd}
+          className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground min-h-[48px] uppercase tracking-[0.15em] text-xs font-medium font-body active:scale-[0.98] transition-transform"
+        >
+          <ShoppingBag size={15} /> Add to Basket
+        </button>
+      </div>
+
       {/* Footer */}
-      <footer className="bg-primary text-primary-foreground/50 py-8 px-6 text-center border-t border-primary-foreground/10">
+      <footer className="bg-primary text-primary-foreground/50 py-8 px-6 pb-24 md:pb-8 text-center border-t border-primary-foreground/10">
         <p className="text-xs font-body tracking-wide">© {new Date().getFullYear()} House of Nuts. All rights reserved.</p>
       </footer>
     </div>
