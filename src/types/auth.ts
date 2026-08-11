@@ -1,11 +1,19 @@
 export type UserRole = "admin" | "developer" | "staff" | "user";
 
+export interface GoogleUser {
+  email: string;
+  name: string;
+  picture?: string;
+  googleId?: string;
+}
+
 export interface UserSession {
   role: UserRole;
   password?: string;
   loggedInAt: number;
   email?: string;
   name?: string;
+  googleUser?: GoogleUser;
 }
 
 export interface Permission {

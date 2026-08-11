@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Terminal, Activity, Database, CheckCircle2, XCircle, RefreshCw, Cpu, Code2, Server } from "lucide-react";
-import { fetchInventoryMap } from "@/lib/inventory";
+import { fetchInventory } from "@/lib/inventory";
 import { adminFetchOrders } from "@/lib/admin";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,7 +23,7 @@ export const DeveloperConsole: React.FC = () => {
     addLog("Initiating Google Apps Script API Health Check...");
     try {
       const startTime = performance.now();
-      const map = await fetchInventoryMap();
+      const map = await fetchInventory(true);
       const duration = Math.round(performance.now() - startTime);
       setInventoryJson(JSON.stringify(map, null, 2));
       addLog(`Inventory fetch successful: Response time ${duration}ms (${Object.keys(map).length} items)`);

@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useInventory } from "@/contexts/InventoryContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle, Clock, Smartphone } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, Smartphone, Mail, ShieldCheck, LogOut } from "lucide-react";
 import { generateOrderId, saveOrder, placeOrderApi, type Order } from "@/lib/orders";
+import { GoogleLoginModal } from "@/components/auth/GoogleLoginModal";
 import { toast } from "sonner";
 
 const UPI_ID = "863932789@okbizaxis";
@@ -13,11 +15,27 @@ const CheckoutPage = () => {
   const { items, totalPrice, subtotal, appliedDiscount, discountAmount, clearCart } = useCart();
   const navigate = useNavigate();
   const { refresh: refreshInventory } = useInventory();
+  const { googleUser, isGoogleAuthenticated, logoutGoogle } = useAuth();
+
   const [step, setStep] = useState<"details" | "payment" | "done">("details");
   const [submitting, setSubmitting] = useState(false);
   const [timer, setTimer] = useState(300); // 5 min countdown
   const [orderId, setOrderId] = useState("");
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", notes: "" });
+
+  // Require Google Mail login on checkout load
+  useEffect(() => {
+    if (!isGoogleAuthenticated) {
+      setIsGoogleModalOpen(true);
+    } else if (googleUser) {
+      setForm((prev) => ({
+        ...prev,
+        email: googleUser.email,
+        name: prev.name || googleUser.name,
+      }));
+    }
+  }, [isGoogleAuthenticated, googleUser]);
 
   // Countdown timer for payment step
   useEffect(() => {
@@ -32,6 +50,10 @@ const CheckoutPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isGoogleAuthenticated) {
+      setIsGoogleModalOpen(true);
+      return;
+    }
     setOrderId(generateOrderId());
     setTimer(300);
     setStep("payment");
@@ -86,7 +108,7 @@ const CheckoutPage = () => {
     await refreshInventory();
     setStep("done");
     setSubmitting(false);
-  }, [orderId, form, items, totalPrice, clearCart, refreshInventory]);
+  }, [orderId, form, items, totalPrice, clearCart, refreshInventory, appliedDiscount, discountAmount]);
 
   if (items.length === 0 && step !== "done") {
     return (
@@ -106,7 +128,7 @@ const CheckoutPage = () => {
         <h2 className="font-display text-4xl">Order Placed!</h2>
         <p className="text-muted-foreground font-body max-w-md">
           Thank you, {form.name}! Order <span className="font-medium text-foreground">{orderId}</span> has been placed.
-          We'll contact you on {form.phone} for confirmation & delivery.
+          We'll send order updates & tracking to <span className="font-semibold text-foreground">{form.email}</span>.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
           <button onClick={() => navigate(`/orders/${orderId}`)} className="bg-accent text-accent-foreground px-8 py-3 uppercase tracking-[0.15em] text-xs font-medium font-body">
@@ -122,6 +144,21 @@ const CheckoutPage = () => {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">
+      {/* Google Login Modal Popup */}
+      <GoogleLoginModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
+        onSuccess={() => {
+          if (googleUser) {
+            setForm((prev) => ({
+              ...prev,
+              email: googleUser.email,
+              name: prev.name || googleUser.name,
+            }));
+          }
+        }}
+      />
+
       <button
         onClick={() => (step === "payment" ? setStep("details") : navigate("/"))}
         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 font-body"
@@ -148,7 +185,33 @@ const CheckoutPage = () => {
 
       {step === "details" && (
         <>
-          <h1 className="font-display text-4xl mb-8">Checkout</h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="font-display text-4xl">Checkout</h1>
+
+            {/* Google Mail User Status Badge */}
+            {isGoogleAuthenticated && googleUser ? (
+              <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-sm text-xs font-body">
+                <ShieldCheck size={14} />
+                <span>{googleUser.email}</span>
+                <button
+                  type="button"
+                  onClick={logoutGoogle}
+                  title="Switch Google Account"
+                  className="hover:text-destructive p-0.5 ml-1"
+                >
+                  <LogOut size={12} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsGoogleModalOpen(true)}
+                className="flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
+              >
+                <Mail size={14} /> Sign in with Google Mail
+              </button>
+            )}
+          </div>
 
           <div className="bg-clay-light p-6 mb-8 space-y-3">
             <h3 className="font-display text-lg mb-4">Order Summary</h3>
@@ -170,106 +233,145 @@ const CheckoutPage = () => {
                 </div>
               </>
             )}
-            <div className="border-t border-border pt-3 flex justify-between font-medium font-body">
+            <div className="border-t border-border pt-3 flex justify-between font-display text-lg">
               <span>Total</span>
-              <span className="tabular-nums text-lg">₹{totalPrice}</span>
+              <span className="tabular-nums">₹{totalPrice}</span>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-body block mb-2">Full Name *</label>
-              <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border border-border bg-background px-4 py-3 font-body text-sm focus:outline-none focus:border-accent transition-colors" placeholder="Your name" />
+              <label className="block text-xs uppercase tracking-[0.15em] font-body text-muted-foreground mb-2 flex items-center justify-between">
+                <span>Google Mail Address *</span>
+                {isGoogleAuthenticated && <span className="text-emerald-600 dark:text-emerald-400 text-[10px]">Verified with Google</span>}
+              </label>
+              <input
+                type="email"
+                required
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="w-full border border-border bg-background px-4 py-3 font-body text-sm focus:outline-none focus:border-accent transition-colors"
+                placeholder="yourname@gmail.com"
+              />
             </div>
+
             <div>
-              <label className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-body block mb-2">Phone / WhatsApp *</label>
-              <input required type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full border border-border bg-background px-4 py-3 font-body text-sm focus:outline-none focus:border-accent transition-colors" placeholder="+91 9652526920" />
+              <label className="block text-xs uppercase tracking-[0.15em] font-body text-muted-foreground mb-2">
+                Full Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full border border-border bg-background px-4 py-3 font-body text-sm focus:outline-none focus:border-accent transition-colors"
+                placeholder="Enter your full name"
+              />
             </div>
+
             <div>
-              <label className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-body block mb-2">Email (Optional)</label>
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full border border-border bg-background px-4 py-3 font-body text-sm focus:outline-none focus:border-accent transition-colors" placeholder="your@email.com" />
+              <label className="block text-xs uppercase tracking-[0.15em] font-body text-muted-foreground mb-2">
+                Phone Number (WhatsApp) *
+              </label>
+              <input
+                type="tel"
+                required
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className="w-full border border-border bg-background px-4 py-3 font-body text-sm focus:outline-none focus:border-accent transition-colors"
+                placeholder="+91 98765 43210"
+              />
             </div>
+
             <div>
-              <label className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-body block mb-2">Delivery Address *</label>
-              <textarea required value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full border border-border bg-background px-4 py-3 font-body text-sm focus:outline-none focus:border-accent transition-colors min-h-[80px]" placeholder="Full delivery address with pincode" />
+              <label className="block text-xs uppercase tracking-[0.15em] font-body text-muted-foreground mb-2">
+                Delivery Address *
+              </label>
+              <textarea
+                required
+                rows={3}
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                className="w-full border border-border bg-background px-4 py-3 font-body text-sm focus:outline-none focus:border-accent transition-colors resize-none"
+                placeholder="House/Flat No., Street, Landmark, City, Pincode"
+              />
             </div>
+
             <div>
-              <label className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-body block mb-2">Notes (Optional)</label>
-              <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full border border-border bg-background px-4 py-3 font-body text-sm focus:outline-none focus:border-accent transition-colors" placeholder="Any special instructions" />
+              <label className="block text-xs uppercase tracking-[0.15em] font-body text-muted-foreground mb-2">
+                Order Notes (Optional)
+              </label>
+              <input
+                type="text"
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                className="w-full border border-border bg-background px-4 py-3 font-body text-sm focus:outline-none focus:border-accent transition-colors"
+                placeholder="Special delivery instructions, gift notes, etc."
+              />
             </div>
-            <button type="submit" className="w-full bg-primary text-primary-foreground py-4 uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-300 font-body mt-4">
-              Proceed to Payment
+
+            <button
+              type="submit"
+              className="w-full bg-primary text-primary-foreground py-4 uppercase tracking-[0.15em] text-xs font-medium font-body hover:bg-accent transition-colors"
+            >
+              Proceed to UPI Payment (₹{totalPrice})
             </button>
           </form>
         </>
       )}
 
       {step === "payment" && (
-        <div className="text-center">
-          <h1 className="font-display text-4xl mb-2">Pay & Confirm</h1>
-          <p className="text-muted-foreground font-body mb-6">
-            Order <span className="text-foreground font-medium">{orderId}</span> • ₹{totalPrice}
-          </p>
-
-          {/* Timer */}
-          <div className={`inline-flex items-center gap-2 px-4 py-2 mb-8 border ${timer <= 60 ? "border-destructive/40 text-destructive bg-destructive/5" : "border-accent/30 text-accent bg-accent/5"}`}>
-            <Clock size={16} />
-            <span className="font-body text-sm font-medium tabular-nums">
-              {timer > 0 ? `Complete payment in ${formatTime(timer)}` : "Time expired — please retry"}
-            </span>
-          </div>
-
-          {/* Open UPI App button (mobile) */}
-          <div className="mb-6">
-            <button
-              onClick={openUpiApp}
-              className="w-full bg-accent text-accent-foreground py-4 uppercase tracking-[0.15em] text-xs font-medium hover:bg-primary transition-colors duration-300 font-body flex items-center justify-center gap-3"
-            >
-              <Smartphone size={18} />
-              Open UPI App to Pay ₹{totalPrice}
-            </button>
-            <p className="text-xs text-muted-foreground font-body mt-2">Opens your UPI app (GPay, PhonePe, Paytm, etc.)</p>
-          </div>
-
-          {/* QR Code for desktop */}
-          <div className="border border-border p-6 mb-6">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground font-body mb-4">Or scan QR code</p>
-            <div className="bg-clay-light p-6 inline-block mb-4">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiDeepLink)}`}
-                alt="UPI QR Code"
-                className="w-[200px] h-[200px]"
-              />
-            </div>
+        <div className="space-y-8">
+          <div className="text-center space-y-2">
+            <h1 className="font-display text-3xl">Scan & Pay via UPI</h1>
             <p className="text-sm text-muted-foreground font-body">
-              UPI ID: <span className="text-foreground font-medium select-all">{UPI_ID}</span>
+              Order ID: <span className="font-medium text-foreground">{orderId}</span> • Total: <span className="font-medium text-foreground">₹{totalPrice}</span>
             </p>
           </div>
 
-          {/* Instructions */}
-          <div className="bg-accent/10 border border-accent/20 p-4 mb-8 text-sm font-body text-left">
-            <p className="font-medium text-foreground mb-2">Steps:</p>
-            <ol className="list-decimal list-inside text-muted-foreground space-y-1">
-              <li>Tap "Open UPI App" or scan the QR code</li>
-              <li>Complete the payment of ₹{totalPrice}</li>
-              <li>Come back here and tap "I've Paid" to confirm</li>
-              <li>We'll verify & confirm via WhatsApp/Call</li>
-            </ol>
+          <div className="bg-clay-light p-4 rounded-sm flex items-center justify-center gap-2 text-sm font-body text-muted-foreground">
+            <Clock size={16} />
+            <span>Complete payment in: </span>
+            <span className="font-mono font-medium text-foreground tabular-nums">{formatTime(timer)}</span>
           </div>
 
-          <button
-            onClick={handlePaymentDone}
-            disabled={submitting || timer <= 0}
-            className="w-full bg-primary text-primary-foreground py-4 uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-300 font-body disabled:opacity-50"
-          >
-            {submitting ? "Placing Order..." : "I've Paid — Place Order"}
-          </button>
+          {/* QR Code */}
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="bg-white p-4 border border-border rounded-sm shadow-md">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiDeepLink)}`}
+                alt="UPI QR Code"
+                className="w-52 h-52 object-contain"
+              />
+            </div>
 
-          {timer <= 0 && (
-            <button onClick={() => { setTimer(300); setOrderId(generateOrderId()); }} className="w-full mt-3 border border-border py-3 text-xs uppercase tracking-wider font-body hover:bg-clay-light transition-colors">
-              Restart Timer
+            <div className="text-center space-y-1">
+              <p className="text-xs text-muted-foreground font-body uppercase tracking-wider">UPI ID</p>
+              <p className="font-mono text-sm font-medium">{UPI_ID}</p>
+            </div>
+          </div>
+
+          {/* Mobile UPI Deep Link */}
+          <div className="block md:hidden">
+            <button
+              onClick={openUpiApp}
+              className="w-full bg-accent text-accent-foreground py-3.5 uppercase tracking-[0.15em] text-xs font-medium font-body flex items-center justify-center gap-2"
+            >
+              <Smartphone size={16} />
+              Open UPI App (GPay / PhonePe / Paytm)
             </button>
-          )}
+          </div>
+
+          {/* Action buttons */}
+          <div className="border-t border-border pt-6 space-y-3">
+            <button
+              onClick={handlePaymentDone}
+              disabled={submitting}
+              className="w-full bg-primary text-primary-foreground py-4 uppercase tracking-[0.15em] text-xs font-medium font-body hover:bg-accent transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {submitting ? "Confirming Order..." : "I've Completed Payment"}
+            </button>
+          </div>
         </div>
       )}
     </div>

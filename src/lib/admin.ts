@@ -138,3 +138,31 @@ export async function adminUploadImage(
   if (!res.ok || !res.url) throw new Error(res.error || "Upload failed");
   return res.url;
 }
+
+export async function adminUpdateProductPrice(
+  productId: string,
+  variantId: string,
+  newPrice: number
+): Promise<void> {
+  const password = requireAuth();
+  const res = await apiPost<{ ok: boolean; error?: string }>("updateProductPrice", {
+    password,
+    productId,
+    variantId,
+    newPrice,
+  });
+  if (!res.ok) throw new Error(res.error || "Failed to update price");
+}
+
+export async function adminFetchUsers(): Promise<Array<{ userId: string; email: string; name: string; phone: string; role: UserRole; createdAt: string }>> {
+  const password = requireAuth();
+  const res = await apiPost<{ ok: boolean; users?: any[]; error?: string }>("getUsers", { password });
+  if (!res.ok) throw new Error(res.error || "Failed to load users");
+  return res.users || [];
+}
+
+export async function adminUpdateUserRole(userId: string, role: UserRole): Promise<void> {
+  const password = requireAuth();
+  const res = await apiPost<{ ok: boolean; error?: string }>("updateUserRole", { password, userId, role });
+  if (!res.ok) throw new Error(res.error || "Failed to update user role");
+}

@@ -1,24 +1,27 @@
-import { ShoppingBag, Menu, X, Package, ChevronDown, User, ShieldCheck } from "lucide-react";
+import { ShoppingBag, Menu, X, Package, ChevronDown, User, ShieldCheck, Heart, LogOut, UserCheck } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import { categories } from "@/data/products";
-import { ROLE_BADGES } from "@/types/auth";
+import { ROLE_BADGES, ROLE_LABELS } from "@/types/auth";
 import { Badge } from "@/components/ui/badge";
+import { GoogleLoginModal } from "@/components/auth/GoogleLoginModal";
 
 const Header = () => {
   const { totalItems, setIsCartOpen } = useCart();
-  const { isLoggedIn, role } = useAuth();
+  const { isLoggedIn, role, googleUser, isGoogleAuthenticated, logout } = useAuth();
+  const { wishlistCount } = useWishlist();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const location = useLocation();
   const isHome = location.pathname === "/";
 
-  const scrollToProducts = () => {
-    document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
-    setMobileMenuOpen(false);
-  };
+  const isAuthenticated = isLoggedIn || isGoogleAuthenticated;
+  const displayName = googleUser ? googleUser.name : isLoggedIn ? ROLE_LABELS[role] : "Customer";
+  const displayEmail = googleUser ? googleUser.email : isLoggedIn ? `${role}@houseofnuts.com` : "";
 
   const scrollToContact = () => {
     document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
@@ -26,8 +29,14 @@ const Header = () => {
   };
 
   return (
-    <header className="flex items-center justify-between px-6 md:px-8 py-5 border-b border-border sticky top-0 bg-background/90 backdrop-blur-md z-50">
-      <nav className="hidden md:flex gap-10 text-xs uppercase tracking-[0.15em] font-medium font-body items-center">
+    <header className="flex items-center justify-between px-6 md:px-8 py-4 border-b border-border sticky top-0 bg-background/90 backdrop-blur-md z-50">
+      {/* Login Modal Popup */}
+      <GoogleLoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
+
+      <nav className="hidden md:flex gap-8 text-xs uppercase tracking-[0.15em] font-medium font-body items-center">
         <Link to="/shop" className="hover:text-accent transition-colors duration-300">Shop</Link>
         <div className="relative group">
           <button className="flex items-center gap-1 hover:text-accent transition-colors duration-300">
@@ -48,7 +57,7 @@ const Header = () => {
           </div>
         </div>
         <Link to="/orders" className="hover:text-accent transition-colors duration-300">
-          <span className="flex items-center gap-1.5"><Package size={14} /> My Orders</span>
+          <span className="flex items-center gap-1.5"><Package size={14} /> Orders</span>
         </Link>
         <Link to="/track" className="hover:text-accent transition-colors duration-300">Track</Link>
         {isHome ? (
@@ -68,22 +77,83 @@ const Header = () => {
 
       <div className="flex items-center gap-4">
         <SearchBar />
-        
-        {/* Account / Admin Portal link */}
+
+        {/* Wishlist Link */}
         <Link
-          to={isLoggedIn ? "/admin" : "/account"}
-          title={isLoggedIn ? `Portal (${role})` : "Account Profile"}
-          className="flex items-center gap-1.5 text-xs uppercase tracking-[0.15em] font-medium font-body hover:text-accent transition-colors"
+          to="/wishlist"
+          title="My Wishlist"
+          className="relative text-muted-foreground hover:text-accent transition-colors p-1"
         >
-          {isLoggedIn ? <ShieldCheck size={18} className="text-accent" /> : <User size={18} />}
-          <span className="hidden lg:inline">{isLoggedIn ? "Portal" : "Account"}</span>
-          {isLoggedIn && (
-            <Badge variant={ROLE_BADGES[role].variant} className="text-[9px] px-1 py-0 font-mono hidden xl:inline-block">
-              {role}
-            </Badge>
+          <Heart size={20} />
+          {wishlistCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground size-4 flex items-center justify-center rounded-full text-[10px] font-bold font-mono">
+              {wishlistCount}
+            </span>
           )}
         </Link>
+        
+        {/* Flipkart-Style Login Button & Account Dropdown */}
+        {isAuthenticated ? (
+          <div className="relative group">
+            <button className="flex items-center gap-2 text-xs font-body hover:text-accent transition-colors py-1">
+              <div className="size-7 rounded-full bg-accent/10 text-accent grid place-items-center font-bold text-xs">
+                {googleUser?.picture ? (
+                  <img src={googleUser.picture} alt={displayName} className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  displayName.charAt(0).toUpperCase()
+                )}
+              </div>
+              <span className="hidden lg:inline font-medium max-w-[120px] truncate">{displayName}</span>
+              <ChevronDown size={12} className="text-muted-foreground group-hover:rotate-180 transition-transform" />
+            </button>
 
+            {/* Dropdown Menu */}
+            <div className="absolute right-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[220px]">
+              <div className="bg-background border border-border shadow-xl rounded-sm py-2 font-body text-xs space-y-1">
+                <div className="px-4 py-2 border-b border-border">
+                  <p className="font-semibold font-display text-sm text-foreground truncate">{displayName}</p>
+                  {displayEmail && <p className="text-[11px] text-muted-foreground truncate">{displayEmail}</p>}
+                </div>
+
+                <Link to="/account" className="flex items-center gap-2.5 px-4 py-2 hover:bg-clay-light hover:text-accent transition-colors">
+                  <User size={14} /> My Profile
+                </Link>
+
+                <Link to="/orders" className="flex items-center gap-2.5 px-4 py-2 hover:bg-clay-light hover:text-accent transition-colors">
+                  <Package size={14} /> My Orders
+                </Link>
+
+                <Link to="/wishlist" className="flex items-center gap-2.5 px-4 py-2 hover:bg-clay-light hover:text-accent transition-colors">
+                  <Heart size={14} /> My Wishlist ({wishlistCount})
+                </Link>
+
+                {isLoggedIn && (
+                  <Link to="/admin" className="flex items-center gap-2.5 px-4 py-2 text-accent font-medium hover:bg-clay-light transition-colors">
+                    <ShieldCheck size={14} /> Role Portal ({role})
+                  </Link>
+                )}
+
+                <div className="border-t border-border pt-1">
+                  <button
+                    onClick={logout}
+                    className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <LogOut size={14} /> Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setIsLoginModalOpen(true)}
+            className="bg-primary text-primary-foreground hover:bg-accent transition-colors px-4 py-2 text-xs font-medium uppercase tracking-wider font-body rounded-sm shadow-xs flex items-center gap-1.5"
+          >
+            <User size={14} /> Login
+          </button>
+        )}
+
+        {/* Basket Button */}
         <button
           onClick={() => setIsCartOpen(true)}
           className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] font-medium font-body hover:text-accent transition-colors duration-300"
@@ -98,7 +168,7 @@ const Header = () => {
         </button>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="absolute top-full left-0 right-0 bg-background border-b border-border p-6 flex flex-col gap-4 md:hidden max-h-[80vh] overflow-auto">
           <Link to="/shop" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Shop All</Link>
@@ -118,12 +188,10 @@ const Header = () => {
           <Link to="/orders" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2 flex items-center gap-2">
             <Package size={16} /> My Orders
           </Link>
+          <Link to="/wishlist" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2 flex items-center gap-2">
+            <Heart size={16} /> My Wishlist ({wishlistCount})
+          </Link>
           <Link to="/track" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Track Order</Link>
-          {isHome ? (
-            <button onClick={scrollToContact} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Wholesale Enquiry</button>
-          ) : (
-            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Wholesale Enquiry</Link>
-          )}
         </div>
       )}
     </header>
