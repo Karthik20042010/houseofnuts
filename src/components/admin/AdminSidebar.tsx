@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Store, LogOut, Nut, Image as ImageIcon } from "lucide-react";
+import { LayoutDashboard, Package, Store, LogOut, Nut, Image as ImageIcon, Terminal, ShieldCheck } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,18 +13,33 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { adminLogout } from "@/lib/admin";
+import { useAuth } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
+import { ROLE_BADGES, ROLE_LABELS, UserRole } from "@/types/auth";
 
-const items = [
-  { title: "Orders", url: "/admin", icon: LayoutDashboard, end: true },
-  { title: "Inventory", url: "/admin/inventory", icon: Package, end: false },
-  { title: "Images", url: "/admin/images", icon: ImageIcon, end: false },
+interface NavItem {
+  title: string;
+  url: string;
+  icon: any;
+  end?: boolean;
+  allowedRoles?: UserRole[];
+}
+
+const navItems: NavItem[] = [
+  { title: "Orders", url: "/admin", icon: LayoutDashboard, end: true, allowedRoles: ["admin", "developer", "staff"] },
+  { title: "Inventory", url: "/admin/inventory", icon: Package, end: false, allowedRoles: ["admin", "developer", "staff"] },
+  { title: "Images", url: "/admin/images", icon: ImageIcon, end: false, allowedRoles: ["admin", "developer"] },
+  { title: "Developer Console", url: "/admin/developer", icon: Terminal, end: false, allowedRoles: ["admin", "developer"] },
+  { title: "Role Management", url: "/admin/roles", icon: ShieldCheck, end: false, allowedRoles: ["admin"] },
 ];
 
 export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const navigate = useNavigate();
+  const { role, logout, hasRole } = useAuth();
+
+  const visibleItems = navItems.filter((item) => !item.allowedRoles || hasRole(item.allowedRoles));
 
   return (
     <Sidebar collapsible="icon">
@@ -34,9 +49,13 @@ export function AdminSidebar() {
             <Nut size={16} />
           </div>
           {!collapsed && (
-            <div className="leading-tight">
-              <div className="font-display text-base">House of Nuts</div>
-              <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">Admin</div>
+            <div className="leading-tight flex-1 min-w-0">
+              <div className="font-display text-base truncate">House of Nuts</div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Badge variant={ROLE_BADGES[role].variant} className="text-[9px] px-1.5 py-0 uppercase font-mono tracking-wider">
+                  {ROLE_BADGES[role].label}
+                </Badge>
+              </div>
             </div>
           )}
         </div>
@@ -44,10 +63,10 @@ export function AdminSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>Manage</SidebarGroupLabel>}
+          {!collapsed && <SidebarGroupLabel>Management Navigation</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink
@@ -90,13 +109,13 @@ export function AdminSidebar() {
             <SidebarMenuButton
               tooltip="Logout"
               onClick={() => {
-                adminLogout();
+                logout();
                 navigate("/admin/login");
               }}
               className="text-destructive hover:text-destructive"
             >
               <LogOut className="h-4 w-4" />
-              <span>Logout</span>
+              <span>Logout ({ROLE_LABELS[role]})</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

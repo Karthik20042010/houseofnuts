@@ -1,12 +1,16 @@
-import { ShoppingBag, Menu, X, Package, ChevronDown } from "lucide-react";
+import { ShoppingBag, Menu, X, Package, ChevronDown, User, ShieldCheck } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import { categories } from "@/data/products";
+import { ROLE_BADGES } from "@/types/auth";
+import { Badge } from "@/components/ui/badge";
 
 const Header = () => {
   const { totalItems, setIsCartOpen } = useCart();
+  const { isLoggedIn, role } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const isHome = location.pathname === "/";
@@ -62,19 +66,35 @@ const Header = () => {
         House of Nuts
       </Link>
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-4">
         <SearchBar />
+        
+        {/* Account / Admin Portal link */}
+        <Link
+          to={isLoggedIn ? "/admin" : "/account"}
+          title={isLoggedIn ? `Portal (${role})` : "Account Profile"}
+          className="flex items-center gap-1.5 text-xs uppercase tracking-[0.15em] font-medium font-body hover:text-accent transition-colors"
+        >
+          {isLoggedIn ? <ShieldCheck size={18} className="text-accent" /> : <User size={18} />}
+          <span className="hidden lg:inline">{isLoggedIn ? "Portal" : "Account"}</span>
+          {isLoggedIn && (
+            <Badge variant={ROLE_BADGES[role].variant} className="text-[9px] px-1 py-0 font-mono hidden xl:inline-block">
+              {role}
+            </Badge>
+          )}
+        </Link>
+
         <button
           onClick={() => setIsCartOpen(true)}
           className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] font-medium font-body hover:text-accent transition-colors duration-300"
         >
-        <ShoppingBag size={20} />
-        <span className="hidden md:inline">Basket</span>
-        {totalItems > 0 && (
-          <span className="bg-primary text-primary-foreground size-6 flex items-center justify-center rounded-full tabular-nums text-[11px]">
-            {totalItems}
-          </span>
-        )}
+          <ShoppingBag size={20} />
+          <span className="hidden md:inline">Basket</span>
+          {totalItems > 0 && (
+            <span className="bg-primary text-primary-foreground size-6 flex items-center justify-center rounded-full tabular-nums text-[11px]">
+              {totalItems}
+            </span>
+          )}
         </button>
       </div>
 

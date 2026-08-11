@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, Loader2, Eye, EyeOff, Nut } from "lucide-react";
+import { Lock, Loader2, Eye, EyeOff, Nut, UserCheck } from "lucide-react";
 import { adminLogin, isAdminLoggedIn } from "@/lib/admin";
+import { UserRole, ROLE_LABELS } from "@/types/auth";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
+  const [selectedRole, setSelectedRole] = useState<UserRole>("admin");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,10 +21,17 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const res = await adminLogin(password);
+    const res = await adminLogin(password, selectedRole);
     setLoading(false);
-    if (res.ok) navigate("/admin", { replace: true });
-    else setError(res.error || "Login failed");
+    if (res.ok) {
+      if (selectedRole === "developer") {
+        navigate("/admin/developer", { replace: true });
+      } else {
+        navigate("/admin", { replace: true });
+      }
+    } else {
+      setError(res.error || "Login failed");
+    }
   };
 
   return (
@@ -37,10 +46,35 @@ const AdminLogin = () => {
           </div>
           <div>
             <div className="font-display text-xl leading-tight">House of Nuts</div>
-            <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">Admin Portal</div>
+            <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">Role-Based Portal</div>
           </div>
         </div>
-        <div className="flex items-center gap-2 mt-6 mb-2 text-muted-foreground">
+
+        {/* Role Selection */}
+        <div className="mt-6 mb-4">
+          <label className="flex items-center gap-2 mb-2 text-muted-foreground">
+            <UserCheck size={14} />
+            <span className="text-xs uppercase tracking-[0.15em] font-body">Select Role</span>
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {(["admin", "developer", "staff"] as UserRole[]).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setSelectedRole(r)}
+                className={`py-2 px-1 text-xs font-body border rounded-sm transition-colors text-center capitalize ${
+                  selectedRole === r
+                    ? "bg-primary text-primary-foreground border-primary font-medium"
+                    : "bg-background text-muted-foreground border-border hover:bg-muted"
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 mt-4 mb-2 text-muted-foreground">
           <Lock size={14} />
           <span className="text-xs uppercase tracking-[0.15em] font-body">Password</span>
         </div>
@@ -74,7 +108,7 @@ const AdminLogin = () => {
           className="w-full mt-6 bg-primary text-primary-foreground py-3 uppercase tracking-[0.15em] text-xs font-medium font-body hover:bg-accent transition-colors disabled:opacity-50 flex items-center justify-center gap-2 rounded-sm"
         >
           {loading && <Loader2 size={14} className="animate-spin" />}
-          Log In
+          Log In as {ROLE_LABELS[selectedRole]}
         </button>
         <p className="text-[11px] text-muted-foreground font-body mt-6 text-center">
           Password lives in your Sheet's <span className="font-medium text-foreground">Config</span> tab.

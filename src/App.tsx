@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/contexts/CartContext";
 import { InventoryProvider } from "@/contexts/InventoryContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
 import MobileTabBar from "./components/MobileTabBar.tsx";
@@ -18,11 +20,14 @@ const Category = lazy(() => import("./pages/Category.tsx"));
 const Orders = lazy(() => import("./pages/Orders.tsx"));
 const OrderDetail = lazy(() => import("./pages/OrderDetail.tsx"));
 const TrackOrder = lazy(() => import("./pages/TrackOrder.tsx"));
+const AccountProfile = lazy(() => import("./pages/AccountProfile.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
 const AdminOrderDetail = lazy(() => import("./pages/AdminOrderDetail.tsx"));
 const AdminInventory = lazy(() => import("./pages/AdminInventory.tsx"));
 const AdminImages = lazy(() => import("./pages/AdminImages.tsx"));
+const DeveloperConsole = lazy(() => import("./pages/DeveloperConsole.tsx"));
+const AdminRoleManagement = lazy(() => import("./pages/AdminRoleManagement.tsx"));
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
@@ -38,40 +43,92 @@ const RouteFallback = () => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <InventoryProvider>
-        <CartProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ScrollToTop />
-            <div className="pb-14 md:pb-0">
-              <Suspense fallback={<RouteFallback />}>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/product/:id" element={<ProductDetail />} />
-                  <Route path="/shop" element={<Category />} />
-                  <Route path="/category/:slug" element={<Category />} />
-                  <Route path="/orders" element={<Orders />} />
-                  <Route path="/orders/:id" element={<OrderDetail />} />
-                  <Route path="/track" element={<TrackOrder />} />
-                  <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route element={<AdminLayout />}>
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
-                    <Route path="/admin/inventory" element={<AdminInventory />} />
-                    <Route path="/admin/images" element={<AdminImages />} />
-                  </Route>
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </div>
-            <MobileTabBar />
-          </BrowserRouter>
-          <WhatsAppButton />
-          <Chatbot />
-        </CartProvider>
-      </InventoryProvider>
+      <AuthProvider>
+        <InventoryProvider>
+          <CartProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ScrollToTop />
+              <div className="pb-14 md:pb-0">
+                <Suspense fallback={<RouteFallback />}>
+                  <Routes>
+                    {/* Public Customer Routes */}
+                    <Route path="/" element={<Index />} />
+                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/product/:id" element={<ProductDetail />} />
+                    <Route path="/shop" element={<Category />} />
+                    <Route path="/category/:slug" element={<Category />} />
+                    <Route path="/orders" element={<Orders />} />
+                    <Route path="/orders/:id" element={<OrderDetail />} />
+                    <Route path="/track" element={<TrackOrder />} />
+                    <Route path="/account" element={<AccountProfile />} />
+
+                    {/* Authentication Login Route */}
+                    <Route path="/admin/login" element={<AdminLogin />} />
+
+                    {/* Role Protected Administration Routes */}
+                    <Route element={<AdminLayout />}>
+                      <Route
+                        path="/admin"
+                        element={
+                          <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
+                            <AdminDashboard />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/orders/:id"
+                        element={
+                          <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
+                            <AdminOrderDetail />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/inventory"
+                        element={
+                          <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
+                            <AdminInventory />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/images"
+                        element={
+                          <ProtectedRoute allowedRoles={["admin", "developer"]}>
+                            <AdminImages />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/developer"
+                        element={
+                          <ProtectedRoute allowedRoles={["admin", "developer"]}>
+                            <DeveloperConsole />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/roles"
+                        element={
+                          <ProtectedRoute allowedRoles={["admin"]}>
+                            <AdminRoleManagement />
+                          </ProtectedRoute>
+                        }
+                      />
+                    </Route>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </div>
+              <MobileTabBar />
+            </BrowserRouter>
+            <WhatsAppButton />
+            <Chatbot />
+          </CartProvider>
+        </InventoryProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

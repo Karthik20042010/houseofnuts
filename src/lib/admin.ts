@@ -1,5 +1,6 @@
 import { apiPost } from "./api";
 import type { Order } from "./orders";
+import type { UserRole } from "@/types/auth";
 
 // The admin password lives in the Google Sheet's Config tab, never in this
 // codebase. On login we send it to Apps Script; on every subsequent admin
@@ -9,12 +10,13 @@ import type { Order } from "./orders";
 const SESSION_KEY = "hon-admin-session";
 const TTL_MS = 8 * 60 * 60 * 1000;
 
-interface Session {
+export interface Session {
   password: string;
+  role: UserRole;
   loggedInAt: number;
 }
 
-function readSession(): Session | null {
+export function readSession(): Session | null {
   const raw = sessionStorage.getItem(SESSION_KEY);
   if (!raw) return null;
   try {
@@ -23,9 +25,25 @@ function readSession(): Session | null {
       sessionStorage.removeItem(SESSION_KEY);
       return null;
     }
+    // Fallback default role if previously saved without role
+    if (!s.role) s.role = "admin";
     return s;
   } catch {
     return null;
+  }
+}
+
+export function getActiveRole(): UserRole {
+  const s = readSession();
+  return s ? s.role : "user";
+}
+
+export function setSessionRole(role: UserRole) {
+  const s = readSession();
+  if (s) {
+    s.role = role;
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    window.dispatchEvent(new CustomEvent("hon-auth-change", { detail: { role } }));
   }
 }
 
@@ -35,16 +53,21 @@ export function isAdminLoggedIn(): boolean {
 
 export function adminLogout() {
   sessionStorage.removeItem(SESSION_KEY);
+  window.dispatchEvent(new CustomEvent("hon-auth-change", { detail: { role: "user" } }));
 }
 
-export async function adminLogin(password: string): Promise<{ ok: boolean; error?: string }> {
+export async function adminLogin(
+  password: string,
+  role: UserRole = "admin"
+): Promise<{ ok: boolean; error?: string }> {
   try {
     const res = await apiPost<{ ok: boolean; error?: string }>("adminLogin", { password });
     if (res.ok) {
       sessionStorage.setItem(
         SESSION_KEY,
-        JSON.stringify({ password, loggedInAt: Date.now() } satisfies Session),
+        JSON.stringify({ password, role, loggedInAt: Date.now() } satisfies Session),
       );
+      window.dispatchEvent(new CustomEvent("hon-auth-change", { detail: { role } }));
       return { ok: true };
     }
     return { ok: false, error: res.error || "Invalid password" };
