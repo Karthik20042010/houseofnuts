@@ -40,6 +40,12 @@ function doPost(e) {
     var body = JSON.parse(e.postData.contents);
     var action = body.action;
 
+    // Rate Limiting Protection against automated attacker brute-force & spamming
+    if (action === "adminLogin" || action === "placeOrder") {
+      var rateLimitErr = checkServerRateLimit(action, 6);
+      if (rateLimitErr) return json({ ok: false, error: rateLimitErr });
+    }
+
     // Public actions
     if (action === "placeOrder")         return json(placeOrder(body.order));
     if (action === "adminLogin")         return json({ ok: checkPassword(body.password) });
@@ -66,6 +72,24 @@ function doPost(e) {
 function json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// -------- Security & Rate Limiting --------
+
+function checkServerRateLimit(action, maxAttempts) {
+  try {
+    var cache = CacheService.getScriptCache();
+    var key = "rl_" + action;
+    var raw = cache.get(key);
+    var count = raw ? Number(raw) : 0;
+    if (count >= maxAttempts) {
+      return "Rate limit exceeded (Too many attempts). Locked for 10 minutes.";
+    }
+    cache.put(key, String(count + 1), 600); // 10 minutes expiry
+  } catch (e) {
+    // Ignore cache glitches
+  }
+  return null;
 }
 
 // -------- Sheet 1: Config Tab --------
