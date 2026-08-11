@@ -59,7 +59,7 @@ const Chatbot = () => {
       {/* Toggle button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 ${
+        className={`fixed bottom-[76px] md:bottom-6 right-4 md:right-6 z-[55] p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 ${
           isOpen
             ? "bg-foreground text-background"
             : "bg-accent text-accent-foreground hover:shadow-xl"
@@ -71,12 +71,12 @@ const Chatbot = () => {
 
       {/* Pulse ring when closed */}
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-accent/30 animate-ping pointer-events-none" />
+        <div className="fixed bottom-[76px] md:bottom-6 right-4 md:right-6 z-40 w-14 h-14 rounded-full bg-accent/30 animate-ping pointer-events-none" />
       )}
 
       {/* Chat window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[340px] max-h-[480px] bg-background border border-border shadow-2xl flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-300 rounded-lg overflow-hidden">
+        <div className="fixed bottom-[140px] md:bottom-24 right-3 md:right-6 z-[58] w-[340px] max-w-[calc(100vw-1.5rem)] max-h-[480px] bg-background border border-border shadow-2xl flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-300 rounded-lg overflow-hidden">
           {/* Header */}
           <div className="bg-primary text-primary-foreground px-5 py-4 flex items-center gap-3">
             <div className="bg-accent rounded-full p-1.5">
