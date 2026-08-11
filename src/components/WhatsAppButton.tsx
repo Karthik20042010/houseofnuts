@@ -6,7 +6,7 @@ const WhatsAppButton = () => {
       href="https://wa.me/919652526920?text=Hi, I need help with House of Nuts"
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 left-6 z-50 bg-[#25D366] hover:bg-[#1ebe57] text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 group"
+      className="fixed bottom-[76px] md:bottom-6 left-4 md:left-6 z-[55] bg-[#25D366] hover:bg-[#1ebe57] text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 group"
       aria-label="Chat on WhatsApp"
     >
       <MessageCircle size={28} className="fill-white" />

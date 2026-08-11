@@ -10,6 +10,7 @@ import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import ReviewsSection from "@/components/ReviewsSection";
 import { getAverageRating } from "@/lib/reviews";
 import { getProductImageSrc } from "@/lib/productImages";
+import ProductImage from "@/components/ProductImage";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -43,6 +44,10 @@ const ProductDetail = () => {
   const relatedProducts = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
   const { avg: avgRating, count: reviewCount } = getAverageRating(product.id);
 
+  const handleAdd = () => {
+    for (let i = 0; i < quantity; i++) addToCart(product, variant);
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -61,8 +66,8 @@ const ProductDetail = () => {
         {/* Product Section */}
         <div className="grid md:grid-cols-2 gap-8 md:gap-16 mb-20">
           {/* Image */}
-          <div className="bg-clay-light p-6 md:p-10 aspect-square relative overflow-hidden flex items-center justify-center">
-            <img src={getProductImageSrc(product)} alt={product.name} className="w-full h-full object-cover" />
+          <div className="bg-clay-light p-6 md:p-10 aspect-square relative overflow-hidden flex items-center justify-center md:sticky md:top-28 md:self-start">
+            <ProductImage src={getProductImageSrc(product)} alt={product.name} eager className="w-full h-full object-cover" />
             {product.badge && (
               <div className="absolute top-0 right-0 bg-accent text-accent-foreground px-4 py-2 m-6 text-[10px] uppercase tracking-[0.2em] font-medium z-20 font-body">
                 {product.badge}
@@ -114,20 +119,19 @@ const ProductDetail = () => {
             {/* Quantity & Add to Cart */}
             <div className="flex items-center gap-4">
               <div className="flex items-center border border-border">
-                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 py-3 hover:bg-clay-light transition-colors font-body">−</button>
-                <span className="px-4 py-3 tabular-nums font-body min-w-[3rem] text-center">{quantity}</span>
-                <button onClick={() => setQuantity(quantity + 1)} className="px-4 py-3 hover:bg-clay-light transition-colors font-body">+</button>
+                <button aria-label="Decrease quantity" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 min-h-[48px] hover:bg-clay-light transition-colors font-body">−</button>
+                <span className="px-4 min-h-[48px] flex items-center justify-center tabular-nums font-body min-w-[3rem] text-center">{quantity}</span>
+                <button aria-label="Increase quantity" onClick={() => setQuantity(quantity + 1)} className="px-4 min-h-[48px] hover:bg-clay-light transition-colors font-body">+</button>
               </div>
               <button
-                onClick={() => {
-                  for (let i = 0; i < quantity; i++) addToCart(product, variant);
-                }}
-                className="flex-1 flex items-center justify-center gap-3 bg-primary text-primary-foreground py-4 uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-300 font-body"
+                onClick={handleAdd}
+                className="flex-1 flex items-center justify-center gap-3 bg-primary text-primary-foreground min-h-[52px] uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-300 font-body active:scale-[0.98]"
               >
                 <ShoppingBag size={16} />
                 Add to Basket — ₹{variant.price * quantity}
               </button>
             </div>
+
 
             {/* Trust badges */}
             <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border">
@@ -165,8 +169,22 @@ const ProductDetail = () => {
         )}
       </div>
 
+      {/* Sticky mobile add-to-basket bar */}
+      <div className="md:hidden fixed bottom-14 left-0 right-0 z-[55] bg-background/95 backdrop-blur-md border-t border-border px-4 py-3 flex items-center gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-body">{variant.size}</p>
+          <p className="font-display text-xl leading-none">₹{variant.price * quantity}</p>
+        </div>
+        <button
+          onClick={handleAdd}
+          className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground min-h-[48px] uppercase tracking-[0.15em] text-xs font-medium font-body active:scale-[0.98] transition-transform"
+        >
+          <ShoppingBag size={15} /> Add to Basket
+        </button>
+      </div>
+
       {/* Footer */}
-      <footer className="bg-primary text-primary-foreground/50 py-8 px-6 text-center border-t border-primary-foreground/10">
+      <footer className="bg-primary text-primary-foreground/50 py-8 px-6 pb-24 md:pb-8 text-center border-t border-primary-foreground/10">
         <p className="text-xs font-body tracking-wide">© {new Date().getFullYear()} House of Nuts. All rights reserved.</p>
       </footer>
     </div>
