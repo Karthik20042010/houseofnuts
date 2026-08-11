@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Cloud, Image as ImageIcon, Link2, Loader2, RotateCcw, Search, Upload, Layers, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { Cloud, Image as ImageIcon, Link2, Loader2, RotateCcw, Search, Upload, Layers, X, CheckCircle2, AlertCircle, FileSpreadsheet, Download } from "lucide-react";
 import { products, categories } from "@/data/products";
 import {
   clearProductImage,
@@ -9,7 +9,9 @@ import {
   useProductImage,
 } from "@/lib/productImages";
 import { adminUploadImage } from "@/lib/admin";
+import { parseSkuMappingCsv, downloadCsv } from "@/lib/adminCsv";
 import type { Product } from "@/data/products";
+
 
 const MAX_INLINE_BYTES = 1_500_000; // ~1.5MB — beyond this we warn but still allow
 
@@ -49,16 +51,59 @@ function BulkUploader({ onClose }: { onClose: () => void }) {
   const [rows, setRows] = useState<BulkRow[]>([]);
   const [target, setTarget] = useState<BulkTarget>("drive");
   const [running, setRunning] = useState(false);
+  // Explicit filename -> SKU map from an uploaded CSV. Takes priority over
+  // filename auto-matching, but a manual per-row override still wins.
+  const [csvMap, setCsvMap] = useState<Record<string, string>>({});
+  const [csvName, setCsvName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const csvRef = useRef<HTMLInputElement>(null);
 
-  const addFiles = (files: FileList | null) => {
+  const validIds = useMemo(() => new Set(products.map((p) => p.id)), []);
+
+  const fromCsv = (map: Record<string, string>, filename: string) => {
+    const id = map[filename.toLowerCase()];
+    return id && validIds.has(id) ? id : undefined;
+  };
+
+  const addFiles = (files: FileList | null, map = csvMap) => {
     if (!files) return;
     const next: BulkRow[] = [];
     for (const f of Array.from(files)) {
       if (!f.type.startsWith("image/")) continue;
-      next.push({ file: f, match: matchProduct(f.name), status: "pending" });
+      next.push({ file: f, match: matchProduct(f.name), override: fromCsv(map, f.name), status: "pending" });
     }
     setRows((r) => [...r, ...next]);
+  };
+
+  const loadCsv = async (file: File) => {
+    try {
+      const text = await file.text();
+      const { map, count } = parseSkuMappingCsv(text);
+      if (!count) {
+        toast.error("No filename/SKU pairs found in that CSV");
+        return;
+      }
+      const unknown = Object.values(map).filter((id) => !validIds.has(id));
+      setCsvMap(map);
+      setCsvName(file.name);
+      // Re-apply mapping to already-added files.
+      setRows((r) => r.map((row) => ({ ...row, override: fromCsv(map, row.file.name) ?? row.override })));
+      toast.success(`Mapping loaded · ${count} row${count === 1 ? "" : "s"}`, {
+        description: unknown.length ? `${unknown.length} unknown SKU(s) ignored: ${unknown.slice(0, 3).join(", ")}` : undefined,
+      });
+    } catch {
+      toast.error("Could not read that CSV");
+    }
+  };
+
+  const clearCsv = () => {
+    setCsvMap({});
+    setCsvName(null);
+  };
+
+  const downloadTemplate = () => {
+    const csv = ["filename,sku", ...products.slice(0, 5).map((p) => `${p.id}.jpg,${p.id}`)].join("\n");
+    downloadCsv("sku-image-mapping-template.csv", csv);
   };
 
   const remove = (i: number) => setRows((r) => r.filter((_, idx) => idx !== i));
@@ -67,6 +112,7 @@ function BulkUploader({ onClose }: { onClose: () => void }) {
 
   const matched = rows.filter((r) => r.override || r.match).length;
   const unmatched = rows.length - matched;
+
 
   const runAll = async () => {
     setRunning(true);
@@ -110,8 +156,55 @@ function BulkUploader({ onClose }: { onClose: () => void }) {
       </div>
 
       <p className="text-xs text-muted-foreground font-body mb-4 leading-relaxed">
-        Drop multiple images at once. We auto-match filenames to SKUs — e.g. <code className="text-foreground">mamra-almonds.jpg</code> maps to the Mamra Almonds product. Any unmatched file lets you pick the SKU manually or skip.
+        Drop multiple images at once. We auto-match filenames to SKUs — e.g. <code className="text-foreground">mamra-almonds.jpg</code> maps to the Mamra Almonds product. Any unmatched file lets you pick the SKU manually or skip. Optionally upload a CSV mapping to match files explicitly.
       </p>
+
+      <div className="border border-border rounded-sm p-3 mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <FileSpreadsheet className="text-accent shrink-0" size={15} />
+          <div className="min-w-0">
+            <div className="text-xs font-body font-medium">
+              CSV mapping <span className="text-muted-foreground font-normal">(optional)</span>
+            </div>
+            <div className="text-[11px] text-muted-foreground font-body truncate">
+              {csvName ? `${csvName} · ${Object.keys(csvMap).length} rows` : "Columns: filename, sku"}
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <input
+            ref={csvRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) loadCsv(f); e.target.value = ""; }}
+          />
+          <button
+            onClick={downloadTemplate}
+            className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body border border-border hover:border-foreground/40 transition-colors"
+          >
+            <Download size={13} /> Template
+          </button>
+          <button
+            onClick={() => csvRef.current?.click()}
+            disabled={running}
+            className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body bg-accent text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50"
+          >
+            <Upload size={13} /> {csvName ? "Replace" : "Upload CSV"}
+          </button>
+          {csvName && (
+            <button
+              onClick={clearCsv}
+              disabled={running}
+              className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body border border-border hover:border-foreground/40 transition-colors disabled:opacity-50"
+            >
+              <X size={13} /> Clear
+            </button>
+          )}
+        </div>
+      </div>
+
+
 
       <div
         onDragOver={(e) => e.preventDefault()}
@@ -163,7 +256,13 @@ function BulkUploader({ onClose }: { onClose: () => void }) {
                   className="w-12 h-12 object-cover rounded-sm bg-clay-light shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-body truncate">{row.file.name}</div>
+                  <div className="text-xs font-body truncate flex items-center gap-2">
+                    <span className="truncate">{row.file.name}</span>
+                    {fromCsv(csvMap, row.file.name) && (
+                      <span className="shrink-0 text-[9px] uppercase tracking-wider bg-accent/15 text-accent px-1.5 py-0.5 rounded-sm">CSV</span>
+                    )}
+                  </div>
+
                   <div className="mt-1">
                     <select
                       value={row.override || row.match?.id || ""}
