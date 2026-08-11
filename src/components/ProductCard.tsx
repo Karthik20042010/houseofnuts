@@ -4,16 +4,19 @@ import { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import { useInventory } from "@/contexts/InventoryContext";
 import { isLowStock, isOutOfStock, stockOf } from "@/lib/inventory";
-import { ShoppingBag, Star } from "lucide-react";
+import { ShoppingBag, Star, Check } from "lucide-react";
 import { getAverageRating } from "@/lib/reviews";
 import { useProductImage } from "@/lib/productImages";
+import ProductImage from "@/components/ProductImage";
 
 interface ProductCardProps {
   product: Product;
+  eagerImage?: boolean;
 }
 
-const ProductCard = ({ product }: ProductCardProps) => {
+const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
   const [selectedVariant, setSelectedVariant] = useState(0);
+  const [justAdded, setJustAdded] = useState(false);
   const { addToCart } = useCart();
   const { stock } = useInventory();
   const variant = product.variants[selectedVariant];
@@ -24,15 +27,26 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const remaining = stockOf(stock, variant.id);
   const allOos = product.variants.every((v) => isOutOfStock(stock, v.id));
 
+  const handleAdd = () => {
+    addToCart(product, variant);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1400);
+  };
+
   return (
     <div className="flex flex-col group">
-      <Link to={`/product/${product.id}`} className="bg-clay-light p-4 md:p-6 aspect-square relative overflow-hidden flex items-center justify-center mb-4">
+      <Link
+        to={`/product/${product.id}`}
+        aria-label={`View ${product.name}`}
+        className="bg-clay-light p-4 md:p-6 aspect-square relative overflow-hidden flex items-center justify-center mb-4"
+      >
         <div className="absolute inset-3 md:inset-5 border border-foreground/5 z-10 pointer-events-none transition-all duration-500 group-hover:inset-2 group-hover:border-foreground/15" />
-        <img
+        <ProductImage
           src={imageSrc}
           alt={product.name}
-          className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
-          loading="lazy"
+          eager={eagerImage}
+          sizes="(max-width: 768px) 50vw, 25vw"
+          className="w-full h-full object-cover group-hover:scale-105 [transition:opacity_500ms,transform_1000ms]"
         />
         {product.badge && !allOos && (
           <div className="absolute top-0 right-0 bg-accent text-accent-foreground px-3 py-1.5 m-4 md:m-6 text-[10px] uppercase tracking-[0.2em] font-medium z-20 shadow-sm font-body">
@@ -50,7 +64,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <h3 className="font-display text-xl md:text-2xl mb-1">{product.name}</h3>
       </Link>
       <div className="flex items-center gap-1.5 mb-2">
-        <div className="flex">
+        <div className="flex" aria-label={`Rated ${avg.toFixed(1)} out of 5`}>
           {[...Array(5)].map((_, i) => (
             <Star key={i} size={11} className={i < Math.round(avg) ? "fill-accent text-accent" : "text-border"} />
           ))}
@@ -62,14 +76,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
       </p>
 
       {/* Size selector */}
-      <div className="flex gap-2 mb-3 flex-wrap">
+      <div className="flex gap-2 mb-3 flex-wrap" role="group" aria-label="Select size">
         {product.variants.map((v, i) => {
           const vOos = isOutOfStock(stock, v.id);
           return (
             <button
               key={v.id}
               onClick={() => setSelectedVariant(i)}
-              className={`text-[11px] px-3 py-1.5 border transition-colors duration-200 font-body tracking-wide ${
+              aria-pressed={i === selectedVariant}
+              className={`text-[11px] px-3 min-h-[38px] md:min-h-0 md:py-1.5 border transition-colors duration-200 font-body tracking-wide ${
                 i === selectedVariant
                   ? "bg-primary text-primary-foreground border-primary"
                   : "border-border hover:border-foreground/30"
@@ -86,15 +101,20 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <p className="text-[11px] font-body text-accent mb-2">Only {remaining} left</p>
       )}
 
-      <div className="flex justify-between items-center mt-auto pt-3 border-t border-border">
+      <div className="flex justify-between items-center gap-3 mt-auto pt-3 border-t border-border">
         <span className="tabular-nums font-medium text-lg font-body">₹{variant.price}</span>
         <button
-          onClick={() => addToCart(product, variant)}
+          onClick={handleAdd}
           disabled={oos}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-accent transition-colors duration-300 font-body disabled:bg-muted-foreground/40 disabled:cursor-not-allowed disabled:hover:bg-muted-foreground/40"
+          aria-label={`Add ${product.name} ${variant.size} to basket`}
+          className={`flex items-center justify-center gap-2 px-4 min-h-[44px] text-[11px] uppercase tracking-[0.15em] font-medium transition-all duration-300 font-body active:scale-95 disabled:bg-muted-foreground/40 disabled:cursor-not-allowed ${
+            justAdded
+              ? "bg-accent text-accent-foreground"
+              : "bg-primary text-primary-foreground hover:bg-accent"
+          }`}
         >
-          <ShoppingBag size={14} />
-          {oos ? "Sold Out" : "Add"}
+          {justAdded ? <Check size={14} /> : <ShoppingBag size={14} />}
+          {oos ? "Sold Out" : justAdded ? "Added" : "Add"}
         </button>
       </div>
     </div>
@@ -102,4 +122,3 @@ const ProductCard = ({ product }: ProductCardProps) => {
 };
 
 export default ProductCard;
-
