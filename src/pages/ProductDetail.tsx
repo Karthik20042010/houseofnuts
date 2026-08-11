@@ -115,20 +115,19 @@ const ProductDetail = () => {
             {/* Quantity & Add to Cart */}
             <div className="flex items-center gap-4">
               <div className="flex items-center border border-border">
-                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 py-3 hover:bg-clay-light transition-colors font-body">−</button>
-                <span className="px-4 py-3 tabular-nums font-body min-w-[3rem] text-center">{quantity}</span>
-                <button onClick={() => setQuantity(quantity + 1)} className="px-4 py-3 hover:bg-clay-light transition-colors font-body">+</button>
+                <button aria-label="Decrease quantity" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 min-h-[48px] hover:bg-clay-light transition-colors font-body">−</button>
+                <span className="px-4 min-h-[48px] flex items-center justify-center tabular-nums font-body min-w-[3rem] text-center">{quantity}</span>
+                <button aria-label="Increase quantity" onClick={() => setQuantity(quantity + 1)} className="px-4 min-h-[48px] hover:bg-clay-light transition-colors font-body">+</button>
               </div>
               <button
-                onClick={() => {
-                  for (let i = 0; i < quantity; i++) addToCart(product, variant);
-                }}
-                className="flex-1 flex items-center justify-center gap-3 bg-primary text-primary-foreground py-4 uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-300 font-body"
+                onClick={handleAdd}
+                className="flex-1 flex items-center justify-center gap-3 bg-primary text-primary-foreground min-h-[52px] uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-300 font-body active:scale-[0.98]"
               >
                 <ShoppingBag size={16} />
                 Add to Basket — ₹{variant.price * quantity}
               </button>
             </div>
+
 
             {/* Trust badges */}
             <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border">
