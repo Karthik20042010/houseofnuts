@@ -81,7 +81,10 @@ const ProductDetail = () => {
               <p className="text-accent uppercase tracking-[0.2em] text-xs font-medium font-body mb-2 capitalize">
                 {product.category.replace("-", " ")}
               </p>
-              <h1 className="font-display text-4xl md:text-5xl mb-3">{product.name}</h1>
+              <h1 className="font-display text-4xl md:text-5xl mb-1">{product.name}</h1>
+              {product.localName && (
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-body mb-3">{product.localName}</p>
+              )}
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
@@ -90,11 +93,22 @@ const ProductDetail = () => {
                 </div>
                 <span className="text-sm text-muted-foreground font-body">{avgRating.toFixed(1)} ({reviewCount} reviews)</span>
               </div>
+              <p className="text-sm text-emerald-700 dark:text-emerald-400 font-body mb-3">✓ 100% Natural · Freshly packed</p>
               <p className="text-muted-foreground font-body leading-relaxed text-lg">{product.description}</p>
             </div>
 
             {/* Price */}
-            <div className="font-display text-4xl">₹{variant.price}</div>
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <span className="font-display text-4xl">₹{variant.price}</span>
+              {variant.mrp && variant.mrp > variant.price && (
+                <>
+                  <span className="text-lg text-muted-foreground line-through font-body">₹{variant.mrp}</span>
+                  <span className="text-xs font-semibold font-body bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-xs uppercase tracking-wider">
+                    Save ₹{variant.mrp - variant.price} ({Math.round(((variant.mrp - variant.price) / variant.mrp) * 100)}% off)
+                  </span>
+                </>
+              )}
+            </div>
 
             {/* Variants */}
             <div>
@@ -115,6 +129,7 @@ const ProductDetail = () => {
                 ))}
               </div>
             </div>
+
 
             {/* Quantity & Add to Cart */}
             <div className="flex items-center gap-4">
