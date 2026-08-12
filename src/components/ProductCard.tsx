@@ -88,6 +88,12 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
         <h3 className="font-display text-lg md:text-xl mb-1 line-clamp-1">{product.name}</h3>
       </Link>
 
+      {product.localName && (
+        <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-body mb-1">
+          {product.localName}
+        </p>
+      )}
+
       <div className="flex items-center gap-1.5 mb-2">
         <div className="flex" aria-label={`Rated ${avg.toFixed(1)} out of 5`}>
           {[...Array(5)].map((_, i) => (
@@ -97,9 +103,14 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
         <span className="text-[11px] text-muted-foreground font-body">({count})</span>
       </div>
 
+      <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-body mb-1.5">
+        ✓ 100% Natural · Freshly packed
+      </p>
+
       <p className="text-xs text-muted-foreground font-light tracking-wide mb-3 line-clamp-1">
         {product.description}
       </p>
+
 
       {/* Size selector */}
       <div className="flex gap-1.5 mb-3 flex-wrap" role="group" aria-label="Select size">
