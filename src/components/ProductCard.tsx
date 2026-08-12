@@ -88,6 +88,12 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
         <h3 className="font-display text-lg md:text-xl mb-1 line-clamp-1">{product.name}</h3>
       </Link>
 
+      {product.localName && (
+        <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-body mb-1">
+          {product.localName}
+        </p>
+      )}
+
       <div className="flex items-center gap-1.5 mb-2">
         <div className="flex" aria-label={`Rated ${avg.toFixed(1)} out of 5`}>
           {[...Array(5)].map((_, i) => (
@@ -97,9 +103,14 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
         <span className="text-[11px] text-muted-foreground font-body">({count})</span>
       </div>
 
+      <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-body mb-1.5">
+        ✓ 100% Natural · Freshly packed
+      </p>
+
       <p className="text-xs text-muted-foreground font-light tracking-wide mb-3 line-clamp-1">
         {product.description}
       </p>
+
 
       {/* Size selector */}
       <div className="flex gap-1.5 mb-3 flex-wrap" role="group" aria-label="Select size">
@@ -129,10 +140,21 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
 
       {/* Price & Actions */}
       <div className="space-y-2 mt-auto pt-3 border-t border-border">
-        <div className="flex items-baseline justify-between">
-          <span className="tabular-nums font-bold text-lg font-display">₹{variant.price}</span>
-          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-body">Free Delivery</span>
+        <div className="flex items-baseline justify-between gap-2">
+          <div className="flex items-baseline gap-1.5 min-w-0">
+            <span className="tabular-nums font-bold text-lg font-display">₹{variant.price}</span>
+            {variant.mrp && variant.mrp > variant.price && (
+              <>
+                <span className="tabular-nums text-xs text-muted-foreground line-through font-body">₹{variant.mrp}</span>
+                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 font-body">
+                  {Math.round(((variant.mrp - variant.price) / variant.mrp) * 100)}% off
+                </span>
+              </>
+            )}
+          </div>
+          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-body shrink-0">Free Delivery</span>
         </div>
+
 
         <div className="grid grid-cols-2 gap-2">
           <button
