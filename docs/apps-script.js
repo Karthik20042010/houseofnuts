@@ -418,7 +418,9 @@ function placeOrder(order) {
       order.total || 0,
       order.status || "pending",
       order.paymentStatus || "pending",
+      JSON.stringify(order.items || []),
     ]);
+
 
     // Send confirmation email
     try {
