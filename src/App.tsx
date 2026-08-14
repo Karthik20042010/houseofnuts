@@ -28,6 +28,7 @@ const Journal = lazy(() => import("./pages/Journal.tsx"));
 const StoreInfo = lazy(() => import("./pages/StoreInfo.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
+const AdminOrders = lazy(() => import("./pages/AdminOrders.tsx"));
 const AdminOrderDetail = lazy(() => import("./pages/AdminOrderDetail.tsx"));
 const AdminInventory = lazy(() => import("./pages/AdminInventory.tsx"));
 const AdminImages = lazy(() => import("./pages/AdminImages.tsx"));
