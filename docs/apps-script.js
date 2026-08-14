@@ -366,10 +366,14 @@ function ensureOrdersSheet() {
   var sh = SpreadsheetApp.getActive().getSheetByName("Orders");
   if (!sh) {
     sh = SpreadsheetApp.getActive().insertSheet("Orders");
-    sh.appendRow(["timestamp", "orderId", "name", "phone", "email", "address", "notes", "items", "total", "status", "paymentStatus"]);
+    sh.appendRow(["timestamp", "orderId", "name", "phone", "email", "address", "notes", "items", "total", "status", "paymentStatus", "itemsJson"]);
+  } else if (sh.getLastColumn() < 12) {
+    // Backfill the itemized column on sheets created before it existed.
+    sh.getRange(1, 12).setValue("itemsJson");
   }
   return sh;
 }
+
 
 function placeOrder(order) {
   if (!order || !order.id) return { ok: false, error: "invalid order" };
