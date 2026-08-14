@@ -457,6 +457,10 @@ function readOrders() {
   for (var i = 1; i < values.length; i++) {
     var r = values[i];
     if (!r[1]) continue;
+    var items = [];
+    if (r[11]) {
+      try { items = JSON.parse(String(r[11])) || []; } catch (e) { items = []; }
+    }
     out.push({
       id: String(r[1]),
       timestamp: r[0] instanceof Date ? r[0].toISOString() : String(r[0] || ""),
@@ -466,10 +470,12 @@ function readOrders() {
       address: String(r[5] || ""),
       notes: String(r[6] || ""),
       itemsSummary: String(r[7] || ""),
+      items: items,
       total: Number(r[8]) || 0,
       status: String(r[9] || "pending"),
       paymentStatus: String(r[10] || "pending"),
     });
+
   }
   return out;
 }
