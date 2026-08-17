@@ -234,7 +234,7 @@ const Index = () => {
                     setSortBy(e.target.value as SortOption);
                     setCurrentPage(1);
                   }}
-                  className="text-[11px] uppercase tracking-[0.15em] px-3 py-2 border border-border bg-background hover:border-foreground/30 transition-colors font-body font-medium cursor-pointer focus:outline-none focus:border-foreground/40"
+                  className="text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 rounded-full border border-border bg-background hover:border-accent/60 transition-colors font-body font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring/40"
                 >
                   {sortOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -245,15 +245,15 @@ const Index = () => {
               </div>
 
               {/* Category filters */}
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-2 flex-wrap">
                 {categories.map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => handleCategoryChange(cat.id)}
-                    className={`text-[11px] uppercase tracking-[0.15em] px-4 py-2 border transition-colors duration-200 font-body font-medium ${
+                    className={`text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 rounded-full border transition-all duration-300 font-body font-medium ${
                       activeCategory === cat.id
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "border-border hover:border-foreground/30"
+                        ? "gradient-earth text-primary-foreground border-transparent shadow-soft"
+                        : "border-border bg-background hover:border-accent/60 hover:text-accent"
                     }`}
                   >
                     {cat.label}
@@ -261,6 +261,8 @@ const Index = () => {
                 ))}
               </div>
             </div>
+          </div>
+
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 transition-opacity duration-300">
