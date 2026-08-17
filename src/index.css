@@ -121,6 +121,59 @@
   }
 }
 
+@layer components {
+  .gradient-warm { background-image: var(--gradient-warm); }
+  .gradient-earth { background-image: var(--gradient-earth); }
+  .gradient-linen { background-image: var(--gradient-linen); }
+
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
+
+  .eyebrow {
+    @apply flex items-center gap-3 text-accent uppercase tracking-[0.22em] text-[11px] font-medium font-body;
+  }
+  .eyebrow::before {
+    content: "";
+    @apply h-px w-10 bg-accent;
+  }
+
+  .btn-warm {
+    @apply relative overflow-hidden text-accent-foreground rounded-full px-7 py-3.5 uppercase tracking-[0.15em] text-[11px] font-semibold font-body transition-all duration-300;
+    background-image: var(--gradient-warm);
+    box-shadow: var(--shadow-glow);
+  }
+  .btn-warm:hover { transform: translateY(-2px); filter: saturate(1.08); }
+
+  .btn-earth {
+    @apply text-primary-foreground rounded-full px-7 py-3.5 uppercase tracking-[0.15em] text-[11px] font-semibold font-body transition-all duration-300;
+    background-image: var(--gradient-earth);
+    box-shadow: var(--shadow-soft);
+  }
+  .btn-earth:hover { transform: translateY(-2px); }
+
+  .card-lift {
+    @apply transition-all duration-500;
+  }
+  .card-lift:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-card);
+  }
+
+  .shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: var(--gradient-sheen);
+    transform: translateX(-120%);
+    transition: transform 900ms ease;
+    pointer-events: none;
+  }
+  .group:hover .shine::after,
+  .shine:hover::after { transform: translateX(120%); }
+}
+
+
 @media print {
   body * { visibility: hidden; }
   .print-area, .print-area * { visibility: visible; }
