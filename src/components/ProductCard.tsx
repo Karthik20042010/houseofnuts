@@ -60,15 +60,16 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
 
         {/* Badge */}
         {product.badge && !allOos && (
-          <div className="absolute top-2 left-2 bg-accent text-accent-foreground px-2 py-1 text-[10px] uppercase tracking-wider font-medium z-20 shadow-xs font-body rounded-xs">
+          <div className="absolute top-2 left-2 gradient-warm text-accent-foreground px-2.5 py-1 text-[10px] uppercase tracking-wider font-semibold z-20 shadow-glow font-body rounded-full">
             {product.badge}
           </div>
         )}
         {allOos && (
-          <div className="absolute top-2 left-2 bg-foreground/85 text-background px-2 py-1 text-[10px] uppercase tracking-wider font-medium z-20 shadow-xs font-body rounded-xs">
+          <div className="absolute top-2 left-2 bg-foreground/85 text-background px-2.5 py-1 text-[10px] uppercase tracking-wider font-medium z-20 shadow-soft font-body rounded-full">
             Sold Out
           </div>
         )}
+
 
         {/* Wishlist Heart Toggle */}
         <button
@@ -122,10 +123,10 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
               key={v.id}
               onClick={() => setSelectedVariant(i)}
               aria-pressed={i === selectedVariant}
-              className={`text-[10px] px-2.5 py-1 border transition-colors duration-200 font-body tracking-wide rounded-xs ${
+              className={`text-[10px] px-3 py-1.5 border transition-all duration-200 font-body tracking-wide rounded-full ${
                 i === selectedVariant
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border hover:border-foreground/30"
+                  ? "gradient-earth text-primary-foreground border-transparent shadow-soft"
+                  : "border-border hover:border-accent/50 hover:text-accent"
               } ${vOos ? "line-through opacity-50" : ""}`}
               title={vOos ? "Out of stock" : undefined}
             >
@@ -133,6 +134,7 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
             </button>
           );
         })}
+
       </div>
 
       {low && !oos && remaining !== null && (
@@ -161,10 +163,10 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
           <button
             onClick={handleAdd}
             disabled={oos}
-            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-[10px] uppercase tracking-wider font-medium transition-all duration-300 font-body rounded-xs disabled:opacity-50 ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 text-[10px] uppercase tracking-wider font-semibold transition-all duration-300 font-body rounded-full disabled:opacity-50 ${
               justAdded
-                ? "bg-emerald-600 text-white"
-                : "bg-muted text-foreground hover:bg-muted/80 border border-border"
+                ? "bg-status-delivered text-status-delivered-foreground"
+                : "bg-secondary text-foreground hover:bg-accent/15 hover:text-accent border border-border"
             }`}
           >
             {justAdded ? <Check size={12} /> : <ShoppingBag size={12} />}
@@ -174,12 +176,13 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
           <button
             onClick={handleBuyNow}
             disabled={oos}
-            className="flex items-center justify-center gap-1.5 py-2 px-2 text-[10px] uppercase tracking-wider font-semibold bg-accent text-accent-foreground hover:bg-primary transition-colors font-body rounded-xs disabled:opacity-50"
+            className="btn-warm flex items-center justify-center gap-1.5 !px-2 !py-2.5 !text-[10px] disabled:opacity-50"
           >
             <Zap size={12} className="fill-accent-foreground" />
             Buy Now
           </button>
         </div>
+
       </div>
     </div>
   );
