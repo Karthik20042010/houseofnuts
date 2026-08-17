@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,13 +16,15 @@ const titleFor = (path: string) => {
 };
 
 const AdminLayout = () => {
-  const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
   const { isLoggedIn, role, switchRole } = useAuth();
 
-  useEffect(() => {
-    if (!isLoggedIn) navigate("/admin/login", { replace: true });
-  }, [isLoggedIn, navigate, pathname]);
+  // Gate the whole admin shell: nothing renders until a session exists.
+  if (!isLoggedIn) {
+    return <Navigate to="/admin/login" state={{ from: location }} replace />;
+  }
+
 
   return (
     <SidebarProvider>
