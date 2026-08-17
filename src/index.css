@@ -34,14 +34,25 @@
     --input: 18 15% 88%;
     --ring: 27 55% 52%;
 
-    --radius: 0.25rem;
+    --radius: 0.75rem;
 
     /* Custom tokens */
     --linen: 36 33% 96%;
     --earth: 18 28% 17%;
     --sun: 27 55% 52%;
+    --sun-glow: 34 78% 62%;
     --clay: 30 25% 85%;
     --clay-light: 30 25% 92%;
+
+    /* Gradients & shadows */
+    --gradient-warm: linear-gradient(135deg, hsl(var(--sun)), hsl(var(--sun-glow)));
+    --gradient-earth: linear-gradient(160deg, hsl(var(--earth)), hsl(18 30% 24%));
+    --gradient-linen: linear-gradient(180deg, hsl(var(--linen)), hsl(30 30% 92%));
+    --gradient-sheen: linear-gradient(105deg, transparent 35%, hsl(0 0% 100% / 0.35) 50%, transparent 65%);
+    --shadow-soft: 0 4px 16px -6px hsl(18 28% 17% / 0.16);
+    --shadow-card: 0 18px 40px -22px hsl(18 28% 17% / 0.35);
+    --shadow-glow: 0 12px 30px -10px hsl(var(--sun) / 0.45);
+
 
     /* Order/payment status tokens (HSL) */
     --status-pending: 38 92% 50%;
@@ -109,6 +120,59 @@
     font-family: var(--font-display);
   }
 }
+
+@layer components {
+  .gradient-warm { background-image: var(--gradient-warm); }
+  .gradient-earth { background-image: var(--gradient-earth); }
+  .gradient-linen { background-image: var(--gradient-linen); }
+
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
+
+  .eyebrow {
+    @apply flex items-center gap-3 text-accent uppercase tracking-[0.22em] text-[11px] font-medium font-body;
+  }
+  .eyebrow::before {
+    content: "";
+    @apply h-px w-10 bg-accent;
+  }
+
+  .btn-warm {
+    @apply relative overflow-hidden text-accent-foreground rounded-full px-7 py-3.5 uppercase tracking-[0.15em] text-[11px] font-semibold font-body transition-all duration-300;
+    background-image: var(--gradient-warm);
+    box-shadow: var(--shadow-glow);
+  }
+  .btn-warm:hover { transform: translateY(-2px); filter: saturate(1.08); }
+
+  .btn-earth {
+    @apply text-primary-foreground rounded-full px-7 py-3.5 uppercase tracking-[0.15em] text-[11px] font-semibold font-body transition-all duration-300;
+    background-image: var(--gradient-earth);
+    box-shadow: var(--shadow-soft);
+  }
+  .btn-earth:hover { transform: translateY(-2px); }
+
+  .card-lift {
+    @apply transition-all duration-500;
+  }
+  .card-lift:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-card);
+  }
+
+  .shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: var(--gradient-sheen);
+    transform: translateX(-120%);
+    transition: transform 900ms ease;
+    pointer-events: none;
+  }
+  .group:hover .shine::after,
+  .shine:hover::after { transform: translateX(120%); }
+}
+
 
 @media print {
   body * { visibility: hidden; }

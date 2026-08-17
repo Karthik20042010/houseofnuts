@@ -87,92 +87,94 @@ const Index = () => {
       <CartDrawer />
 
       {/* Hero */}
-      <section className="px-6 md:px-12 py-16 md:py-24 max-w-[1600px] mx-auto w-full grid md:grid-cols-12 gap-12 md:gap-8 items-center">
-        <div className="md:col-span-5 flex flex-col gap-8 order-2 md:order-1">
-          <div className="flex items-center gap-4">
-            <div className="h-[1px] w-12 bg-accent" />
-            <p className="text-accent uppercase tracking-[0.2em] text-xs font-medium font-body">
-              Premium Quality
+      <section className="relative overflow-hidden gradient-linen">
+        <div className="pointer-events-none absolute -top-24 -left-24 size-72 rounded-full bg-accent/20 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 size-80 rounded-full bg-accent/10 blur-3xl" />
+        <div className="relative px-6 md:px-12 py-16 md:py-24 max-w-[1600px] mx-auto w-full grid md:grid-cols-12 gap-12 md:gap-8 items-center">
+          <div className="md:col-span-5 flex flex-col gap-7 order-2 md:order-1 animate-fade-up">
+            <p className="eyebrow">Premium Quality</p>
+            <h1 className="font-display text-5xl md:text-7xl leading-[0.95] tracking-tight">
+              Earth's{" "}
+              <span className="bg-gradient-warm bg-clip-text text-transparent italic font-light">richest</span>{" "}
+              yield.
+            </h1>
+            <p className="text-lg leading-relaxed max-w-[42ch] text-muted-foreground font-light font-body">
+              Sun-cured pistachios, wild honey from deep forests, and spices
+              ground under heavy stone. We bring nature's finest directly to your
+              table.
             </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() =>
+                  document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })
+                }
+                className="btn-earth"
+              >
+                Explore Collection
+              </button>
+              <button onClick={() => setGameOpen(true)} className="btn-warm">
+                🎮 Play & Win 20% OFF
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2 font-body text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              <span>Free delivery</span>
+              <span>·</span>
+              <span>Fresh roasted</span>
+              <span>·</span>
+              <span>No preservatives</span>
+            </div>
           </div>
-          <h1 className="font-display text-5xl md:text-7xl leading-[0.95] tracking-tight">
-            Earth's{" "}
-            <span className="text-accent italic font-light">richest</span>{" "}
-            yield.
-          </h1>
-          <p className="text-lg leading-relaxed max-w-[42ch] text-muted-foreground font-light font-body">
-            Sun-cured pistachios, wild honey from deep forests, and spices
-            ground under heavy stone. We bring nature's finest directly to your
-            table.
-          </p>
-          <div className="pt-2 flex flex-wrap items-center gap-3">
-            <button
-              onClick={() =>
-                document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })
-              }
-              className="bg-primary text-primary-foreground px-8 py-4 uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-500 font-body"
-            >
-              Explore Collection
-            </button>
-            <button
-              onClick={() => setGameOpen(true)}
-              className="bg-accent text-accent-foreground px-6 py-4 uppercase tracking-[0.15em] text-xs font-semibold hover:bg-primary hover:text-primary-foreground transition-colors duration-300 font-body flex items-center gap-2"
-            >
-              🎮 Play & Win 20% OFF
-            </button>
-          </div>
-        </div>
-        <div className="md:col-span-7 bg-clay p-4 md:p-6 pb-10 md:pb-14 rounded-t-[100px] md:rounded-t-[140px] rounded-b-lg relative group order-1 md:order-2">
-          <img
-            src={heroImage}
-            alt="Premium dry fruits, nuts, spices and honey collection"
-            className="w-full h-[40vh] md:h-[65vh] object-cover rounded-t-[90px] md:rounded-t-[130px] rounded-b shadow-[0_24px_48px_-12px_rgba(59,38,29,0.25)] transition-transform duration-1000 group-hover:scale-[1.01] origin-bottom"
-            width={1440}
-            height={900}
-          />
-          <div className="absolute -bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 bg-background px-6 py-3 border border-border shadow-lg whitespace-nowrap z-10">
-            <span className="font-display italic text-muted-foreground mr-2">Fresh stock:</span>
-            <span className="font-medium tracking-wide font-body">Kashmiri Walnuts & Saffron</span>
+          <div className="md:col-span-7 relative group order-1 md:order-2 animate-fade-in">
+            <div className="bg-clay/70 backdrop-blur-sm p-4 md:p-6 pb-10 md:pb-14 rounded-t-[100px] md:rounded-t-[140px] rounded-b-3xl shadow-card">
+              <img
+                src={heroImage}
+                alt="Premium dry fruits, nuts, spices and honey collection"
+                className="w-full h-[40vh] md:h-[65vh] object-cover rounded-t-[90px] md:rounded-t-[130px] rounded-b-2xl shadow-card transition-transform duration-1000 group-hover:scale-[1.02] origin-bottom"
+                width={1440}
+                height={900}
+              />
+            </div>
+            <div className="absolute -bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur px-6 py-3 rounded-full border border-border shadow-soft whitespace-nowrap z-10">
+              <span className="font-display italic text-muted-foreground mr-2">Fresh stock:</span>
+              <span className="font-medium tracking-wide font-body">Kashmiri Walnuts & Saffron</span>
+            </div>
           </div>
         </div>
       </section>
 
+
       {/* Value Propositions / Brand Pillars */}
-      <section className="bg-primary text-primary-foreground py-12 px-6 md:px-12 border-t border-b border-primary-foreground/10">
-        <div className="max-w-[1600px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 font-body">
-          <div className="p-4 border-r border-primary-foreground/10 last:border-r-0">
-            <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1">100% Natural</h4>
-            <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">No oils, no additives, no shortcuts. Pure farm origin.</p>
-          </div>
-          <div className="p-4 border-r border-primary-foreground/10 last:border-r-0">
-            <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1">Small-Batch Roasted</h4>
-            <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">Roasted fresh to order so every nut snaps with crunch.</p>
-          </div>
-          <div className="p-4 border-r border-primary-foreground/10 last:border-r-0">
-            <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1">Responsibly Sourced</h4>
-            <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">Direct partner farms across Kashmir, Iran & California.</p>
-          </div>
-          <div className="p-4">
-            <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1">Zero Preservatives</h4>
-            <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">Vacuum-sealed at peak freshness to lock in flavor.</p>
-          </div>
+      <section className="gradient-earth text-primary-foreground py-14 px-6 md:px-12">
+        <div className="max-w-[1600px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 font-body">
+          {[
+            ["100% Natural", "No oils, no additives, no shortcuts. Pure farm origin."],
+            ["Small-Batch Roasted", "Roasted fresh to order so every nut snaps with crunch."],
+            ["Responsibly Sourced", "Direct partner farms across Kashmir, Iran & California."],
+            ["Zero Preservatives", "Vacuum-sealed at peak freshness to lock in flavor."],
+          ].map(([title, copy]) => (
+            <div
+              key={title}
+              className="rounded-2xl border border-primary-foreground/10 bg-primary-foreground/5 p-5 transition-colors hover:border-accent/50 hover:bg-primary-foreground/10"
+            >
+              <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1.5">{title}</h4>
+              <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">{copy}</p>
+            </div>
+          ))}
         </div>
       </section>
+
 
       {/* Recently Viewed */}
       <RecentlyViewed viewedIds={viewedIds} />
 
       {/* Shop by Category */}
-      <section className="px-6 md:px-12 py-16 md:py-20 border-t border-border">
+      <section className="px-6 md:px-12 py-16 md:py-20">
         <div className="max-w-[1600px] mx-auto">
-          <div className="flex items-center gap-4 mb-3">
-            <div className="h-[1px] w-12 bg-accent" />
-            <p className="text-accent uppercase tracking-[0.2em] text-xs font-medium font-body">Browse</p>
-          </div>
+          <p className="eyebrow mb-3">Browse</p>
           <div className="flex flex-col md:flex-row justify-between md:items-end mb-10 gap-4">
             <h2 className="font-display text-4xl md:text-5xl tracking-tight">Shop by Category</h2>
-            <Link to="/shop" className="text-[11px] uppercase tracking-[0.2em] font-body font-medium hover:text-accent transition-colors flex items-center gap-2">
-              View all products <ArrowRight size={14} />
+            <Link to="/shop" className="group text-[11px] uppercase tracking-[0.2em] font-body font-medium hover:text-accent transition-colors flex items-center gap-2">
+              View all products <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
@@ -184,17 +186,17 @@ const Index = () => {
                 <Link
                   key={c.id}
                   to={`/category/${c.id}`}
-                  className="group relative aspect-square bg-clay-light overflow-hidden flex flex-col justify-end p-4 md:p-6 border border-border hover:border-accent transition-colors"
+                  className="group relative aspect-square bg-clay-light overflow-hidden rounded-2xl flex flex-col justify-end p-4 md:p-6 border border-border/60 hover:border-accent/60 card-lift shadow-soft"
                 >
                   {categoryImage && (
                     <img
                       src={categoryImage}
                       alt={c.label}
-                      className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 group-hover:scale-105 transition-all duration-700"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-[900ms] group-hover:scale-110"
                       loading="lazy"
                     />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/50 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/85 via-primary/35 to-transparent transition-opacity duration-500 group-hover:from-primary/90" />
                   <div className="relative">
                     <h3 className="font-display text-2xl md:text-3xl text-primary-foreground leading-tight">{c.label}</h3>
                     <p className="text-[10px] uppercase tracking-[0.2em] font-body text-primary-foreground/80 mt-1">{count} item{count !== 1 ? "s" : ""}</p>
@@ -208,11 +210,14 @@ const Index = () => {
 
 
 
+
       {/* Products */}
-      <section id="products" className="bg-clay-light/50 px-6 md:px-12 py-20 border-t border-border">
+      <section id="products" className="gradient-linen px-6 md:px-12 py-20">
         <div className="max-w-[1600px] mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b border-border pb-8 gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b border-border/70 pb-8 gap-6">
             <div>
+              <p className="eyebrow mb-3">Shop</p>
+
               <h2 className="font-display text-4xl md:text-5xl tracking-tight">Our Collection</h2>
               <p className="text-sm text-muted-foreground font-body mt-2">
                 {filtered.length} product{filtered.length !== 1 ? "s" : ""}
@@ -229,7 +234,7 @@ const Index = () => {
                     setSortBy(e.target.value as SortOption);
                     setCurrentPage(1);
                   }}
-                  className="text-[11px] uppercase tracking-[0.15em] px-3 py-2 border border-border bg-background hover:border-foreground/30 transition-colors font-body font-medium cursor-pointer focus:outline-none focus:border-foreground/40"
+                  className="text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 rounded-full border border-border bg-background hover:border-accent/60 transition-colors font-body font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring/40"
                 >
                   {sortOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -240,15 +245,15 @@ const Index = () => {
               </div>
 
               {/* Category filters */}
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-2 flex-wrap">
                 {categories.map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => handleCategoryChange(cat.id)}
-                    className={`text-[11px] uppercase tracking-[0.15em] px-4 py-2 border transition-colors duration-200 font-body font-medium ${
+                    className={`text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 rounded-full border transition-all duration-300 font-body font-medium ${
                       activeCategory === cat.id
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "border-border hover:border-foreground/30"
+                        ? "gradient-earth text-primary-foreground border-transparent shadow-soft"
+                        : "border-border bg-background hover:border-accent/60 hover:text-accent"
                     }`}
                   >
                     {cat.label}
@@ -258,6 +263,8 @@ const Index = () => {
             </div>
           </div>
 
+
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 transition-opacity duration-300">
             {paginated.map((product) => (
               <ProductCard key={product.id} product={product} />
@@ -266,11 +273,11 @@ const Index = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-12 pt-8 border-t border-border">
+            <div className="flex items-center justify-center gap-2 mt-12 pt-8 border-t border-border/70">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="flex items-center gap-1.5 px-4 py-2.5 border border-border text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-foreground/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-border bg-background text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-accent/60 hover:text-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={14} />
                 Prev
@@ -280,10 +287,10 @@ const Index = () => {
                 <button
                   key={page}
                   onClick={() => handlePageChange(page)}
-                  className={`w-10 h-10 flex items-center justify-center text-sm font-body font-medium border transition-all duration-200 ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-body font-medium border transition-all duration-300 ${
                     page === currentPage
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border hover:border-foreground/30"
+                      ? "gradient-warm text-accent-foreground border-transparent shadow-glow"
+                      : "border-border bg-background hover:border-accent/60 hover:text-accent"
                   }`}
                 >
                   {page}
@@ -293,12 +300,13 @@ const Index = () => {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="flex items-center gap-1.5 px-4 py-2.5 border border-border text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-foreground/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-border bg-background text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-accent/60 hover:text-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 Next
                 <ChevronRight size={14} />
               </button>
             </div>
+
           )}
         </div>
       </section>
