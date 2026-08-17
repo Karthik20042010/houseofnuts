@@ -212,10 +212,12 @@ const Index = () => {
 
 
       {/* Products */}
-      <section id="products" className="bg-clay-light/50 px-6 md:px-12 py-20 border-t border-border">
+      <section id="products" className="gradient-linen px-6 md:px-12 py-20">
         <div className="max-w-[1600px] mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b border-border pb-8 gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b border-border/70 pb-8 gap-6">
             <div>
+              <p className="eyebrow mb-3">Shop</p>
+
               <h2 className="font-display text-4xl md:text-5xl tracking-tight">Our Collection</h2>
               <p className="text-sm text-muted-foreground font-body mt-2">
                 {filtered.length} product{filtered.length !== 1 ? "s" : ""}
