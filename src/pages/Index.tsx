@@ -273,11 +273,11 @@ const Index = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-12 pt-8 border-t border-border">
+            <div className="flex items-center justify-center gap-2 mt-12 pt-8 border-t border-border/70">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="flex items-center gap-1.5 px-4 py-2.5 border border-border text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-foreground/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-border bg-background text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-accent/60 hover:text-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={14} />
                 Prev
@@ -287,10 +287,10 @@ const Index = () => {
                 <button
                   key={page}
                   onClick={() => handlePageChange(page)}
-                  className={`w-10 h-10 flex items-center justify-center text-sm font-body font-medium border transition-all duration-200 ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-body font-medium border transition-all duration-300 ${
                     page === currentPage
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border hover:border-foreground/30"
+                      ? "gradient-warm text-accent-foreground border-transparent shadow-glow"
+                      : "border-border bg-background hover:border-accent/60 hover:text-accent"
                   }`}
                 >
                   {page}
@@ -300,12 +300,13 @@ const Index = () => {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="flex items-center gap-1.5 px-4 py-2.5 border border-border text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-foreground/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-border bg-background text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-accent/60 hover:text-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 Next
                 <ChevronRight size={14} />
               </button>
             </div>
+
           )}
         </div>
       </section>
