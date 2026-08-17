@@ -44,18 +44,19 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
   };
 
   return (
-    <div className="flex flex-col group relative bg-background border border-border/40 hover:border-border rounded-sm p-3 transition-all duration-300">
+    <div className="flex flex-col group relative bg-card border border-border/50 hover:border-accent/40 rounded-2xl p-3 card-lift shadow-soft">
       {/* Image container */}
-      <div className="bg-clay-light p-4 aspect-square relative overflow-hidden flex items-center justify-center mb-4 rounded-sm">
+      <div className="gradient-linen p-4 aspect-square relative overflow-hidden flex items-center justify-center mb-4 rounded-xl shine">
         <Link to={`/product/${product.id}`} className="w-full h-full">
           <ProductImage
             src={imageSrc}
             alt={product.name}
             eager={eagerImage}
             sizes="(max-width: 768px) 50vw, 25vw"
-            className="w-full h-full object-cover group-hover:scale-105 [transition:opacity_500ms,transform_1000ms]"
+            className="w-full h-full object-cover rounded-lg group-hover:scale-[1.07] [transition:opacity_500ms,transform_1000ms]"
           />
         </Link>
+
 
         {/* Badge */}
         {product.badge && !allOos && (
