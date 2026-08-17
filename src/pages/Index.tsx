@@ -87,55 +87,61 @@ const Index = () => {
       <CartDrawer />
 
       {/* Hero */}
-      <section className="px-6 md:px-12 py-16 md:py-24 max-w-[1600px] mx-auto w-full grid md:grid-cols-12 gap-12 md:gap-8 items-center">
-        <div className="md:col-span-5 flex flex-col gap-8 order-2 md:order-1">
-          <div className="flex items-center gap-4">
-            <div className="h-[1px] w-12 bg-accent" />
-            <p className="text-accent uppercase tracking-[0.2em] text-xs font-medium font-body">
-              Premium Quality
+      <section className="relative overflow-hidden gradient-linen">
+        <div className="pointer-events-none absolute -top-24 -left-24 size-72 rounded-full bg-accent/20 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 size-80 rounded-full bg-accent/10 blur-3xl" />
+        <div className="relative px-6 md:px-12 py-16 md:py-24 max-w-[1600px] mx-auto w-full grid md:grid-cols-12 gap-12 md:gap-8 items-center">
+          <div className="md:col-span-5 flex flex-col gap-7 order-2 md:order-1 animate-fade-up">
+            <p className="eyebrow">Premium Quality</p>
+            <h1 className="font-display text-5xl md:text-7xl leading-[0.95] tracking-tight">
+              Earth's{" "}
+              <span className="bg-gradient-warm bg-clip-text text-transparent italic font-light">richest</span>{" "}
+              yield.
+            </h1>
+            <p className="text-lg leading-relaxed max-w-[42ch] text-muted-foreground font-light font-body">
+              Sun-cured pistachios, wild honey from deep forests, and spices
+              ground under heavy stone. We bring nature's finest directly to your
+              table.
             </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() =>
+                  document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })
+                }
+                className="btn-earth"
+              >
+                Explore Collection
+              </button>
+              <button onClick={() => setGameOpen(true)} className="btn-warm">
+                🎮 Play & Win 20% OFF
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2 font-body text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              <span>Free delivery</span>
+              <span>·</span>
+              <span>Fresh roasted</span>
+              <span>·</span>
+              <span>No preservatives</span>
+            </div>
           </div>
-          <h1 className="font-display text-5xl md:text-7xl leading-[0.95] tracking-tight">
-            Earth's{" "}
-            <span className="text-accent italic font-light">richest</span>{" "}
-            yield.
-          </h1>
-          <p className="text-lg leading-relaxed max-w-[42ch] text-muted-foreground font-light font-body">
-            Sun-cured pistachios, wild honey from deep forests, and spices
-            ground under heavy stone. We bring nature's finest directly to your
-            table.
-          </p>
-          <div className="pt-2 flex flex-wrap items-center gap-3">
-            <button
-              onClick={() =>
-                document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })
-              }
-              className="bg-primary text-primary-foreground px-8 py-4 uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-500 font-body"
-            >
-              Explore Collection
-            </button>
-            <button
-              onClick={() => setGameOpen(true)}
-              className="bg-accent text-accent-foreground px-6 py-4 uppercase tracking-[0.15em] text-xs font-semibold hover:bg-primary hover:text-primary-foreground transition-colors duration-300 font-body flex items-center gap-2"
-            >
-              🎮 Play & Win 20% OFF
-            </button>
-          </div>
-        </div>
-        <div className="md:col-span-7 bg-clay p-4 md:p-6 pb-10 md:pb-14 rounded-t-[100px] md:rounded-t-[140px] rounded-b-lg relative group order-1 md:order-2">
-          <img
-            src={heroImage}
-            alt="Premium dry fruits, nuts, spices and honey collection"
-            className="w-full h-[40vh] md:h-[65vh] object-cover rounded-t-[90px] md:rounded-t-[130px] rounded-b shadow-[0_24px_48px_-12px_rgba(59,38,29,0.25)] transition-transform duration-1000 group-hover:scale-[1.01] origin-bottom"
-            width={1440}
-            height={900}
-          />
-          <div className="absolute -bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 bg-background px-6 py-3 border border-border shadow-lg whitespace-nowrap z-10">
-            <span className="font-display italic text-muted-foreground mr-2">Fresh stock:</span>
-            <span className="font-medium tracking-wide font-body">Kashmiri Walnuts & Saffron</span>
+          <div className="md:col-span-7 relative group order-1 md:order-2 animate-fade-in">
+            <div className="bg-clay/70 backdrop-blur-sm p-4 md:p-6 pb-10 md:pb-14 rounded-t-[100px] md:rounded-t-[140px] rounded-b-3xl shadow-card">
+              <img
+                src={heroImage}
+                alt="Premium dry fruits, nuts, spices and honey collection"
+                className="w-full h-[40vh] md:h-[65vh] object-cover rounded-t-[90px] md:rounded-t-[130px] rounded-b-2xl shadow-card transition-transform duration-1000 group-hover:scale-[1.02] origin-bottom"
+                width={1440}
+                height={900}
+              />
+            </div>
+            <div className="absolute -bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur px-6 py-3 rounded-full border border-border shadow-soft whitespace-nowrap z-10">
+              <span className="font-display italic text-muted-foreground mr-2">Fresh stock:</span>
+              <span className="font-medium tracking-wide font-body">Kashmiri Walnuts & Saffron</span>
+            </div>
           </div>
         </div>
       </section>
+
 
       {/* Value Propositions / Brand Pillars */}
       <section className="bg-primary text-primary-foreground py-12 px-6 md:px-12 border-t border-b border-primary-foreground/10">
