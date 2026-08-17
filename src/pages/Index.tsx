@@ -144,26 +144,25 @@ const Index = () => {
 
 
       {/* Value Propositions / Brand Pillars */}
-      <section className="bg-primary text-primary-foreground py-12 px-6 md:px-12 border-t border-b border-primary-foreground/10">
-        <div className="max-w-[1600px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 font-body">
-          <div className="p-4 border-r border-primary-foreground/10 last:border-r-0">
-            <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1">100% Natural</h4>
-            <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">No oils, no additives, no shortcuts. Pure farm origin.</p>
-          </div>
-          <div className="p-4 border-r border-primary-foreground/10 last:border-r-0">
-            <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1">Small-Batch Roasted</h4>
-            <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">Roasted fresh to order so every nut snaps with crunch.</p>
-          </div>
-          <div className="p-4 border-r border-primary-foreground/10 last:border-r-0">
-            <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1">Responsibly Sourced</h4>
-            <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">Direct partner farms across Kashmir, Iran & California.</p>
-          </div>
-          <div className="p-4">
-            <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1">Zero Preservatives</h4>
-            <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">Vacuum-sealed at peak freshness to lock in flavor.</p>
-          </div>
+      <section className="gradient-earth text-primary-foreground py-14 px-6 md:px-12">
+        <div className="max-w-[1600px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 font-body">
+          {[
+            ["100% Natural", "No oils, no additives, no shortcuts. Pure farm origin."],
+            ["Small-Batch Roasted", "Roasted fresh to order so every nut snaps with crunch."],
+            ["Responsibly Sourced", "Direct partner farms across Kashmir, Iran & California."],
+            ["Zero Preservatives", "Vacuum-sealed at peak freshness to lock in flavor."],
+          ].map(([title, copy]) => (
+            <div
+              key={title}
+              className="rounded-2xl border border-primary-foreground/10 bg-primary-foreground/5 p-5 transition-colors hover:border-accent/50 hover:bg-primary-foreground/10"
+            >
+              <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1.5">{title}</h4>
+              <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">{copy}</p>
+            </div>
+          ))}
         </div>
       </section>
+
 
       {/* Recently Viewed */}
       <RecentlyViewed viewedIds={viewedIds} />
