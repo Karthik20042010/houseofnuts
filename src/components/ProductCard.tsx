@@ -159,7 +159,7 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
         </div>
 
 
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <button
             onClick={handleAdd}
             disabled={oos}
