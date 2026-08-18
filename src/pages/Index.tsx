@@ -212,21 +212,21 @@ const Index = () => {
 
 
       {/* Products */}
-      <section id="products" className="gradient-linen px-6 md:px-12 py-20">
+      <section id="products" className="gradient-linen px-4 sm:px-6 md:px-12 py-14 md:py-20">
         <div className="max-w-[1600px] mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b border-border/70 pb-8 gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 md:mb-12 border-b border-border/70 pb-6 md:pb-8 gap-5 md:gap-6">
             <div>
               <p className="eyebrow mb-3">Shop</p>
 
-              <h2 className="font-display text-4xl md:text-5xl tracking-tight">Our Collection</h2>
+              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-tight">Our Collection</h2>
               <p className="text-sm text-muted-foreground font-body mt-2">
                 {filtered.length} product{filtered.length !== 1 ? "s" : ""}
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center w-full md:w-auto">
               {/* Sort */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <label className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground font-body font-medium whitespace-nowrap">Sort:</label>
                 <select
                   value={sortBy}
@@ -234,7 +234,7 @@ const Index = () => {
                     setSortBy(e.target.value as SortOption);
                     setCurrentPage(1);
                   }}
-                  className="text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 rounded-full border border-border bg-background hover:border-accent/60 transition-colors font-body font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring/40"
+                  className="flex-1 sm:flex-none text-[11px] uppercase tracking-[0.15em] px-4 min-h-[44px] rounded-full border border-border bg-background hover:border-accent/60 transition-colors font-body font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring/40"
                 >
                   {sortOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -245,12 +245,12 @@ const Index = () => {
               </div>
 
               {/* Category filters */}
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 overflow-x-auto sm:flex-wrap -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {categories.map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => handleCategoryChange(cat.id)}
-                    className={`text-[11px] uppercase tracking-[0.15em] px-4 py-2.5 rounded-full border transition-all duration-300 font-body font-medium ${
+                    className={`shrink-0 whitespace-nowrap text-[11px] uppercase tracking-[0.15em] px-4 min-h-[40px] rounded-full border transition-all duration-300 font-body font-medium ${
                       activeCategory === cat.id
                         ? "gradient-earth text-primary-foreground border-transparent shadow-soft"
                         : "border-border bg-background hover:border-accent/60 hover:text-accent"
@@ -265,7 +265,7 @@ const Index = () => {
 
 
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 transition-opacity duration-300">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 md:gap-8 transition-opacity duration-300">
             {paginated.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -273,41 +273,57 @@ const Index = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-12 pt-8 border-t border-border/70">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 mt-10 md:mt-12 pt-8 border-t border-border/70 flex-wrap">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-border bg-background text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-accent/60 hover:text-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Previous page"
+                className="flex items-center gap-1.5 px-3 sm:px-4 min-h-[44px] rounded-full border border-border bg-background text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-accent/60 hover:text-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={14} />
-                Prev
+                <span className="hidden sm:inline">Prev</span>
               </button>
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-body font-medium border transition-all duration-300 ${
-                    page === currentPage
-                      ? "gradient-warm text-accent-foreground border-transparent shadow-glow"
-                      : "border-border bg-background hover:border-accent/60 hover:text-accent"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(
+                  (page) =>
+                    totalPages <= 5 ||
+                    page === 1 ||
+                    page === totalPages ||
+                    Math.abs(page - currentPage) <= 1
+                )
+                .map((page, idx, arr) => (
+                  <span key={page} className="flex items-center gap-1.5 sm:gap-2">
+                    {idx > 0 && page - arr[idx - 1] > 1 && (
+                      <span className="text-muted-foreground font-body text-sm px-0.5">…</span>
+                    )}
+                    <button
+                      onClick={() => handlePageChange(page)}
+                      aria-current={page === currentPage ? "page" : undefined}
+                      className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-body font-medium border transition-all duration-300 ${
+                        page === currentPage
+                          ? "gradient-warm text-accent-foreground border-transparent shadow-glow"
+                          : "border-border bg-background hover:border-accent/60 hover:text-accent"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  </span>
+                ))}
 
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-border bg-background text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-accent/60 hover:text-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Next page"
+                className="flex items-center gap-1.5 px-3 sm:px-4 min-h-[44px] rounded-full border border-border bg-background text-[11px] uppercase tracking-[0.15em] font-body font-medium hover:border-accent/60 hover:text-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
-                Next
+                <span className="hidden sm:inline">Next</span>
                 <ChevronRight size={14} />
               </button>
             </div>
 
           )}
+
         </div>
       </section>
 

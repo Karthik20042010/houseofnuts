@@ -44,9 +44,9 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
   };
 
   return (
-    <div className="flex flex-col group relative bg-card border border-border/50 hover:border-accent/40 rounded-2xl p-3 card-lift shadow-soft">
+    <div className="flex flex-col group relative bg-card border border-border/50 hover:border-accent/40 rounded-2xl p-2.5 sm:p-3 card-lift shadow-soft">
       {/* Image container */}
-      <div className="gradient-linen p-4 aspect-square relative overflow-hidden flex items-center justify-center mb-4 rounded-xl shine">
+      <div className="gradient-linen p-2.5 sm:p-4 aspect-square relative overflow-hidden flex items-center justify-center mb-3 sm:mb-4 rounded-xl shine">
         <Link to={`/product/${product.id}`} className="w-full h-full">
           <ProductImage
             src={imageSrc}
@@ -87,7 +87,7 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
       </div>
 
       <Link to={`/product/${product.id}`} className="hover:text-accent transition-colors duration-300">
-        <h3 className="font-display text-lg md:text-xl mb-1 line-clamp-1">{product.name}</h3>
+        <h3 className="font-display text-base sm:text-lg md:text-xl mb-1 line-clamp-2 sm:line-clamp-1">{product.name}</h3>
       </Link>
 
       {product.localName && (
@@ -109,7 +109,7 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
         ✓ 100% Natural · Freshly packed
       </p>
 
-      <p className="text-xs text-muted-foreground font-light tracking-wide mb-3 line-clamp-1">
+      <p className="text-xs text-muted-foreground font-light tracking-wide mb-3 line-clamp-2 sm:line-clamp-1">
         {product.description}
       </p>
 
@@ -123,7 +123,7 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
               key={v.id}
               onClick={() => setSelectedVariant(i)}
               aria-pressed={i === selectedVariant}
-              className={`text-[10px] px-3 py-1.5 border transition-all duration-200 font-body tracking-wide rounded-full ${
+              className={`text-[10px] px-2.5 sm:px-3 py-2 sm:py-1.5 min-h-[32px] border transition-all duration-200 font-body tracking-wide rounded-full ${
                 i === selectedVariant
                   ? "gradient-earth text-primary-foreground border-transparent shadow-soft"
                   : "border-border hover:border-accent/50 hover:text-accent"
@@ -143,27 +143,28 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
 
       {/* Price & Actions */}
       <div className="space-y-2 mt-auto pt-3 border-t border-border">
-        <div className="flex items-baseline justify-between gap-2">
-          <div className="flex items-baseline gap-1.5 min-w-0">
-            <span className="tabular-nums font-bold text-lg font-display">₹{variant.price}</span>
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 sm:gap-2">
+          <div className="flex items-baseline gap-1.5 flex-wrap min-w-0">
+            <span className="tabular-nums font-bold text-base sm:text-lg font-display">₹{variant.price}</span>
             {variant.mrp && variant.mrp > variant.price && (
               <>
                 <span className="tabular-nums text-xs text-muted-foreground line-through font-body">₹{variant.mrp}</span>
-                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 font-body">
+                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 font-body whitespace-nowrap">
                   {Math.round(((variant.mrp - variant.price) / variant.mrp) * 100)}% off
                 </span>
               </>
             )}
           </div>
-          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-body shrink-0">Free Delivery</span>
+          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-body shrink-0 whitespace-nowrap">Free Delivery</span>
         </div>
+
 
 
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={handleAdd}
             disabled={oos}
-            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 text-[10px] uppercase tracking-wider font-semibold transition-all duration-300 font-body rounded-full disabled:opacity-50 ${
+            className={`flex items-center justify-center gap-1.5 min-h-[40px] px-2 text-[10px] uppercase tracking-wider font-semibold transition-all duration-300 font-body rounded-full disabled:opacity-50 ${
               justAdded
                 ? "bg-status-delivered text-status-delivered-foreground"
                 : "bg-secondary text-foreground hover:bg-accent/15 hover:text-accent border border-border"
@@ -176,7 +177,7 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
           <button
             onClick={handleBuyNow}
             disabled={oos}
-            className="btn-warm flex items-center justify-center gap-1.5 !px-2 !py-2.5 !text-[10px] disabled:opacity-50"
+            className="btn-warm flex items-center justify-center gap-1.5 !px-2 !min-h-[40px] !text-[10px] disabled:opacity-50"
           >
             <Zap size={12} className="fill-accent-foreground" />
             Buy Now
