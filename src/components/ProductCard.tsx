@@ -143,20 +143,21 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
 
       {/* Price & Actions */}
       <div className="space-y-2 mt-auto pt-3 border-t border-border">
-        <div className="flex items-baseline justify-between gap-2">
-          <div className="flex items-baseline gap-1.5 min-w-0">
-            <span className="tabular-nums font-bold text-lg font-display">₹{variant.price}</span>
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 sm:gap-2">
+          <div className="flex items-baseline gap-1.5 flex-wrap min-w-0">
+            <span className="tabular-nums font-bold text-base sm:text-lg font-display">₹{variant.price}</span>
             {variant.mrp && variant.mrp > variant.price && (
               <>
                 <span className="tabular-nums text-xs text-muted-foreground line-through font-body">₹{variant.mrp}</span>
-                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 font-body">
+                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 font-body whitespace-nowrap">
                   {Math.round(((variant.mrp - variant.price) / variant.mrp) * 100)}% off
                 </span>
               </>
             )}
           </div>
-          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-body shrink-0">Free Delivery</span>
+          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-body shrink-0 whitespace-nowrap">Free Delivery</span>
         </div>
+
 
 
         <div className="grid grid-cols-2 gap-2">
