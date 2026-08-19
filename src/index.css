@@ -181,3 +181,9 @@
   .no-print { display: none !important; }
 }
 
+
+/* Defer offscreen rendering work for long homepage sections (mobile scroll perf) */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 600px;
+}

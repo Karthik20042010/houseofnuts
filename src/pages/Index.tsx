@@ -132,6 +132,10 @@ const Index = () => {
                 className="w-full h-[40vh] md:h-[65vh] object-cover rounded-t-[90px] md:rounded-t-[130px] rounded-b-2xl shadow-card transition-transform duration-1000 group-hover:scale-[1.02] origin-bottom"
                 width={1440}
                 height={900}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                sizes="(max-width: 768px) 100vw, 58vw"
               />
             </div>
             <div className="absolute -bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur px-6 py-3 rounded-full border border-border shadow-soft whitespace-nowrap z-10">
@@ -194,6 +198,10 @@ const Index = () => {
                       alt={c.label}
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-[900ms] group-hover:scale-110"
                       loading="lazy"
+                      decoding="async"
+                      width={600}
+                      height={600}
+                      sizes="(max-width: 768px) 50vw, 20vw"
                     />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/85 via-primary/35 to-transparent transition-opacity duration-500 group-hover:from-primary/90" />
@@ -266,8 +274,8 @@ const Index = () => {
 
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 md:gap-8 transition-opacity duration-300">
-            {paginated.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {paginated.map((product, i) => (
+              <ProductCard key={product.id} product={product} eagerImage={i < 2} />
             ))}
           </div>
 
@@ -328,7 +336,7 @@ const Index = () => {
       </section>
 
       {/* Freshness story */}
-      <section className="bg-primary px-6 py-16 text-primary-foreground md:px-12 md:py-24">
+      <section className="cv-auto bg-primary px-6 py-16 text-primary-foreground md:px-12 md:py-24">
         <div className="mx-auto grid max-w-[1600px] gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16">
           <div className="overflow-hidden rounded-sm">
             <img
@@ -356,7 +364,7 @@ const Index = () => {
       </section>
 
       {/* Grand Opening */}
-      <section id="grand-opening" className="relative px-6 md:px-12 py-20 bg-clay-light border-t border-border overflow-hidden">
+      <section id="grand-opening" className="cv-auto relative px-6 md:px-12 py-20 bg-clay-light border-t border-border overflow-hidden">
         <div className="max-w-[1600px] mx-auto grid md:grid-cols-2 gap-12 md:gap-16 items-center">
           <div className="order-2 md:order-1">
             <div className="flex items-center gap-4 mb-6">
@@ -405,6 +413,9 @@ const Index = () => {
                 alt="House of Nuts Grand Opening — 17 December 2025 at KK Street, Gandhi Road, Proddatur"
                 className="w-full h-full object-cover"
                 loading="lazy"
+                decoding="async"
+                width={900}
+                height={1200}
               />
             </div>
           </div>
@@ -418,6 +429,9 @@ const Index = () => {
           alt="Festive assortment of premium nuts and dry fruits"
           className="absolute inset-0 w-full h-full object-cover"
           loading="lazy"
+          decoding="async"
+          width={1600}
+          height={900}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/70 via-primary/40 to-transparent" />
         <div className="relative h-full flex items-center px-6 md:px-16 max-w-[1600px] mx-auto">
