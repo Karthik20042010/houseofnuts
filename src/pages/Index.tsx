@@ -336,7 +336,7 @@ const Index = () => {
       </section>
 
       {/* Freshness story */}
-      <section className="bg-primary px-6 py-16 text-primary-foreground md:px-12 md:py-24">
+      <section className="cv-auto bg-primary px-6 py-16 text-primary-foreground md:px-12 md:py-24">
         <div className="mx-auto grid max-w-[1600px] gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16">
           <div className="overflow-hidden rounded-sm">
             <img
@@ -364,7 +364,7 @@ const Index = () => {
       </section>
 
       {/* Grand Opening */}
-      <section id="grand-opening" className="relative px-6 md:px-12 py-20 bg-clay-light border-t border-border overflow-hidden">
+      <section id="grand-opening" className="cv-auto relative px-6 md:px-12 py-20 bg-clay-light border-t border-border overflow-hidden">
         <div className="max-w-[1600px] mx-auto grid md:grid-cols-2 gap-12 md:gap-16 items-center">
           <div className="order-2 md:order-1">
             <div className="flex items-center gap-4 mb-6">
