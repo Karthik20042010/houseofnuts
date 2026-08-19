@@ -413,6 +413,9 @@ const Index = () => {
                 alt="House of Nuts Grand Opening — 17 December 2025 at KK Street, Gandhi Road, Proddatur"
                 className="w-full h-full object-cover"
                 loading="lazy"
+                decoding="async"
+                width={900}
+                height={1200}
               />
             </div>
           </div>
@@ -426,6 +429,9 @@ const Index = () => {
           alt="Festive assortment of premium nuts and dry fruits"
           className="absolute inset-0 w-full h-full object-cover"
           loading="lazy"
+          decoding="async"
+          width={1600}
+          height={900}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/70 via-primary/40 to-transparent" />
         <div className="relative h-full flex items-center px-6 md:px-16 max-w-[1600px] mx-auto">
