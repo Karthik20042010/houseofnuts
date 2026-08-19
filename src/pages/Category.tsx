@@ -46,6 +46,7 @@ const Category = () => {
   const [bands, setBands] = useState<string[]>([]);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const gridReady = useGridReady(`${slug ?? ""}-${currentPage}-${sortBy}`);
 
   useEffect(() => {
     setCurrentPage(1);
