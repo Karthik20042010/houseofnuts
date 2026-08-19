@@ -257,7 +257,9 @@ const Category = () => {
             </div>
           ) : (
             <div key={`${effectiveSlug}-${page}-${sortBy}`} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 animate-in fade-in duration-300">
-              {paginated.map((p, i) => <ProductCard key={p.id} product={p} eagerImage={i < 4} />)}
+              {!gridReady
+                ? <ProductCardSkeletonGrid count={Math.min(paginated.length || 8, 8)} />
+                : paginated.map((p, i) => <ProductCard key={p.id} product={p} eagerImage={i < 4} />)}
             </div>
           )}
 
