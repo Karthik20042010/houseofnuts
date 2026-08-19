@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
+import { ProductCardSkeletonGrid } from "@/components/ProductCardSkeleton";
+import { useGridReady } from "@/hooks/useGridReady";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import { products, categories } from "@/data/products";
 import { Phone, MessageCircle, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
