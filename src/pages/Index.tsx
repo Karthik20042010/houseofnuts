@@ -41,6 +41,7 @@ const Index = () => {
   const [sortBy, setSortBy] = useState<SortOption>("default");
   const [gameOpen, setGameOpen] = useState(false);
   const { viewedIds } = useRecentlyViewed();
+  const gridReady = useGridReady(`${activeCategory}-${currentPage}-${sortBy}`);
 
   const filtered = useMemo(() => {
     const base =
