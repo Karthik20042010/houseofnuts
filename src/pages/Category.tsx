@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight, ChevronRight as Crumb, SlidersHorizontal, X 
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
+import { ProductCardSkeletonGrid } from "@/components/ProductCardSkeleton";
+import { useGridReady } from "@/hooks/useGridReady";
 import PromoBanner from "@/components/PromoBanner";
 import { categories, products, Product } from "@/data/products";
 import { useInventory } from "@/contexts/InventoryContext";
@@ -44,6 +46,7 @@ const Category = () => {
   const [bands, setBands] = useState<string[]>([]);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const gridReady = useGridReady(`${slug ?? ""}-${currentPage}-${sortBy}`);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -255,7 +258,9 @@ const Category = () => {
             </div>
           ) : (
             <div key={`${effectiveSlug}-${page}-${sortBy}`} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 animate-in fade-in duration-300">
-              {paginated.map((p, i) => <ProductCard key={p.id} product={p} eagerImage={i < 4} />)}
+              {!gridReady
+                ? <ProductCardSkeletonGrid count={Math.min(paginated.length || 8, 8)} />
+                : paginated.map((p, i) => <ProductCard key={p.id} product={p} eagerImage={i < 4} />)}
             </div>
           )}
 
