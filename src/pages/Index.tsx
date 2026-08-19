@@ -132,6 +132,10 @@ const Index = () => {
                 className="w-full h-[40vh] md:h-[65vh] object-cover rounded-t-[90px] md:rounded-t-[130px] rounded-b-2xl shadow-card transition-transform duration-1000 group-hover:scale-[1.02] origin-bottom"
                 width={1440}
                 height={900}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                sizes="(max-width: 768px) 100vw, 58vw"
               />
             </div>
             <div className="absolute -bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur px-6 py-3 rounded-full border border-border shadow-soft whitespace-nowrap z-10">
@@ -194,6 +198,10 @@ const Index = () => {
                       alt={c.label}
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-[900ms] group-hover:scale-110"
                       loading="lazy"
+                      decoding="async"
+                      width={600}
+                      height={600}
+                      sizes="(max-width: 768px) 50vw, 20vw"
                     />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/85 via-primary/35 to-transparent transition-opacity duration-500 group-hover:from-primary/90" />
@@ -266,8 +274,8 @@ const Index = () => {
 
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 md:gap-8 transition-opacity duration-300">
-            {paginated.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {paginated.map((product, i) => (
+              <ProductCard key={product.id} product={product} eagerImage={i < 2} />
             ))}
           </div>
 
