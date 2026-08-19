@@ -274,9 +274,13 @@ const Index = () => {
 
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 md:gap-8 transition-opacity duration-300">
-            {paginated.map((product, i) => (
-              <ProductCard key={product.id} product={product} eagerImage={i < 2} />
-            ))}
+            {!gridReady ? (
+              <ProductCardSkeletonGrid count={Math.min(paginated.length || 8, 8)} />
+            ) : (
+              paginated.map((product, i) => (
+                <ProductCard key={product.id} product={product} eagerImage={i < 2} />
+              ))
+            )}
           </div>
 
           {/* Pagination */}
