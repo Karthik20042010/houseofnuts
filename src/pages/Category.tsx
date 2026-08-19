@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight, ChevronRight as Crumb, SlidersHorizontal, X 
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
+import { ProductCardSkeletonGrid } from "@/components/ProductCardSkeleton";
+import { useGridReady } from "@/hooks/useGridReady";
 import PromoBanner from "@/components/PromoBanner";
 import { categories, products, Product } from "@/data/products";
 import { useInventory } from "@/contexts/InventoryContext";
