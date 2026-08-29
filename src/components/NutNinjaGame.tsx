@@ -3,6 +3,8 @@ import { Sparkles, Trophy, X, RotateCcw, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 
+const NUT_EMOJIS = ["🥜", "🌰", "🍯", "🍫", "✨"];
+
 export const NutNinjaGame: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   const { applyDiscount } = useCart();
   const [score, setScore] = useState(0);
@@ -11,8 +13,6 @@ export const NutNinjaGame: React.FC<{ isOpen: boolean; onClose: () => void }> = 
   const [gameEnded, setGameEnded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [nuts, setNuts] = useState<Array<{ id: number; top: number; left: number; emoji: string }>>([]);
-
-  const NUT_EMOJIS = ["🥜", "🌰", "🍯", "🍫", "✨"];
 
   useEffect(() => {
     let timer: NodeJS.Timeout;

@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Store, LogOut, Nut, Image as ImageIcon, Terminal, ShieldCheck, ReceiptText, LucideIcon } from "lucide-react";
+import { LayoutDashboard, Package, Store, LogOut, Nut, Image as ImageIcon, Terminal, ShieldCheck, ReceiptText, BarChart3, LucideIcon } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +27,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, end: true, allowedRoles: ["admin", "developer", "staff"] },
+  { title: "Analytics & Logs", url: "/admin/analytics", icon: BarChart3, end: true, allowedRoles: ["admin", "developer", "staff"] },
   { title: "Orders", url: "/admin/orders", icon: ReceiptText, end: true, allowedRoles: ["admin", "developer", "staff"] },
   { title: "Inventory", url: "/admin/inventory", icon: Package, end: false, allowedRoles: ["admin", "developer", "staff"] },
   { title: "Images", url: "/admin/images", icon: ImageIcon, end: false, allowedRoles: ["admin", "developer"] },

@@ -11,6 +11,7 @@ import { WishlistProvider } from "@/contexts/WishlistContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
+import AnalyticsTracker from "./components/AnalyticsTracker.tsx";
 import MobileTabBar from "./components/MobileTabBar.tsx";
 import WhatsAppButton from "./components/WhatsAppButton.tsx";
 import Chatbot from "./components/Chatbot.tsx";
@@ -28,6 +29,7 @@ const Journal = lazy(() => import("./pages/Journal.tsx"));
 const StoreInfo = lazy(() => import("./pages/StoreInfo.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
+const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics.tsx"));
 const AdminOrders = lazy(() => import("./pages/AdminOrders.tsx"));
 const AdminOrderDetail = lazy(() => import("./pages/AdminOrderDetail.tsx"));
 const AdminInventory = lazy(() => import("./pages/AdminInventory.tsx"));
@@ -57,6 +59,7 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <ScrollToTop />
+                <AnalyticsTracker />
                 <div className="pb-14 md:pb-0">
                   <Suspense fallback={<RouteFallback />}>
                     <Routes>
@@ -90,6 +93,14 @@ const App = () => (
                           element={
                             <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
                               <AdminDashboard />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin/analytics"
+                          element={
+                            <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
+                              <AdminAnalytics />
                             </ProtectedRoute>
                           }
                         />

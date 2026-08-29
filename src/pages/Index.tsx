@@ -8,7 +8,7 @@ import { useGridReady } from "@/hooks/useGridReady";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import WholesaleForm from "@/components/WholesaleForm";
 import { products, categories } from "@/data/products";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, Phone, MessageCircle } from "lucide-react";
 const heroImage = "/images/branding/cinematic-store-banner.jpg";
 const festiveImage = "https://images.unsplash.com/photo-1548907040-4baa42d10919?w=1440&h=800&fit=crop";
 const grandOpeningImage = "/images/branding/grand-opening-banner.jpg";
@@ -137,7 +137,7 @@ const Index = () => {
                 width={1440}
                 height={900}
                 loading="eager"
-                fetchPriority="high"
+                fetchpriority="high"
                 decoding="async"
                 sizes="(max-width: 768px) 100vw, 58vw"
               />

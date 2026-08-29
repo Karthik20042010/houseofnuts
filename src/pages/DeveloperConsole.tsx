@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { Terminal, Activity, Database, CheckCircle2, XCircle, RefreshCw, Cpu, Code2, Server } from "lucide-react";
+import { Terminal, Activity, Database, CheckCircle2, XCircle, RefreshCw, Cpu, Code2, Server, FileSpreadsheet, ExternalLink } from "lucide-react";
 import { fetchInventory } from "@/lib/inventory";
 import { adminFetchOrders } from "@/lib/admin";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +11,8 @@ export const DeveloperConsole: React.FC = () => {
   const [logs, setLogs] = useState<string[]>([]);
   const [inventoryJson, setInventoryJson] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"health" | "logs" | "payload">("health");
+
+  const oneDriveExcelUrl = import.meta.env.VITE_ONEDRIVE_EXCEL_URL as string || "https://1drv.ms/x/c/4ce278ef9bf5ebd6/IQCN8-hhvvf5TYKdAOg6ULN1AR8N2otsJ772B2GiAgQqpUg?e=8k7QJN";
 
   const addLog = (msg: string) => {
     setLogs((prev) => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
@@ -78,6 +79,21 @@ export const DeveloperConsole: React.FC = () => {
             </p>
           </div>
           <Badge variant="outline">Web App v1.0</Badge>
+        </div>
+
+        <div className="bg-card border border-border p-4 rounded-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-mono">OneDrive Excel DB</p>
+            <a
+              href={oneDriveExcelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-accent hover:underline flex items-center gap-1 mt-1 font-medium font-body"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5" /> Open Excel <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+          <Badge variant="secondary" className="text-[10px]">OneDrive</Badge>
         </div>
 
         <div className="bg-card border border-border p-4 rounded-sm flex items-center justify-between">

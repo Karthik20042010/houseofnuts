@@ -5,6 +5,8 @@ import CartDrawer from "@/components/CartDrawer";
 import { getOrders, type Order } from "@/lib/orders";
 import { Package, ChevronRight, ShoppingBag } from "lucide-react";
 
+import { useAuth } from "@/contexts/AuthContext";
+
 const statusColors: Record<Order["status"], string> = {
   pending: "bg-yellow-100 text-yellow-800",
   confirmed: "bg-blue-100 text-blue-800",
@@ -17,21 +19,38 @@ const OrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<"all" | Order["status"]>("all");
   const navigate = useNavigate();
+  const { googleUser } = useAuth();
 
   useEffect(() => {
-    setOrders(getOrders());
-  }, []);
+    const all = getOrders();
+    if (googleUser?.email) {
+      const userOrders = all.filter((o) => o.email?.toLowerCase() === googleUser.email.toLowerCase());
+      setOrders(userOrders.length > 0 ? userOrders : all);
+    } else {
+      setOrders(all);
+    }
+  }, [googleUser]);
 
   const filtered = filter === "all" ? orders : orders.filter((o) => o.status === filter);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen font-body">
       <Header />
       <CartDrawer />
 
       <div className="max-w-4xl mx-auto px-6 py-12">
-        <h1 className="font-display text-4xl mb-2">My Orders</h1>
-        <p className="text-muted-foreground font-body mb-8">Track and manage your orders</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="font-display text-4xl mb-1">My Orders</h1>
+            <p className="text-muted-foreground font-body">Track and manage your purchase history</p>
+          </div>
+          {googleUser && (
+            <div className="flex items-center gap-2 bg-clay-light px-3 py-1.5 rounded-full border border-border text-xs">
+              <img src={googleUser.picture} alt={googleUser.name} className="size-5 rounded-full" />
+              <span className="font-medium text-foreground">{googleUser.email}</span>
+            </div>
+          )}
+        </div>
 
         {/* Filters */}
         <div className="flex gap-2 flex-wrap mb-8">

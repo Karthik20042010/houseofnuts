@@ -6,6 +6,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  BarChart3,
   Download,
   Loader2,
   MessageCircle,
@@ -52,7 +53,6 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filtered = useMemo(() => {
@@ -234,6 +234,12 @@ const AdminDashboard = () => {
             className="flex items-center gap-2 border border-border bg-background px-3 py-2 text-xs uppercase tracking-wider font-body hover:bg-clay-light rounded-sm"
           >
             <Download size={12} /> Export CSV
+          </button>
+          <button
+            onClick={() => navigate("/admin/analytics")}
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-3 py-2 text-xs uppercase tracking-wider font-body hover:bg-primary/90 rounded-sm"
+          >
+            <BarChart3 size={12} /> Analytics & Logs
           </button>
         </div>
         {lastSync && (

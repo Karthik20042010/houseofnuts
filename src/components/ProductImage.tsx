@@ -43,7 +43,7 @@ const ProductImage = ({
           width={600}
           height={600}
           loading={eager ? "eager" : "lazy"}
-          fetchPriority={eager ? "high" : "low"}
+          fetchpriority={eager ? "high" : "low"}
           decoding="async"
           onLoad={() => setLoaded(true)}
           onError={() => setFailed(true)}

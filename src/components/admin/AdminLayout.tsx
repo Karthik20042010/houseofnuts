@@ -7,7 +7,9 @@ import { ROLE_BADGES, ROLE_LABELS, UserRole } from "@/types/auth";
 import { ShieldCheck, UserCheck } from "lucide-react";
 
 const titleFor = (path: string) => {
-  if (path.startsWith("/admin/inventory")) return "Inventory";
+  if (path === "/admin") return "Admin Dashboard";
+  if (path.startsWith("/admin/analytics")) return "Analytics, Metrics & Logs";
+  if (path.startsWith("/admin/inventory")) return "Inventory Management";
   if (path.startsWith("/admin/images")) return "Product Images";
   if (path.startsWith("/admin/developer")) return "Developer Console";
   if (path.startsWith("/admin/roles")) return "Role & Permission Management";
