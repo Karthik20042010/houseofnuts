@@ -63,6 +63,8 @@ function doPost(e) {
     if (action === "getProducts")        return json({ ok: true, products: readProducts() });
     if (action === "getPrices")          return json({ ok: true, prices: readPricesMap() });
     if (action === "registerGoogleUser") return json(registerGoogleUser(body));
+    if (action === "submitMessage")      return json(addMessage(body));
+    if (action === "wholesaleEnquiry")   return json(addMessage({ type: "wholesale", name: body.name, phone: body.phone, email: body.email, subject: (body.business || "") + " · " + (body.city || ""), message: (body.interest || "") + " / " + (body.quantity || "") + " — " + (body.message || "") }));
 
     // Protected actions requiring Admin / Staff / Developer Auth
     if (action === "getOrders")          { requireAuth(body.password); return json({ ok: true, orders: readOrders() }); }
@@ -73,6 +75,9 @@ function doPost(e) {
     if (action === "getUsers")           { requireAuth(body.password); return json({ ok: true, users: readUsers() }); }
     if (action === "updateUserRole")     { requireAuth(body.password); return json(updateUserRole(body.userId, body.role)); }
     if (action === "uploadImage")        { requireAuth(body.password); return json(uploadImage(body)); }
+    if (action === "getMessages")        { requireAuth(body.password); return json({ ok: true, messages: readMessages() }); }
+    if (action === "updateMessage")      { requireAuth(body.password); return json(updateMessage(body)); }
+
 
     return json({ ok: false, error: "unknown action: " + action });
   } catch (err) {
