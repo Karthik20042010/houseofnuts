@@ -27,7 +27,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, end: true, allowedRoles: ["admin", "developer", "staff"] },
-  { title: "Analytics & Logs", url: "/admin/analytics", icon: BarChart3, end: true, allowedRoles: ["admin", "developer", "staff"] },
+  { title: "Analytics & Logs", url: "/admin/analytics", icon: BarChart3, end: true, allowedRoles: ["admin", "developer"] },
   { title: "Orders", url: "/admin/orders", icon: ReceiptText, end: true, allowedRoles: ["admin", "developer", "staff"] },
   { title: "Inventory", url: "/admin/inventory", icon: Package, end: false, allowedRoles: ["admin", "developer", "staff"] },
   { title: "Images", url: "/admin/images", icon: ImageIcon, end: false, allowedRoles: ["admin", "developer"] },

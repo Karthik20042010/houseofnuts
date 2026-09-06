@@ -137,7 +137,7 @@ const Index = () => {
                 width={1440}
                 height={900}
                 loading="eager"
-                fetchpriority="high"
+                fetchPriority="high"
                 decoding="async"
                 sizes="(max-width: 768px) 100vw, 58vw"
               />
