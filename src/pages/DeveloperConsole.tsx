@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { Terminal, Activity, Database, CheckCircle2, XCircle, RefreshCw, Cpu, Code2, Server, FileSpreadsheet, ExternalLink } from "lucide-react";
 import { fetchInventory } from "@/lib/inventory";
 import { adminFetchOrders } from "@/lib/admin";

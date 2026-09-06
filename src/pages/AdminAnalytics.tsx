@@ -37,6 +37,8 @@ import {
 import {
   getAnalyticsSummary,
   exportAnalyticsLogsToCsv,
+  exportSessionsToCsv,
+  formatDuration,
   DateRangeFilter,
   AnalyticsSummary,
   ActivityLog,
@@ -159,6 +161,18 @@ export function AdminAnalytics() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <KpiCard
+          label="Avg. Time On Site"
+          value={formatDuration(summary.avgSessionSeconds)}
+          subtext={`${summary.totalSessions.toLocaleString()} tracked sessions`}
+          icon={<Clock className="size-4 text-amber-600" />}
+        />
+        <KpiCard
+          label="Total Time Tracked"
+          value={formatDuration(summary.totalTimeSeconds)}
+          subtext={`${summary.avgPagesPerSession} pages per session`}
+          icon={<Activity className="size-4 text-rose-600" />}
+        />
         <KpiCard
           label="Total Page Views"
           value={summary.totalViews.toLocaleString()}
@@ -352,6 +366,68 @@ export function AdminAnalytics() {
             })}
           </div>
         </div>
+      </div>
+
+      {/* Visitor Session Time Tracking */}
+      <div className="bg-background border border-border rounded-sm p-4 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="font-display font-medium text-base flex items-center gap-2">
+              <Clock size={16} className="text-amber-600" /> Visitor Sessions & Time Tracking
+            </h3>
+            <p className="text-xs text-muted-foreground font-body">
+              Every visitor session with time spent on site, pages seen, device and location
+            </p>
+          </div>
+          <button
+            onClick={() => exportSessionsToCsv()}
+            className="flex items-center gap-1.5 border border-border bg-background px-3 py-1.5 text-xs uppercase tracking-wider font-body hover:bg-clay-light rounded-sm self-start"
+          >
+            <Download size={13} /> Export Sessions
+          </button>
+        </div>
+
+        {summary.sessions.length === 0 ? (
+          <p className="text-xs text-muted-foreground font-body py-6 text-center">
+            No visitor sessions recorded yet. Sessions appear as soon as people browse the storefront.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs font-body">
+              <thead>
+                <tr className="text-left border-b border-border text-muted-foreground uppercase tracking-wider text-[10px]">
+                  <th className="py-2 pr-3">Visitor</th>
+                  <th className="py-2 pr-3">Started</th>
+                  <th className="py-2 pr-3">Time On Site</th>
+                  <th className="py-2 pr-3">Pages</th>
+                  <th className="py-2 pr-3">Last Page</th>
+                  <th className="py-2 pr-3">Device</th>
+                  <th className="py-2 pr-3">Location</th>
+                </tr>
+              </thead>
+              <tbody>
+                {summary.sessions.slice(0, 25).map((s) => (
+                  <tr key={s.id} className="border-b border-border/60 hover:bg-clay-light/40">
+                    <td className="py-2 pr-3">
+                      <span className="font-medium">{s.userName || s.userEmail || "Guest Visitor"}</span>
+                      <span className={`ml-2 text-[10px] uppercase px-1.5 py-0.5 rounded border ${s.userType === "member" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-muted text-muted-foreground border-border"}`}>
+                        {s.userType}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-3 tabular-nums whitespace-nowrap">
+                      {new Date(s.startedAt).toLocaleString()}
+                    </td>
+                    <td className="py-2 pr-3 font-semibold tabular-nums">{formatDuration(s.durationSeconds)}</td>
+                    <td className="py-2 pr-3 tabular-nums">{s.pageViews}</td>
+                    <td className="py-2 pr-3 font-mono text-[11px]">{s.lastPath}</td>
+                    <td className="py-2 pr-3">{s.device} · {s.browser}</td>
+                    <td className="py-2 pr-3">{s.location}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* System Activity & Visitor Logs Section */}
