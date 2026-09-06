@@ -57,6 +57,22 @@ export interface MonthTrendStat {
   guestViews: number;
 }
 
+export interface VisitorSession {
+  id: string;
+  startedAt: string;
+  lastSeenAt: string;
+  durationSeconds: number;
+  pageViews: number;
+  userType: "member" | "guest";
+  userEmail?: string;
+  userName?: string;
+  location: string;
+  device: "Desktop" | "Mobile" | "Tablet";
+  browser: string;
+  entryPath: string;
+  lastPath: string;
+}
+
 export interface AnalyticsSummary {
   totalViews: number;
   uniqueVisitors: number;
@@ -69,11 +85,100 @@ export interface AnalyticsSummary {
   monthlyTrends: MonthTrendStat[];
   deviceBreakdown: { device: string; count: number }[];
   recentLogs: ActivityLog[];
+  sessions: VisitorSession[];
+  totalSessions: number;
+  avgSessionSeconds: number;
+  totalTimeSeconds: number;
+  avgPagesPerSession: number;
 }
 
 const STORAGE_KEY_LOGS = "hon_analytics_logs_v2";
 const STORAGE_KEY_HITS = "hon_analytics_hits_v2";
 const STORAGE_KEY_LOC = "hon_analytics_cached_location";
+const STORAGE_KEY_SESSIONS = "hon_analytics_sessions_v1";
+const SESSION_ID_KEY = "hon_analytics_active_session";
+const SESSION_IDLE_MS = 30 * 60 * 1000;
+
+export function formatDuration(totalSeconds: number): string {
+  const s = Math.max(0, Math.round(totalSeconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+
+export function readStoredSessions(): VisitorSession[] {
+  const raw = localStorage.getItem(STORAGE_KEY_SESSIONS);
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw) as VisitorSession[];
+  } catch {
+    return [];
+  }
+}
+
+function writeSessions(sessions: VisitorSession[]) {
+  localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(sessions.slice(0, 500)));
+}
+
+/** Creates or continues the current visitor session and records elapsed time on site. */
+export function touchSession(
+  path: string,
+  isPageView: boolean,
+  userEmail?: string,
+  userName?: string
+): VisitorSession | null {
+  try {
+    const now = Date.now();
+    const sessions = readStoredSessions();
+    const activeId = sessionStorage.getItem(SESSION_ID_KEY);
+    let current = activeId ? sessions.find((s) => s.id === activeId) : undefined;
+
+    if (current && now - new Date(current.lastSeenAt).getTime() > SESSION_IDLE_MS) {
+      current = undefined;
+    }
+
+    const locInfo = detectLocationFromTimezone();
+    const isMember = Boolean(userEmail || localStorage.getItem("hon-google-user"));
+
+    if (!current) {
+      current = {
+        id: "ses_" + now + "_" + Math.random().toString(36).substring(2, 7),
+        startedAt: new Date(now).toISOString(),
+        lastSeenAt: new Date(now).toISOString(),
+        durationSeconds: 0,
+        pageViews: isPageView ? 1 : 0,
+        userType: isMember ? "member" : "guest",
+        userEmail,
+        userName,
+        location: locInfo.location,
+        device: detectDevice(),
+        browser: detectBrowser(),
+        entryPath: path || "/",
+        lastPath: path || "/",
+      };
+      sessionStorage.setItem(SESSION_ID_KEY, current.id);
+      writeSessions([current, ...sessions]);
+      return current;
+    }
+
+    const elapsed = Math.min((now - new Date(current.lastSeenAt).getTime()) / 1000, 120);
+    current.durationSeconds = Math.round(current.durationSeconds + elapsed);
+    current.lastSeenAt = new Date(now).toISOString();
+    current.lastPath = path || current.lastPath;
+    if (isPageView) current.pageViews += 1;
+    if (isMember) current.userType = "member";
+    if (userEmail) current.userEmail = userEmail;
+    if (userName) current.userName = userName;
+
+    writeSessions([current, ...sessions.filter((s) => s.id !== current!.id)]);
+    return current;
+  } catch {
+    return null;
+  }
+}
 
 // Default location detector using timezone map for immediate zero-latency fallback
 function detectLocationFromTimezone(): { country: string; city: string; location: string } {
@@ -417,6 +522,23 @@ export function getAnalyticsSummary(range: DateRangeFilter): AnalyticsSummary {
 
   const monthlyTrends = generateHistorical30MonthsTrend(hits);
 
+  // Session / time-on-site aggregation
+  const allSessions = readStoredSessions();
+  const filteredSessions = allSessions.filter(
+    (s) => now - new Date(s.startedAt).getTime() <= timeLimitMs
+  );
+  const totalTimeSeconds = filteredSessions.reduce((sum, s) => sum + (s.durationSeconds || 0), 0);
+  const totalSessions = filteredSessions.length;
+  const avgSessionSeconds = totalSessions ? Math.round(totalTimeSeconds / totalSessions) : 0;
+  const avgPagesPerSession = totalSessions
+    ? Math.round(
+        (filteredSessions.reduce((sum, s) => sum + (s.pageViews || 0), 0) / totalSessions) * 10
+      ) / 10
+    : 0;
+  const sessions = [...filteredSessions].sort(
+    (a, b) => new Date(b.lastSeenAt).getTime() - new Date(a.lastSeenAt).getTime()
+  );
+
   // Active right now calculation (hits within last 15 minutes)
   const fifteenMinsAgo = now - 15 * 60 * 1000;
   const activeNowCount = hits.filter((h) => new Date(h.timestamp).getTime() >= fifteenMinsAgo).length;
@@ -433,6 +555,11 @@ export function getAnalyticsSummary(range: DateRangeFilter): AnalyticsSummary {
     monthlyTrends,
     deviceBreakdown,
     recentLogs: logs.slice(0, 100),
+    sessions,
+    totalSessions,
+    avgSessionSeconds,
+    totalTimeSeconds,
+    avgPagesPerSession,
   };
 }
 
@@ -445,6 +572,31 @@ function getCountryFlag(country: string): string {
   if (country.includes("Canada")) return "🇨🇦";
   if (country.includes("Australia")) return "🇦🇺";
   return "🌐";
+}
+
+export function exportSessionsToCsv(): void {
+  const sessions = readStoredSessions();
+  const csvRows = [
+    ["Session ID", "Started", "Last Seen", "Time On Site (s)", "Time On Site", "Page Views", "Visitor Type", "Email", "Name", "Location", "Device", "Browser", "Entry Page", "Last Page"],
+    ...sessions.map((s) => [
+      s.id,
+      s.startedAt,
+      s.lastSeenAt,
+      String(s.durationSeconds),
+      formatDuration(s.durationSeconds),
+      String(s.pageViews),
+      s.userType,
+      s.userEmail || "",
+      s.userName || "",
+      s.location || "",
+      s.device,
+      s.browser,
+      s.entryPath,
+      s.lastPath,
+    ]),
+  ].join("\n");
+
+  downloadCsv(`houseofnuts-visitor-sessions-${new Date().toISOString().slice(0, 10)}.csv`, csvRows);
 }
 
 export function exportAnalyticsLogsToCsv(): void {
