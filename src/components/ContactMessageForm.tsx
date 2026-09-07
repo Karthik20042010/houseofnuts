@@ -35,7 +35,14 @@ const ContactMessageForm = () => {
     setErrors({});
     setSending(true);
     try {
-      await submitMessage({ ...parsed.data, type: "enquiry" });
+      await submitMessage({
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        subject: form.subject.trim(),
+        message: form.message.trim(),
+        type: "enquiry",
+      });
       setSent(true);
       setForm({ name: "", phone: "", email: "", subject: "", message: "" });
     } catch (err) {
