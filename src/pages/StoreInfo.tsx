@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { MessageCircle } from "lucide-react";
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
+import ContactMessageForm from "@/components/ContactMessageForm";
 
 type Info = { eyebrow: string; title: string; intro: string; sections: Array<[string, string]> };
 
