@@ -516,3 +516,78 @@ function uploadImage(body) {
   var url = "https://lh3.googleusercontent.com/d/" + fileId;
   return { ok: true, url: url, fileId: fileId };
 }
+
+// -------- Sheet 7: Messages Tab (customer messages & wholesale enquiries) --------
+
+function ensureMessagesSheet() {
+  var sh = SpreadsheetApp.getActive().getSheetByName("Messages");
+  if (!sh) {
+    sh = SpreadsheetApp.getActive().insertSheet("Messages");
+    sh.appendRow(["messageId", "timestamp", "type", "name", "phone", "email", "subject", "message", "status", "adminNote"]);
+  }
+  return sh;
+}
+
+function addMessage(body) {
+  var sh = ensureMessagesSheet();
+  var id = "MSG-" + new Date().getTime();
+  sh.appendRow([
+    id,
+    new Date().toISOString(),
+    String(body.type || "enquiry"),
+    String(body.name || ""),
+    String(body.phone || ""),
+    String(body.email || ""),
+    String(body.subject || ""),
+    String(body.message || ""),
+    "new",
+    ""
+  ]);
+  try {
+    var cfg = getConfig();
+    if (cfg.ownerEmail) {
+      MailApp.sendEmail(cfg.ownerEmail,
+        "New " + (body.type || "enquiry") + " message — House of Nuts",
+        "From: " + (body.name || "") + " (" + (body.phone || "") + " / " + (body.email || "") + ")\n\n" +
+        (body.subject ? "Subject: " + body.subject + "\n\n" : "") + (body.message || ""));
+    }
+  } catch (e) {}
+  return { ok: true, messageId: id };
+}
+
+function readMessages() {
+  var sh = ensureMessagesSheet();
+  var values = sh.getDataRange().getValues();
+  if (values.length < 2) return [];
+  var out = [];
+  for (var i = 1; i < values.length; i++) {
+    var r = values[i];
+    if (!r[0]) continue;
+    out.push({
+      id: String(r[0]),
+      timestamp: String(r[1] || ""),
+      type: String(r[2] || "enquiry"),
+      name: String(r[3] || ""),
+      phone: String(r[4] || ""),
+      email: String(r[5] || ""),
+      subject: String(r[6] || ""),
+      message: String(r[7] || ""),
+      status: String(r[8] || "new"),
+      adminNote: String(r[9] || "")
+    });
+  }
+  return out.reverse();
+}
+
+function updateMessage(body) {
+  var sh = ensureMessagesSheet();
+  var values = sh.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(body.messageId)) {
+      if (body.status) sh.getRange(i + 1, 9).setValue(String(body.status));
+      if (typeof body.adminNote === "string") sh.getRange(i + 1, 10).setValue(body.adminNote);
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: "Message not found" };
+}

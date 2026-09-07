@@ -33,6 +33,7 @@ const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics.tsx"));
 const AdminOrders = lazy(() => import("./pages/AdminOrders.tsx"));
 const AdminOrderDetail = lazy(() => import("./pages/AdminOrderDetail.tsx"));
 const AdminInventory = lazy(() => import("./pages/AdminInventory.tsx"));
+const AdminMessages = lazy(() => import("./pages/AdminMessages.tsx"));
 const AdminImages = lazy(() => import("./pages/AdminImages.tsx"));
 const DeveloperConsole = lazy(() => import("./pages/DeveloperConsole.tsx"));
 const AdminRoleManagement = lazy(() => import("./pages/AdminRoleManagement.tsx"));
@@ -117,6 +118,14 @@ const App = () => (
                           element={
                             <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
                               <AdminOrderDetail />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin/messages"
+                          element={
+                            <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
+                              <AdminMessages />
                             </ProtectedRoute>
                           }
                         />

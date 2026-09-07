@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { MessageCircle } from "lucide-react";
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
+import ContactMessageForm from "@/components/ContactMessageForm";
 
 type Info = { eyebrow: string; title: string; intro: string; sections: Array<[string, string]> };
 
@@ -23,6 +24,7 @@ const StoreInfo = () => {
       <h1 className="mt-3 font-display text-5xl leading-none md:text-6xl">{page.title}</h1>
       <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground font-body">{page.intro}</p>
       <div className="mt-12 divide-y divide-border border-y border-border">{page.sections.map(([heading, body]) => <section key={heading} className="py-7"><h2 className="font-display text-2xl">{heading}</h2><p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground font-body">{body}</p></section>)}</div>
+      {pathname === "/contact" && <div className="mt-12"><ContactMessageForm /></div>}
       <div className="mt-10 flex flex-wrap gap-3"><Link to="/shop" className="bg-primary px-5 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-primary-foreground font-body">Shop products</Link><a href="https://wa.me/919652526920" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-border px-5 py-3 text-xs font-semibold uppercase tracking-[0.15em] font-body hover:text-accent"><MessageCircle size={15} /> WhatsApp support</a></div>
     </div></main>
   </div>;
