@@ -99,9 +99,12 @@ const AdminLogin = () => {
           <p className="text-destructive text-sm font-body mt-3">
             {/cannot reach/i.test(error)
               ? "Can't reach the server. Check your internet or the Apps Script URL."
-              : error}
+              : /not configured/i.test(error)
+                ? "No admin password set yet. Open your orders spreadsheet, go to the Config tab, and type your password next to adminPassword."
+                : error}
           </p>
         )}
+
         <button
           type="submit"
           disabled={loading}
