@@ -2,15 +2,19 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { products } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
-import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf } from "lucide-react";
+import DeliveryEstimate from "@/components/DeliveryEstimate";
+import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf, Heart, Share2, Zap, Check } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import ReviewsSection from "@/components/ReviewsSection";
 import { getAverageRating } from "@/lib/reviews";
 import { getProductImageSrc } from "@/lib/productImages";
 import ProductImage from "@/components/ProductImage";
+import { toast } from "sonner";
+
 
 const ProductDetail = () => {
   const { id } = useParams();
