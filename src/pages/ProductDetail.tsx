@@ -179,6 +179,37 @@ const ProductDetail = () => {
               </button>
             </div>
 
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleBuyNow}
+                className="flex-1 flex items-center justify-center gap-2 bg-accent text-accent-foreground min-h-[48px] uppercase tracking-[0.15em] text-xs font-medium font-body hover:bg-primary hover:text-primary-foreground transition-colors active:scale-[0.98]"
+              >
+                <Zap size={15} /> Buy Now
+              </button>
+              <button
+                onClick={() => toggleWishlist(product)}
+                aria-pressed={wishlisted}
+                className={`min-h-[48px] px-4 border flex items-center gap-2 text-xs uppercase tracking-[0.15em] font-body transition-colors ${
+                  wishlisted ? "border-accent text-accent bg-accent/10" : "border-border hover:border-accent hover:text-accent"
+                }`}
+              >
+                {wishlisted ? <Check size={15} /> : <Heart size={15} />}
+                <span className="hidden sm:inline">{wishlisted ? "Saved" : "Save"}</span>
+              </button>
+              <button
+                onClick={handleShare}
+                aria-label="Share this product"
+                className="min-h-[48px] px-4 border border-border hover:border-accent hover:text-accent transition-colors flex items-center"
+              >
+                <Share2 size={15} />
+              </button>
+            </div>
+
+            {/* Delivery estimate by PIN code */}
+            <DeliveryEstimate />
+
+
+
 
             {/* Trust badges */}
             <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border">
