@@ -3,9 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import { getOrders, type Order } from "@/lib/orders";
-import { Package, ChevronRight, ShoppingBag } from "lucide-react";
+import { Package, ChevronRight, ShoppingBag, RotateCcw } from "lucide-react";
+import { products } from "@/data/products";
+import { useCart } from "@/contexts/CartContext";
+import { toast } from "sonner";
 
 import { useAuth } from "@/contexts/AuthContext";
+
 
 const statusColors: Record<Order["status"], string> = {
   pending: "bg-yellow-100 text-yellow-800",
