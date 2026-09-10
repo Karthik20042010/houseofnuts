@@ -1,5 +1,6 @@
 import { useState, FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import { getOrders, type Order } from "@/lib/orders";
@@ -14,7 +15,9 @@ const steps = [
 const statusIdx: Record<string, number> = { pending: 0, confirmed: 1, shipped: 2, delivered: 3 };
 
 const TrackOrder = () => {
-  const [orderId, setOrderId] = useState("");
+  const [params] = useSearchParams();
+  const [orderId, setOrderId] = useState(params.get("order")?.toUpperCase() || "");
+
   const [contact, setContact] = useState("");
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState("");

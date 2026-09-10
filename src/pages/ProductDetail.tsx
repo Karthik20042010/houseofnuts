@@ -2,23 +2,29 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { products } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
-import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf } from "lucide-react";
+import DeliveryEstimate from "@/components/DeliveryEstimate";
+import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf, Heart, Share2, Zap, Check } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import ReviewsSection from "@/components/ReviewsSection";
 import { getAverageRating } from "@/lib/reviews";
 import { getProductImageSrc } from "@/lib/productImages";
 import ProductImage from "@/components/ProductImage";
+import { toast } from "sonner";
+
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
   const [selectedVariant, setSelectedVariant] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const { addViewed } = useRecentlyViewed();
+
 
   const product = products.find((p) => p.id === id);
 
@@ -43,10 +49,36 @@ const ProductDetail = () => {
   const variant = product.variants[selectedVariant];
   const relatedProducts = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
   const { avg: avgRating, count: reviewCount } = getAverageRating(product.id);
+  const wishlisted = isInWishlist(product.id);
 
   const handleAdd = () => {
     for (let i = 0; i < quantity; i++) addToCart(product, variant);
   };
+
+  const handleBuyNow = () => {
+    handleAdd();
+    navigate("/checkout");
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const shareData = {
+      title: product.name,
+      text: `${product.name} — ₹${variant.price} at House of Nuts`,
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied — share it with anyone");
+    } catch {
+      /* user cancelled the share sheet */
+    }
+  };
+
 
   return (
     <div className="min-h-screen">
@@ -146,6 +178,37 @@ const ProductDetail = () => {
                 Add to Basket — ₹{variant.price * quantity}
               </button>
             </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleBuyNow}
+                className="flex-1 flex items-center justify-center gap-2 bg-accent text-accent-foreground min-h-[48px] uppercase tracking-[0.15em] text-xs font-medium font-body hover:bg-primary hover:text-primary-foreground transition-colors active:scale-[0.98]"
+              >
+                <Zap size={15} /> Buy Now
+              </button>
+              <button
+                onClick={() => toggleWishlist(product)}
+                aria-pressed={wishlisted}
+                className={`min-h-[48px] px-4 border flex items-center gap-2 text-xs uppercase tracking-[0.15em] font-body transition-colors ${
+                  wishlisted ? "border-accent text-accent bg-accent/10" : "border-border hover:border-accent hover:text-accent"
+                }`}
+              >
+                {wishlisted ? <Check size={15} /> : <Heart size={15} />}
+                <span className="hidden sm:inline">{wishlisted ? "Saved" : "Save"}</span>
+              </button>
+              <button
+                onClick={handleShare}
+                aria-label="Share this product"
+                className="min-h-[48px] px-4 border border-border hover:border-accent hover:text-accent transition-colors flex items-center"
+              >
+                <Share2 size={15} />
+              </button>
+            </div>
+
+            {/* Delivery estimate by PIN code */}
+            <DeliveryEstimate />
+
+
 
 
             {/* Trust badges */}
