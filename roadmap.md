@@ -2,13 +2,12 @@
 
 ## Done
 - Admin login guide: docs/ADMIN-LOGIN.md + clearer "password not set" message on login page.
+- Product page: Buy Now, Save to wishlist, Share, PIN-code delivery estimate.
+- My Orders: Buy Again (re-adds items to basket) and quick Track link.
+- Track page: order ID prefilled from link.
 
-## Open
-- Improve storefront features/UX to match a real e-commerce site:
-  - Product quantity selector + "add to cart" from card without opening drawer jump
-  - Free-shipping progress bar in cart
-  - Better cart drawer (item images, save for later / move to wishlist)
-  - Trust/urgency signals: low-stock badge, delivery estimate
-  - Sticky product detail buy bar on mobile
-  - Filters: price range, in-stock only, sort persistence
-  - Order confirmation clarity + email/WhatsApp confirmation copy
+## Open (next round of e-commerce polish)
+- Quick-view popup from product cards
+- Offers/coupon list shown on product and cart
+- Back-in-stock notify for sold-out sizes
+- Product comparison
