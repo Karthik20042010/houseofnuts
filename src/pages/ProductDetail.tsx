@@ -49,10 +49,36 @@ const ProductDetail = () => {
   const variant = product.variants[selectedVariant];
   const relatedProducts = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
   const { avg: avgRating, count: reviewCount } = getAverageRating(product.id);
+  const wishlisted = isInWishlist(product.id);
 
   const handleAdd = () => {
     for (let i = 0; i < quantity; i++) addToCart(product, variant);
   };
+
+  const handleBuyNow = () => {
+    handleAdd();
+    navigate("/checkout");
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const shareData = {
+      title: product.name,
+      text: `${product.name} — ₹${variant.price} at House of Nuts`,
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied — share it with anyone");
+    } catch {
+      /* user cancelled the share sheet */
+    }
+  };
+
 
   return (
     <div className="min-h-screen">
