@@ -1,5 +1,6 @@
 import { useState, FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+
 import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import { getOrders, type Order } from "@/lib/orders";
