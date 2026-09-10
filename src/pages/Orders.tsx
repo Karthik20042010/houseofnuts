@@ -24,6 +24,22 @@ const OrdersPage = () => {
   const [filter, setFilter] = useState<"all" | Order["status"]>("all");
   const navigate = useNavigate();
   const { googleUser } = useAuth();
+  const { addToCart } = useCart();
+
+  const buyAgain = (order: Order) => {
+    let added = 0;
+    order.items.forEach((item) => {
+      const product = products.find((p) => p.id === item.productId);
+      const variant = product?.variants.find((v) => v.id === item.variantId);
+      if (product && variant) {
+        for (let i = 0; i < item.quantity; i++) addToCart(product, variant);
+        added += 1;
+      }
+    });
+    if (added === 0) toast.error("These items are no longer available");
+    else toast.success("Items added to your basket");
+  };
+
 
   useEffect(() => {
     const all = getOrders();
