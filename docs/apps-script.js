@@ -23,13 +23,47 @@
 // -------- Setup Function --------
 
 function setupDatabase() {
+  var ss = SpreadsheetApp.getActive();
+  
+  // 1. Rename legacy "Sheet1" to "Orders" if Orders sheet does not exist yet
+  var sheet1 = ss.getSheetByName("Sheet1");
+  var ordersSheet = ss.getSheetByName("Orders");
+  
+  if (sheet1 && !ordersSheet) {
+    sheet1.setName("Orders");
+    ordersSheet = sheet1;
+    Logger.log("✅ Renamed legacy 'Sheet1' tab to 'Orders'.");
+  }
+
+  // 2. Initialize all 7 dedicated sheet tabs
   getConfig();
-  ensureUsersSheet();
+  var usersSh = ensureUsersSheet();
   ensureProductsSheet();
   ensurePricesSheet();
   ensureInventorySheet();
   ensureOrdersSheet();
   ensureMessagesSheet();
+
+  // 3. Migrate user records from Orders tab into Users tab if Users tab is new
+  var userValues = usersSh.getDataRange().getValues();
+  if (userValues.length < 2 && ordersSheet) {
+    var srcData = ordersSheet.getDataRange().getValues();
+    var addedUsers = {};
+    for (var i = 1; i < srcData.length; i++) {
+      var row = srcData[i];
+      var nameStr = String(row[1] || "").trim();
+      var phoneStr = String(row[2] || "").trim();
+      if (nameStr && nameStr !== "Name" && !addedUsers[nameStr.toLowerCase()]) {
+        addedUsers[nameStr.toLowerCase()] = true;
+        var uId = "usr_" + Math.random().toString(36).substring(2, 9);
+        var role = (nameStr.toLowerCase().indexOf("admin") !== -1 || nameStr.toLowerCase().indexOf("j04") !== -1) ? "admin" : "user";
+        var email = nameStr.toLowerCase().replace(/[^a-z0-9]/g, "") + "@houseofnuts.in";
+        usersSh.appendRow([uId, email, nameStr, phoneStr, role, "google_oauth", new Date().toISOString()]);
+      }
+    }
+    Logger.log("✅ Migrated user accounts into 'Users' tab.");
+  }
+
   Logger.log("✅ All 7 database sheets (Config, Users, Products, Prices, Inventory, Orders, Messages) initialized successfully!");
 }
 
