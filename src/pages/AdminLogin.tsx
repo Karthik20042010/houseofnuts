@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserRole, ROLE_LABELS } from "@/types/auth";
 import { adminLogin, isAdminLoggedIn } from "@/lib/admin";
 import Header from "@/components/Header";
+import { GoogleLoginModal } from "@/components/auth/GoogleLoginModal";
 import {
   Lock,
   Mail,
@@ -14,34 +15,29 @@ import {
   Eye,
   EyeOff,
   UserCheck,
-  CheckCircle2,
   KeyRound,
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
-type AuthTab = "google" | "phone" | "role";
+type AuthTab = "google" | "phone" | "staff";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { loginWithGoogle, login, isLoggedIn, googleUser, role } = useAuth();
 
   const [activeTab, setActiveTab] = useState<AuthTab>("google");
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
 
-  // Email / Password Login fields (Clean inputs, no pre-filled public data)
+  // Email / Password Login fields (Clean unrevealed inputs)
   const [emailInput, setEmailInput] = useState("");
   const [nameInput, setNameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // Role Password Login fields
+  // Staff Role Password Login fields
   const [rolePassword, setRolePassword] = useState("");
-  const [selectedRole, setSelectedRole] = useState<UserRole>("admin");
-
-  // Phone OTP fields
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [otpStep, setOtpStep] = useState<"input" | "verify">("input");
-  const [otpDigits, setOtpDigits] = useState(["", "", "", ""]);
+  const [selectedRole, setSelectedRole] = useState<UserRole>("staff");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -79,23 +75,6 @@ const AdminLogin = () => {
     }
   };
 
-  // Google OAuth Standard Button Handler
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    try {
-      // Standard Google OAuth sign-in flow
-      const defaultEmail = emailInput.trim() || "houseofnutsproddatur@gmail.com";
-      const defaultName = nameInput.trim() || "House of Nuts Account";
-      await loginWithGoogle(defaultEmail, defaultName);
-      toast.success("Signed in successfully via Google OAuth");
-      performRedirect(defaultEmail);
-    } catch {
-      toast.error("Google authentication failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Custom Email & Password Form Handler
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,7 +105,7 @@ const AdminLogin = () => {
     }
   };
 
-  // Role Password Form Handler
+  // Staff / Portal Role Password Form Handler
   const handleRolePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -146,43 +125,17 @@ const AdminLogin = () => {
     }
   };
 
-  // Mobile OTP Handlers
-  const handleSendMobileOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanNumber = phoneNumber.replace(/\D/g, "");
-    if (cleanNumber.length < 10) {
-      toast.error("Please enter a valid 10-digit mobile number.");
-      return;
-    }
-    setOtpStep("verify");
-    setOtpDigits(["", "", "", ""]);
-    toast.success(`OTP sent to +91 ${cleanNumber}. (Demo Code: 1234)`);
-  };
-
-  const handleVerifyMobileOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const codeStr = otpDigits.join("");
-    if (codeStr.length < 4) {
-      toast.error("Please enter the 4-digit OTP code.");
-      return;
-    }
-    setLoading(true);
-    try {
-      const cleanNumber = phoneNumber.replace(/\D/g, "");
-      const userEmail = `member_${cleanNumber.slice(-4)}@houseofnuts.com`;
-      await loginWithGoogle(userEmail, `Customer (+91 ${cleanNumber})`);
-      toast.success("Mobile number verified successfully!");
-      performRedirect(userEmail);
-    } catch {
-      toast.error("OTP verification failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Header />
+
+      <GoogleLoginModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
+        onSuccess={() => {
+          setIsGoogleModalOpen(false);
+        }}
+      />
 
       <main className="flex-1 flex items-center justify-center px-4 py-12 md:py-20 relative bg-gradient-linen">
         {/* Soft luxury ambient background highlights matching brand aesthetic */}
@@ -234,29 +187,28 @@ const AdminLogin = () => {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Phone size={13} /> Mobile OTP
+              <Lock size={12} className="text-muted-foreground" /> Mobile OTP
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab("role")}
+              onClick={() => setActiveTab("staff")}
               className={`py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-                activeTab === "role"
+                activeTab === "staff"
                   ? "bg-background text-foreground shadow-xs font-semibold"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <ShieldCheck size={13} /> Role Key
+              <ShieldCheck size={13} /> Staff Login
             </button>
           </div>
 
           {/* TAB 1: GOOGLE OAUTH & EMAIL FORM */}
           {activeTab === "google" && (
             <div className="space-y-4 pt-1">
-              {/* Clean Google OAuth Button */}
+              {/* Clean Google OAuth Button -> Opens Google Account Chooser & Consent Screen */}
               <button
                 type="button"
-                disabled={loading}
-                onClick={handleGoogleSignIn}
+                onClick={() => setIsGoogleModalOpen(true)}
                 className="w-full flex items-center justify-center gap-3 p-3.5 border border-border bg-background hover:bg-secondary rounded-2xl transition-all font-body text-xs font-semibold shadow-xs group cursor-pointer"
               >
                 <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
@@ -326,108 +278,40 @@ const AdminLogin = () => {
             </div>
           )}
 
-          {/* TAB 2: MOBILE PHONE OTP */}
+          {/* TAB 2: MOBILE PHONE OTP (LOCKED FOR INITIAL RELEASE) */}
           {activeTab === "phone" && (
-            <div className="space-y-4 pt-1">
-              {otpStep === "input" ? (
-                <form onSubmit={handleSendMobileOtp} className="space-y-3.5">
-                  <div>
-                    <label className="block text-[11px] font-body font-medium text-muted-foreground mb-1">
-                      Enter Mobile Number
-                    </label>
-                    <div className="flex gap-2">
-                      <span className="px-3 py-2.5 bg-secondary border border-border rounded-xl text-xs font-mono font-medium text-muted-foreground flex items-center">
-                        +91
-                      </span>
-                      <input
-                        type="tel"
-                        maxLength={10}
-                        required
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
-                        placeholder="Enter 10-digit number"
-                        className="w-full border border-border bg-background px-3.5 py-2.5 font-body text-xs rounded-xl focus:outline-none focus:border-accent"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-3 bg-primary text-primary-foreground text-xs font-semibold font-body rounded-xl hover:bg-accent transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    Send OTP Verification <ArrowRight size={14} />
-                  </button>
-                </form>
-              ) : (
-                <form onSubmit={handleVerifyMobileOtp} className="space-y-4">
-                  <div className="text-center space-y-1">
-                    <p className="text-xs font-body font-medium text-foreground">
-                      Enter 4-digit code sent to +91 {phoneNumber}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setOtpDigits(["1", "2", "3", "4"])}
-                      className="text-[11px] text-accent hover:underline font-mono"
-                    >
-                      (Auto-fill Demo OTP: 1234)
-                    </button>
-                  </div>
-
-                  <div className="flex justify-center gap-3">
-                    {otpDigits.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        id={`login-page-otp-${idx}`}
-                        type="text"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => {
-                          const val = e.target.value.slice(-1);
-                          const copy = [...otpDigits];
-                          copy[idx] = val;
-                          setOtpDigits(copy);
-                          if (val && idx < 3) {
-                            document.getElementById(`login-page-otp-${idx + 1}`)?.focus();
-                          }
-                        }}
-                        className="size-11 border border-border bg-background text-center font-mono font-bold text-lg rounded-xl focus:outline-none focus:border-accent"
-                      />
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 text-xs font-body">
-                    <button
-                      type="button"
-                      onClick={() => setOtpStep("input")}
-                      className="text-muted-foreground hover:underline"
-                    >
-                      ← Change Number
-                    </button>
-
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="py-2.5 px-5 bg-primary text-primary-foreground text-xs font-semibold rounded-xl hover:bg-accent transition-colors flex items-center gap-1.5 cursor-pointer"
-                    >
-                      {loading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                      Verify & Log In
-                    </button>
-                  </div>
-                </form>
-              )}
+            <div className="space-y-4 pt-1 text-center py-6 border border-dashed border-border rounded-2xl bg-secondary/30">
+              <div className="size-12 rounded-full bg-muted border border-border grid place-items-center mx-auto text-muted-foreground">
+                <Lock size={20} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-body font-semibold text-foreground flex items-center justify-center gap-1.5">
+                  Mobile OTP Sign In <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full font-mono">Coming Soon</span>
+                </p>
+                <p className="text-[11px] text-muted-foreground max-w-xs mx-auto font-body">
+                  Mobile phone OTP authentication is locked for the v1 release. Please sign in using Google OAuth or Email.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab("google")}
+                className="text-xs text-accent font-semibold hover:underline"
+              >
+                Use Google / Email Login &rarr;
+              </button>
             </div>
           )}
 
-          {/* TAB 3: ROLE PASSWORD LOGIN */}
-          {activeTab === "role" && (
+          {/* TAB 3: STAFF & PORTAL ROLE LOGIN */}
+          {activeTab === "staff" && (
             <form onSubmit={handleRolePasswordSubmit} className="space-y-4 pt-1 font-body">
               <div>
                 <label className="flex items-center gap-1.5 mb-2 text-muted-foreground">
                   <UserCheck size={14} className="text-accent" />
-                  <span className="text-xs uppercase tracking-[0.15em] font-medium">Select Portal Role</span>
+                  <span className="text-xs uppercase tracking-[0.15em] font-medium">Select Access Portal</span>
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["admin", "developer", "staff"] as UserRole[]).map((r) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {(["staff", "admin"] as UserRole[]).map((r) => (
                     <button
                       key={r}
                       type="button"
@@ -438,7 +322,7 @@ const AdminLogin = () => {
                           : "bg-secondary text-muted-foreground border-border hover:bg-background hover:text-foreground"
                       }`}
                     >
-                      {r}
+                      {r === "staff" ? "Staff Portal" : "Admin Portal"}
                     </button>
                   ))}
                 </div>
@@ -447,14 +331,14 @@ const AdminLogin = () => {
               <div>
                 <label className="flex items-center gap-1.5 mb-1.5 text-muted-foreground">
                   <Lock size={14} className="text-accent" />
-                  <span className="text-xs uppercase tracking-[0.15em] font-medium">Role Password</span>
+                  <span className="text-xs uppercase tracking-[0.15em] font-medium">Portal Key Password</span>
                 </label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     value={rolePassword}
                     onChange={(e) => setRolePassword(e.target.value)}
-                    placeholder="Enter role password"
+                    placeholder="Enter portal password"
                     className="w-full border border-border bg-background px-4 py-3 pr-11 text-xs focus:outline-none focus:border-accent rounded-2xl"
                     required
                   />
@@ -480,7 +364,7 @@ const AdminLogin = () => {
                 className="w-full bg-primary text-primary-foreground py-3.5 uppercase tracking-[0.15em] text-xs font-semibold hover:bg-accent transition-all disabled:opacity-50 flex items-center justify-center gap-2 rounded-2xl shadow-soft cursor-pointer"
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={15} />}
-                Log In as {ROLE_LABELS[selectedRole]}
+                Sign In to {selectedRole === "staff" ? "Staff Portal" : "Admin Portal"}
               </button>
             </form>
           )}
