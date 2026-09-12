@@ -26,7 +26,7 @@ export async function fetchInventory(force = false): Promise<StockMap> {
     sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), data: stock }));
     return stock;
   } catch (e) {
-    console.error("Inventory fetch failed:", e);
+    console.warn("Inventory fetch using local default stock map:", e);
     return {};
   }
 }

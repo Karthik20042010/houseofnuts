@@ -49,10 +49,20 @@ export async function apiGet<T = unknown>(
   action: string,
   params: Record<string, string> = {},
 ): Promise<T> {
-  const url = new URL(API_URL);
-  url.searchParams.set("action", action);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  const res = await fetch(url.toString(), { redirect: "follow" });
-  if (!res.ok) throw new Error(`API error: Status ${res.status}`);
-  return res.json() as Promise<T>;
+  try {
+    const url = new URL(API_URL);
+    url.searchParams.set("action", action);
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+    const res = await fetch(url.toString(), { redirect: "follow" });
+    if (!res.ok) throw new Error(`API error: Status ${res.status}`);
+    return (await res.json()) as T;
+  } catch (err) {
+    // Google Apps Script GET redirects can trigger browser CORS policy blocks on localhost.
+    // Fall back seamlessly to POST with text/plain header which avoids preflight CORS blocks.
+    try {
+      return await apiPost<T>(action, params);
+    } catch {
+      throw err;
+    }
+  }
 }
