@@ -96,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res;
   };
 
-  const loginWithGoogle = async (email: string, name: string, picture?: string): Promise<GoogleUser> => {
+  const loginWithGoogle = async (email: string, name: string, picture?: string, idToken?: string): Promise<GoogleUser> => {
     const userRole = deriveRoleFromEmail(email);
 
     const user: GoogleUser = {
@@ -112,13 +112,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole(userRole);
     setIsLoggedIn(true);
 
-    // Sync with Google Sheets Apps Script Users Tab (Zero-cost database)
+    // Sync & verify with Google Sheets Apps Script Users Tab (Zero-cost database backend)
     try {
-      const res = await apiPost<{ ok: boolean; role?: UserRole }>("registerGoogleUser", {
+      const res = await apiPost<{ ok: boolean; role?: UserRole; email?: string; name?: string }>("registerGoogleUser", {
         userId: user.googleId,
         email: user.email,
         name: user.name,
-        role: userRole,
+        idToken: idToken || "",
       });
       if (res && res.ok && res.role) {
         setSessionRole(res.role);
@@ -147,7 +147,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return await loginWithGoogle(
           payload.email,
           payload.name || payload.email.split("@")[0],
-          payload.picture
+          payload.picture,
+          idToken
         );
       }
     } catch {

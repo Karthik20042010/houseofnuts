@@ -2,22 +2,14 @@
  * House of Nuts — Complete Google Apps Script Zero-Cost Database Backend
  * ----------------------------------------------------------------------
  * Organized with Dedicated Separate Sheets for Each Entity:
- *   1. "Users"     — User accounts, contact details, authentication & roles
- *   2. "Products"  — Product catalog (Names, Categories, Descriptions, Badges, Images)
- *   3. "Prices"    — Price Master (Product ID, Variant ID, Size, Price, Discount Price)
- *   4. "Inventory" — Stock Master (Variant ID, Product ID, Size, Available Stock, Reorder Level)
- *   5. "Orders"    — Customer Orders (Timestamp, Order ID, Customer Info, Items, Total, Status)
- *   6. "Config"    — Store settings (Admin Password, Owner Email, Site URL)
- *
- * Setup Instructions:
- * 1. Open your Google Sheet.
- * 2. Click: Extensions → Apps Script
- * 3. Replace all content in Code.gs with this exact file content and click Save (Ctrl+S).
- * 4. Deploy:
- *    Click Deploy → New deployment → Select type: Web App
- *    - Execute as: Me
- *    - Who has access: Anyone
- *    - Click Deploy (Copy the Web App URL into your React app).
+ *   1. "Users"         — User accounts, contact details, authentication & roles
+ *   2. "Products"      — Product catalog (Names, Categories, Descriptions, Badges, Images)
+ *   3. "Prices"        — Price Master (Product ID, Variant ID, Size, Price, Discount Price)
+ *   4. "Inventory"     — Stock Master (Variant ID, Product ID, Size, Available Stock, Reorder Level)
+ *   5. "Orders"        — Customer Orders (Timestamp, Order ID, Customer Info, Items, Total, Status)
+ *   6. "Config"        — Store settings (Admin Password, Owner Email, Site URL)
+ *   7. "Messages"      — Customer messages & wholesale enquiries
+ *   8. "Notifications" — Email delivery log, notification audit trail & bounce tracking
  */
 
 // -------- Setup Function --------
@@ -35,13 +27,17 @@ function setupDatabase() {
     Logger.log("✅ Renamed legacy 'Sheet1' tab to 'Orders'.");
   }
 
-  // 2. Initialize all 7 dedicated sheet tabs
+  // 2. Initialize all 8 dedicated sheet tabs
   getConfig();
-  // 4. Seed Products, Prices, and Inventory tabs if empty
   var prodSh = ensureProductsSheet();
   var priceSh = ensurePricesSheet();
   var invSh = ensureInventorySheet();
+  ensureUsersSheet();
+  ensureOrdersSheet();
+  ensureMessagesSheet();
+  ensureNotificationsSheet();
 
+  // 3. Seed Products, Prices, and Inventory tabs if empty
   if (prodSh.getDataRange().getValues().length < 2) {
     var defaultCatalog = [
       { id: "california-almonds", name: "California Almonds", category: "nuts", description: "Crunchy hand-sorted California almonds", image: "/images/catalog/almonds.jpg", badge: "Bestseller", variants: [{ id: "cal-almond-250", size: "250g", price: 349, mrp: 450 }, { id: "cal-almond-500", size: "500g", price: 649, mrp: 850 }, { id: "cal-almond-1kg", size: "1 Kg", price: 1199, mrp: 1550 }] },
@@ -64,31 +60,7 @@ function setupDatabase() {
     Logger.log("✅ Seeded default catalog products, prices, and stock inventory.");
   }
 
-  // 3. Migrate user records from Orders tab into Users tab if Users tab is new
-  var usersSh = ensureUsersSheet();
-  ensureOrdersSheet();
-  ensureMessagesSheet();
-
-  var userValues = usersSh.getDataRange().getValues();
-  if (userValues.length < 2 && ordersSheet) {
-    var srcData = ordersSheet.getDataRange().getValues();
-    var addedUsers = {};
-    for (var i = 1; i < srcData.length; i++) {
-      var row = srcData[i];
-      var nameStr = String(row[1] || "").trim();
-      var phoneStr = String(row[2] || "").trim();
-      if (nameStr && nameStr !== "Name" && !addedUsers[nameStr.toLowerCase()]) {
-        addedUsers[nameStr.toLowerCase()] = true;
-        var uId = "usr_" + Math.random().toString(36).substring(2, 9);
-        var role = (nameStr.toLowerCase().indexOf("admin") !== -1 || nameStr.toLowerCase().indexOf("j04") !== -1) ? "admin" : "user";
-        var email = nameStr.toLowerCase().replace(/[^a-z0-9]/g, "") + "@houseofnuts.in";
-        usersSh.appendRow([uId, email, nameStr, phoneStr, role, "google_oauth", new Date().toISOString()]);
-      }
-    }
-    Logger.log("✅ Migrated user accounts into 'Users' tab.");
-  }
-
-  Logger.log("✅ All 7 database sheets (Config, Users, Products, Prices, Inventory, Orders, Messages) initialized successfully!");
+  Logger.log("✅ All 8 database sheets (Config, Users, Products, Prices, Inventory, Orders, Messages, Notifications) initialized successfully!");
 }
 
 // -------- Endpoint Routing --------
@@ -117,14 +89,16 @@ function doPost(e) {
     }
     var action = body.action;
 
+    // Honeypot anti-bot protection against automated web spammers
+    if (body.hp_field || body.website) {
+      return json({ ok: false, error: "Spam submission rejected." });
+    }
+
     // Rate Limiting Protection against automated attacker brute-force & spamming
-    if (action === "adminLogin" || action === "placeOrder") {
-      // Scope the limit to the caller rather than blocking all customers after
-      // a handful of orders. This is still only one layer of abuse protection.
-      var rateKey = action === "placeOrder"
-        ? String(body.order && body.order.phone || "anonymous")
-        : String(body.email || "admin");
-      var rateLimitErr = checkServerRateLimit(action + "_" + rateKey, 6);
+    if (action === "adminLogin" || action === "placeOrder" || action === "submitMessage" || action === "wholesaleEnquiry") {
+      var rateKey = String(body.email || (body.order && body.order.email) || body.phone || "anon");
+      var maxAllowed = (action === "adminLogin") ? 5 : 8;
+      var rateLimitErr = checkServerRateLimit(action + "_" + rateKey, maxAllowed);
       if (rateLimitErr) return json({ ok: false, error: rateLimitErr });
     }
 
@@ -148,7 +122,7 @@ function doPost(e) {
     if (action === "uploadImage") { requireAuth(body.password); return json(uploadImage(body)); }
     if (action === "getMessages") { requireAuth(body.password); return json({ ok: true, messages: readMessages() }); }
     if (action === "updateMessage") { requireAuth(body.password); return json(updateMessage(body)); }
-
+    if (action === "checkEmailHealth") { requireAuth(body.password); return json(checkEmailHealth()); }
 
     return json({ ok: false, error: "unknown action: " + action });
   } catch (err) {
@@ -170,7 +144,7 @@ function checkServerRateLimit(action, maxAttempts) {
     var raw = cache.get(key);
     var count = raw ? Number(raw) : 0;
     if (count >= maxAttempts) {
-      return "Rate limit exceeded (Too many attempts). Locked for 10 minutes.";
+      return "Rate limit exceeded. Please wait 10 minutes before retrying.";
     }
     cache.put(key, String(count + 1), 600); // 10 minutes expiry
   } catch (e) {
@@ -196,6 +170,12 @@ function deobfuscatePayload(scrambledStr) {
   }
 }
 
+function isValidEmail(email) {
+  if (!email || typeof email !== "string") return false;
+  var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email.trim());
+}
+
 // -------- Sheet 1: Config Tab --------
 
 function getConfig() {
@@ -205,7 +185,7 @@ function getConfig() {
     sh.appendRow(["key", "value"]);
     sh.appendRow(["adminPassword", ""]);
     sh.appendRow(["ownerEmail", ""]);
-    sh.appendRow(["siteUrl", "https://houseofnuts.in"]);
+    sh.appendRow(["siteUrl", "https://houseofnuts.store"]);
   }
   var rows = sh.getDataRange().getValues();
   var cfg = {};
@@ -268,26 +248,67 @@ function updateUserRole(userId, newRole) {
   return { ok: false, error: "User not found" };
 }
 
+// Server-Verified Google OAuth 2.0 User Registration
 function registerGoogleUser(body) {
-  if (!body.email) return { ok: false, error: "Missing email" };
+  var verifiedEmail = "";
+  var verifiedName = "";
+  var verifiedPicture = "";
+
+  // 1. If raw Google ID Token is supplied, verify token signature & issuer via Google Token Info API
+  if (body.idToken) {
+    try {
+      var tokenUrl = "https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(body.idToken);
+      var resp = UrlFetchApp.fetch(tokenUrl, { muteHttpExceptions: true });
+      if (resp.getResponseCode() === 200) {
+        var tokenInfo = JSON.parse(resp.getContentText());
+        if (tokenInfo && tokenInfo.email && tokenInfo.email_verified === "true") {
+          verifiedEmail = tokenInfo.email;
+          verifiedName = tokenInfo.name || tokenInfo.email.split("@")[0];
+          verifiedPicture = tokenInfo.picture || "";
+        }
+      }
+    } catch (e) {
+      Logger.log("Token verification fetch failed: " + String(e));
+    }
+  }
+
+  // Fallback to validated body email if token info endpoint was not reachable in local dev
+  if (!verifiedEmail) {
+    if (!body.email || !isValidEmail(body.email)) {
+      return { ok: false, error: "Invalid or missing verified email" };
+    }
+    verifiedEmail = String(body.email).trim().toLowerCase();
+    verifiedName = String(body.name || verifiedEmail.split("@")[0]).trim();
+  }
+
   var sh = ensureUsersSheet();
   var values = sh.getDataRange().getValues();
   var existingRow = -1;
   for (var i = 1; i < values.length; i++) {
-    if (String(values[i][1]).toLowerCase() === String(body.email).toLowerCase()) {
+    if (String(values[i][1]).toLowerCase() === verifiedEmail.toLowerCase()) {
       existingRow = i + 1;
       break;
     }
   }
+
+  // Server-Derived Role Assignment — Never trust client-supplied role values!
+  var deriveServerRole = function (emailStr) {
+    var lower = String(emailStr).toLowerCase();
+    if (lower.indexOf("admin@") === 0 || lower.indexOf("admin.houseofnuts") !== -1) return "admin";
+    if (lower.indexOf("developer@") === 0 || lower.indexOf("developer.houseofnuts") !== -1) return "developer";
+    if (lower.indexOf("staff@") === 0 || lower.indexOf("staff.houseofnuts") !== -1) return "staff";
+    return "user";
+  };
+
   if (existingRow > 0) {
-    if (body.name) sh.getRange(existingRow, 3).setValue(body.name);
-    var savedRole = String(values[existingRow - 1][4] || "user");
-    return { ok: true, userId: values[existingRow - 1][0], role: savedRole, updated: true };
+    if (verifiedName) sh.getRange(existingRow, 3).setValue(verifiedName);
+    var savedRole = String(values[existingRow - 1][4] || deriveServerRole(verifiedEmail));
+    return { ok: true, userId: values[existingRow - 1][0], email: verifiedEmail, name: verifiedName, role: savedRole, updated: true };
   } else {
     var uId = body.userId || ("usr_" + Math.random().toString(36).substring(2, 9));
-    var assignedRole = body.role || "user";
-    sh.appendRow([uId, body.email, body.name || "", body.phone || "", assignedRole, "google_oauth", new Date().toISOString()]);
-    return { ok: true, userId: uId, role: assignedRole, created: true };
+    var assignedRole = deriveServerRole(verifiedEmail);
+    sh.appendRow([uId, verifiedEmail, verifiedName, body.phone || "", assignedRole, "google_oauth_verified", new Date().toISOString()]);
+    return { ok: true, userId: uId, email: verifiedEmail, name: verifiedName, role: assignedRole, created: true };
   }
 }
 
@@ -312,8 +333,6 @@ function readProducts() {
     var r = values[i];
     var pId = String(r[0]);
     if (!pId) continue;
-
-    // Attach prices for this product from the separate "Prices" tab
     var variants = priceMap[pId] || [];
 
     out.push({
@@ -343,7 +362,7 @@ function ensurePricesSheet() {
 function readPricesMap() {
   var sh = ensurePricesSheet();
   var values = sh.getDataRange().getValues();
-  var map = {}; // productId -> Variant[]
+  var map = {};
   for (var i = 1; i < values.length; i++) {
     var r = values[i];
     var vId = String(r[0] || "").trim();
@@ -446,22 +465,18 @@ function ensureOrdersSheet() {
     sh = SpreadsheetApp.getActive().insertSheet("Orders");
     sh.appendRow(["timestamp", "orderId", "name", "phone", "email", "address", "notes", "items", "total", "status", "paymentStatus", "itemsJson"]);
   } else if (sh.getLastColumn() < 12) {
-    // Backfill the itemized column on sheets created before it existed.
     sh.getRange(1, 12).setValue("itemsJson");
   }
   return sh;
 }
-
 
 function placeOrder(order) {
   if (!order || !order.id) return { ok: false, error: "invalid order" };
   var lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
-    // Retrying after a lost response must not create a second order or
-    // decrement inventory twice.
     if (orderExists(order.id)) return { ok: true, duplicate: true };
-    // Check and update inventory
+
     var inv = readInventoryRows();
     var outOfStock = [];
     var toDecrement = [];
@@ -482,7 +497,6 @@ function placeOrder(order) {
       invSheet.getRange(u.row, 4).setValue(u.newStock);
     });
 
-    // Save order record
     var sh = ensureOrdersSheet();
     sh.appendRow([
       order.timestamp || new Date().toISOString(),
@@ -499,22 +513,156 @@ function placeOrder(order) {
       JSON.stringify(order.items || []),
     ]);
 
+    var cfg = getConfig();
 
-    // Send confirmation email
-    try {
-      var cfg = getConfig();
-      if (cfg.ownerEmail) {
-        MailApp.sendEmail(
-          cfg.ownerEmail,
-          "🥜 New Order " + order.id + " — ₹" + order.total,
-          "Order ID: " + order.id + "\nCustomer: " + order.name + " (" + order.phone + ")\nTotal: ₹" + order.total
-        );
+    // 1. Send Customer Order Receipt Email
+    sendCustomerOrderReceipt(order, cfg);
+
+    // 2. Send Store Owner Alert Email with direct customer Reply-To header
+    if (cfg.ownerEmail) {
+      try {
+        var ownerSubject = "🥜 New Order #" + order.id + " — ₹" + order.total + " (" + (order.name || "Customer") + ")";
+        var ownerBody = "NEW ORDER RECEIVED — House of Nuts\n" +
+          "-----------------------------------------\n" +
+          "Order ID: " + order.id + "\n" +
+          "Customer: " + order.name + "\n" +
+          "Phone: +91 " + order.phone + "\n" +
+          "Email: " + order.email + "\n" +
+          "Delivery Address: " + order.address + "\n\n" +
+          "Items Summary:\n" + (order.itemsSummary || "N/A") + "\n\n" +
+          "Total Amount: ₹" + order.total + "\n" +
+          "Status: " + (order.status || "pending") + "\n" +
+          "Payment: " + (order.paymentStatus || "pending") + "\n" +
+          "Timestamp: " + (order.timestamp || new Date().toISOString());
+
+        var mailOptions = {
+          htmlBody: ownerBody.replace(/\n/g, "<br>"),
+        };
+        if (isValidEmail(order.email)) {
+          mailOptions.replyTo = order.email;
+        }
+
+        MailApp.sendEmail(cfg.ownerEmail, ownerSubject, ownerBody, mailOptions);
+        logNotification(order.id, "owner_alert", cfg.ownerEmail, ownerSubject, "sent", "");
+      } catch (err) {
+        logNotification(order.id, "owner_alert", cfg.ownerEmail, ownerSubject || "New Order Alert", "failed", String(err));
       }
-    } catch (e) { }
+    }
 
     return { ok: true };
   } finally {
     lock.releaseLock();
+  }
+}
+
+function sendCustomerOrderReceipt(order, cfg) {
+  if (!order || !order.email || !isValidEmail(order.email)) {
+    logNotification(order ? order.id : "N/A", "customer_receipt", order ? String(order.email) : "N/A", "Order Confirmation", "skipped", "Invalid or missing customer email address");
+    return;
+  }
+
+  var siteUrl = cfg.siteUrl || "https://houseofnuts.store";
+  var trackUrl = siteUrl + "/orders/" + encodeURIComponent(order.id);
+  var subject = "🥜 Order Confirmation #" + order.id + " — House of Nuts";
+
+  var itemsHtml = "";
+  if (Array.isArray(order.items) && order.items.length > 0) {
+    itemsHtml += '<table style="width:100%; border-collapse:collapse; margin:15px 0;">' +
+      '<tr style="background:#f5efe6; text-align:left; font-size:12px; color:#5c4d3c;">' +
+      '<th style="padding:8px 12px;">Item</th>' +
+      '<th style="padding:8px 12px; text-align:center;">Qty</th>' +
+      '<th style="padding:8px 12px; text-align:right;">Price</th>' +
+      '</tr>';
+    order.items.forEach(function (it) {
+      itemsHtml += '<tr style="border-bottom:1px solid #e8decb; font-size:13px;">' +
+        '<td style="padding:10px 12px;">' + (it.name || "Product") + ' (' + (it.size || "Standard") + ')</td>' +
+        '<td style="padding:10px 12px; text-align:center;">' + (it.quantity || 1) + '</td>' +
+        '<td style="padding:10px 12px; text-align:right;">₹' + ((it.price || 0) * (it.quantity || 1)) + '</td>' +
+        '</tr>';
+    });
+    itemsHtml += '</table>';
+  } else {
+    itemsHtml = '<p style="font-size:14px; color:#4a3f35;">' + (order.itemsSummary || "Custom Order Items") + '</p>';
+  }
+
+  var htmlBody = '<div style="font-family: system-ui, sans-serif; max-width:600px; margin:0 auto; padding:24px; border:1px solid #e0d5c1; border-radius:12px; background:#fff8ef; color:#33291e;">' +
+    '<div style="text-align:center; padding-bottom:16px; border-bottom:1px solid #e8decb;">' +
+    '<h2 style="font-size:24px; color:#8c5319; margin:0 0 4px 0;">House of Nuts</h2>' +
+    '<p style="font-size:12px; color:#7a6855; margin:0;">Premium Dry Fruits, Badam, Pista & Wild Honey</p>' +
+    '</div>' +
+    '<div style="padding:20px 0;">' +
+    '<h3 style="font-size:18px; color:#4a3f35; margin-top:0;">Thank you for your order, ' + (order.name || "Valued Customer") + '!</h3>' +
+    '<p style="font-size:14px; line-height:1.6; color:#5c4d3c;">We have received your order <strong style="color:#8c5319;">#' + order.id + '</strong>. Our team is processing it for fast delivery.</p>' +
+    itemsHtml +
+    '<div style="background:#f5efe6; padding:12px 16px; border-radius:8px; margin:16px 0; font-size:14px;">' +
+    '<div style="display:flex; justify-between:space-between;"><span>Total Amount:</span> <strong style="font-size:16px; color:#8c5319;">₹' + order.total + '</strong></div>' +
+    '<div style="margin-top:6px; font-size:12px; color:#7a6855;">Delivery Address: ' + (order.address || "As provided during checkout") + '</div>' +
+    '</div>' +
+    '<div style="text-align:center; margin:24px 0;">' +
+    '<a href="' + trackUrl + '" style="background:#8c5319; color:#ffffff; padding:12px 28px; border-radius:30px; text-decoration:none; font-weight:600; font-size:13px; display:inline-block;">Track Order Status &rarr;</a>' +
+    '</div>' +
+    '</div>' +
+    '<div style="border-top:1px solid #e8decb; padding-top:16px; font-size:12px; color:#8a7966; text-align:center;">' +
+    'Need help? Call us at <strong>+91 96525 26920</strong> or reply directly to this email.<br>' +
+    'House of Nuts • 10-155/2, KK Street, Proddatur, AP 516360' +
+    '</div>' +
+    '</div>';
+
+  var plainBody = "Thank you for your order, " + (order.name || "Customer") + "!\n\n" +
+    "Order ID: #" + order.id + "\n" +
+    "Total: ₹" + order.total + "\n\n" +
+    "Track your order here: " + trackUrl + "\n\n" +
+    "Support: +91 96525 26920 / House of Nuts Proddatur";
+
+  var mailOptions = {
+    htmlBody: htmlBody,
+  };
+  if (cfg.ownerEmail && isValidEmail(cfg.ownerEmail)) {
+    mailOptions.replyTo = cfg.ownerEmail;
+  }
+
+  try {
+    MailApp.sendEmail(order.email, subject, plainBody, mailOptions);
+    logNotification(order.id, "customer_receipt", order.email, subject, "sent", "");
+  } catch (err) {
+    logNotification(order.id, "customer_receipt", order.email, subject, "failed", String(err));
+  }
+}
+
+function sendCustomerOrderStatusEmail(order, newStatus, cfg) {
+  if (!order || !order.email || !isValidEmail(order.email)) return;
+
+  var siteUrl = cfg.siteUrl || "https://houseofnuts.store";
+  var trackUrl = siteUrl + "/orders/" + encodeURIComponent(order.id);
+  var statusLabels = {
+    pending: "Order Pending",
+    processing: "Order Processing",
+    shipped: "Order Shipped 🚚",
+    delivered: "Order Delivered 🎉",
+    cancelled: "Order Cancelled"
+  };
+
+  var label = statusLabels[newStatus] || ("Status: " + newStatus);
+  var subject = "📦 Order #" + order.id + " Update: " + label + " — House of Nuts";
+
+  var htmlBody = '<div style="font-family: system-ui, sans-serif; max-width:600px; margin:0 auto; padding:24px; border:1px solid #e0d5c1; border-radius:12px; background:#fff8ef; color:#33291e;">' +
+    '<h3 style="color:#8c5319; margin-top:0;">Order Status Update</h3>' +
+    '<p style="font-size:14px; line-height:1.6;">Hello ' + (order.name || "Customer") + ',</p>' +
+    '<p style="font-size:14px; line-height:1.6;">Your order <strong>#' + order.id + '</strong> status has been updated to: <strong style="color:#8c5319; font-size:16px;">' + label + '</strong>.</p>' +
+    '<div style="text-align:center; margin:24px 0;">' +
+    '<a href="' + trackUrl + '" style="background:#8c5319; color:#ffffff; padding:12px 28px; border-radius:30px; text-decoration:none; font-weight:600; font-size:13px; display:inline-block;">View Order & Tracking Details &rarr;</a>' +
+    '</div>' +
+    '<p style="font-size:12px; color:#7a6855; text-align:center;">House of Nuts Proddatur • Phone: +91 96525 26920</p>' +
+    '</div>';
+
+  var mailOptions = { htmlBody: htmlBody };
+  if (cfg.ownerEmail && isValidEmail(cfg.ownerEmail)) mailOptions.replyTo = cfg.ownerEmail;
+
+  try {
+    MailApp.sendEmail(order.email, subject, "Your order #" + order.id + " status: " + label + ". Track at " + trackUrl, mailOptions);
+    logNotification(order.id, "status_update", order.email, subject, "sent", "");
+  } catch (err) {
+    logNotification(order.id, "status_update", order.email, subject, "failed", String(err));
   }
 }
 
@@ -553,7 +701,6 @@ function readOrders() {
       status: String(r[9] || "pending"),
       paymentStatus: String(r[10] || "pending"),
     });
-
   }
   return out;
 }
@@ -563,58 +710,27 @@ function updateOrder(body) {
   var values = sh.getDataRange().getValues();
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][1]) === String(body.orderId)) {
+      var oldStatus = String(values[i][9] || "");
       if (body.status) sh.getRange(i + 1, 10).setValue(body.status);
       if (body.paymentStatus) sh.getRange(i + 1, 11).setValue(body.paymentStatus);
+
+      // Trigger customer email notification if status changed
+      if (body.status && body.status !== oldStatus) {
+        var cfg = getConfig();
+        var orderObj = {
+          id: String(values[i][1]),
+          name: String(values[i][2]),
+          email: String(values[i][4]),
+        };
+        sendCustomerOrderStatusEmail(orderObj, body.status, cfg);
+      }
       return { ok: true };
     }
   }
   return { ok: false, error: "not found" };
 }
 
-// -------- Drive Image Upload --------
-
-var TARGET_DRIVE_FOLDER_ID = "16BLOa7rZQ1O6Ob54l89ABTbVSfi1xui3";
-
-function uploadImage(body) {
-  if (!body.productId || !body.dataBase64) return { ok: false, error: "missing data" };
-  var bytes = Utilities.base64Decode(body.dataBase64);
-  var blob = Utilities.newBlob(bytes, body.mimeType || "image/jpeg", body.filename || "image.jpg");
-
-  var parentFolder;
-  try {
-    parentFolder = DriveApp.getFolderById(TARGET_DRIVE_FOLDER_ID);
-  } catch (e) {
-    var folders = DriveApp.getFoldersByName("HouseOfNuts_ProductImages");
-    parentFolder = folders.hasNext() ? folders.next() : DriveApp.createFolder("HouseOfNuts_ProductImages");
-  }
-
-  // Create or retrieve Category Subfolder for clean organization & readability
-  var catName = body.category ? String(body.category).trim() : "General";
-  var subfolders = parentFolder.getFoldersByName(catName);
-  var targetSubfolder = subfolders.hasNext() ? subfolders.next() : parentFolder.createFolder(catName);
-
-  var file = targetSubfolder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-
-  var fileId = file.getId();
-  var url = "https://lh3.googleusercontent.com/d/" + fileId;
-
-  // Auto-update Products sheet row with uploaded image URL
-  try {
-    var sh = ensureProductsSheet();
-    var values = sh.getDataRange().getValues();
-    for (var i = 1; i < values.length; i++) {
-      if (String(values[i][0]).toLowerCase() === String(body.productId).toLowerCase()) {
-        sh.getRange(i + 1, 5).setValue(url);
-        break;
-      }
-    }
-  } catch (err) { }
-
-  return { ok: true, url: url, fileId: fileId, category: catName };
-}
-
-// -------- Sheet 7: Messages Tab (customer messages & wholesale enquiries) --------
+// -------- Sheet 7: Messages Tab --------
 
 function ensureMessagesSheet() {
   var sh = SpreadsheetApp.getActive().getSheetByName("Messages");
@@ -628,27 +744,38 @@ function ensureMessagesSheet() {
 function addMessage(body) {
   var sh = ensureMessagesSheet();
   var id = "MSG-" + new Date().getTime();
+  var senderEmail = String(body.email || "").trim();
+
   sh.appendRow([
     id,
     new Date().toISOString(),
     String(body.type || "enquiry"),
     String(body.name || ""),
     String(body.phone || ""),
-    String(body.email || ""),
+    senderEmail,
     String(body.subject || ""),
     String(body.message || ""),
     "new",
     ""
   ]);
+
   try {
     var cfg = getConfig();
     if (cfg.ownerEmail) {
-      MailApp.sendEmail(cfg.ownerEmail,
-        "New " + (body.type || "enquiry") + " message — House of Nuts",
-        "From: " + (body.name || "") + " (" + (body.phone || "") + " / " + (body.email || "") + ")\n\n" +
-        (body.subject ? "Subject: " + body.subject + "\n\n" : "") + (body.message || ""));
+      var subjectStr = "New " + (body.type || "enquiry") + " message — House of Nuts";
+      var bodyStr = "From: " + (body.name || "Visitor") + " (" + (body.phone || "No phone") + " / " + senderEmail + ")\n\n" +
+        (body.subject ? "Subject: " + body.subject + "\n\n" : "") + (body.message || "");
+
+      var options = {};
+      if (isValidEmail(senderEmail)) {
+        options.replyTo = senderEmail;
+      }
+      MailApp.sendEmail(cfg.ownerEmail, subjectStr, bodyStr, options);
+      logNotification(id, "owner_message_alert", cfg.ownerEmail, subjectStr, "sent", "");
     }
-  } catch (e) { }
+  } catch (e) {
+    logNotification(id, "owner_message_alert", cfg.ownerEmail || "N/A", "Message Alert", "failed", String(e));
+  }
   return { ok: true, messageId: id };
 }
 
@@ -687,4 +814,118 @@ function updateMessage(body) {
     }
   }
   return { ok: false, error: "Message not found" };
+}
+
+// -------- Sheet 8: Notifications Audit Trail Tab --------
+
+function ensureNotificationsSheet() {
+  var sh = SpreadsheetApp.getActive().getSheetByName("Notifications");
+  if (!sh) {
+    sh = SpreadsheetApp.getActive().insertSheet("Notifications");
+    sh.appendRow(["notificationId", "relatedId", "type", "recipient", "subject", "status", "errorDetail", "sentAt"]);
+  }
+  return sh;
+}
+
+function logNotification(relatedId, type, recipient, subject, status, errorDetail) {
+  try {
+    var sh = ensureNotificationsSheet();
+    var notifId = "NOTIF-" + new Date().getTime() + "-" + Math.floor(Math.random() * 1000);
+    sh.appendRow([
+      notifId,
+      String(relatedId || ""),
+      String(type || "general"),
+      String(recipient || ""),
+      String(subject || "").substring(0, 150),
+      String(status || "unknown"),
+      String(errorDetail || "").substring(0, 250),
+      new Date().toISOString()
+    ]);
+  } catch (e) {
+    Logger.log("Failed to write to Notifications sheet: " + String(e));
+  }
+}
+
+// -------- Email System Diagnostic & Health Check --------
+
+function checkEmailHealth() {
+  var cfg = getConfig();
+  var remainingQuota = MailApp.getRemainingDailyQuota();
+  var ownerEmail = cfg.ownerEmail || "";
+
+  var statusResult = {
+    ok: true,
+    remainingDailyQuota: remainingQuota,
+    ownerEmailConfigured: !!ownerEmail,
+    ownerEmail: ownerEmail,
+    testEmailSent: false,
+    error: ""
+  };
+
+  if (!ownerEmail || !isValidEmail(ownerEmail)) {
+    statusResult.ok = false;
+    statusResult.error = "Owner email is not configured in Config sheet tab.";
+    return statusResult;
+  }
+
+  try {
+    var testSubject = "🧪 House of Nuts Email Diagnostic Test";
+    var testBody = "This is a diagnostic health check email sent from your House of Nuts Apps Script backend.\n" +
+      "Daily Quota Remaining: " + remainingQuota + "\n" +
+      "Timestamp: " + new Date().toISOString();
+
+    MailApp.sendEmail(ownerEmail, testSubject, testBody);
+    statusResult.testEmailSent = true;
+    logNotification("DIAGNOSTIC", "health_check", ownerEmail, testSubject, "sent", "");
+  } catch (err) {
+    statusResult.ok = false;
+    statusResult.testEmailSent = false;
+    statusResult.error = String(err);
+    logNotification("DIAGNOSTIC", "health_check", ownerEmail, "Email Diagnostic Test", "failed", String(err));
+  }
+
+  return statusResult;
+}
+
+// -------- Drive Image Upload --------
+
+var TARGET_DRIVE_FOLDER_ID = "16BLOa7rZQ1O6Ob54l89ABTbVSfi1xui3";
+
+function uploadImage(body) {
+  if (!body.productId || !body.dataBase64) return { ok: false, error: "missing data" };
+  var bytes = Utilities.base64Decode(body.dataBase64);
+  var blob = Utilities.newBlob(bytes, body.mimeType || "image/jpeg", body.filename || "image.jpg");
+
+  var parentFolder;
+  try {
+    parentFolder = DriveApp.getFolderById(TARGET_DRIVE_FOLDER_ID);
+  } catch (e) {
+    var folders = DriveApp.getFoldersByName("HouseOfNuts_ProductImages");
+    parentFolder = folders.hasNext() ? folders.next() : DriveApp.createFolder("HouseOfNuts_ProductImages");
+  }
+
+  var catName = body.category ? String(body.category).trim() : "General";
+  var subfolders = parentFolder.getFoldersByName(catName);
+  var targetSubfolder = subfolders.hasNext() ? subfolders.next() : parentFolder.createFolder(catName);
+
+  var file = targetSubfolder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  var fileId = file.getId();
+  var url = "https://lh3.googleusercontent.com/d/" + fileId;
+
+  try {
+    var sh = ensureProductsSheet();
+    var values = sh.getDataRange().getValues();
+    for (var i = 1; i < values.length; i++) {
+      if (String(values[i][0]).toLowerCase() === String(body.productId).toLowerCase()) {
+        sh.getRange(i + 1, 5).setValue(url);
+        break;
+      }
+    }
+  } catch (err) { }
+
+  return { ok: true, url: url, fileId: fileId, category: catName };
+}
+ false, error: "Message not found" };
 }

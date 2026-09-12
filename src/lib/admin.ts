@@ -170,3 +170,16 @@ export async function adminUpdateUserRole(userId: string, role: UserRole): Promi
   const res = await apiPost<{ ok: boolean; error?: string }>("updateUserRole", { password, userId, role });
   if (!res.ok) throw new Error(res.error || "Failed to update user role");
 }
+
+export async function adminCheckEmailHealth(): Promise<{
+  ok: boolean;
+  remainingDailyQuota: number;
+  ownerEmailConfigured: boolean;
+  ownerEmail: string;
+  testEmailSent: boolean;
+  error?: string;
+}> {
+  const password = requireAuth();
+  return await apiPost("checkEmailHealth", { password });
+}
+

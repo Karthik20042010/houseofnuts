@@ -248,10 +248,19 @@ const CheckoutPage = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Hidden Honeypot Field against automated spam submissions */}
+            <input type="text" name="hp_field" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
+
             <div>
               <label className="block text-xs uppercase tracking-[0.15em] font-body text-muted-foreground mb-2 flex items-center justify-between">
-                <span>Google Mail Address *</span>
-                {isGoogleAuthenticated && <span className="text-emerald-600 dark:text-emerald-400 text-[10px]">Verified with Google</span>}
+                <span>Notification & Delivery Email *</span>
+                {isGoogleAuthenticated && googleUser && form.email === googleUser.email ? (
+                  <span className="text-emerald-600 dark:text-emerald-400 text-[10px] flex items-center gap-1 font-medium">
+                    <ShieldCheck size={12} /> Verified Google Account
+                  </span>
+                ) : isGoogleAuthenticated ? (
+                  <span className="text-amber-600 dark:text-amber-400 text-[10px]">Custom Delivery Recipient</span>
+                ) : null}
               </label>
               <input
                 type="email"
@@ -261,6 +270,9 @@ const CheckoutPage = () => {
                 className="w-full border border-border bg-background px-4 py-3 font-body text-sm focus:outline-none focus:border-accent transition-colors"
                 placeholder="yourname@gmail.com"
               />
+              <p className="text-[11px] text-muted-foreground mt-1 font-body">
+                Order confirmation receipts, shipping alerts, and tracking links will be sent here.
+              </p>
             </div>
 
             <div>

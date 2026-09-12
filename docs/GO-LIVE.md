@@ -1,113 +1,75 @@
-# Going Live — House of Nuts (5-minute setup)
+# Going Live — House of Nuts Production Setup
 
-Everything runs on your existing Google Sheet. No database, no server, no cost.
+Everything runs on your existing Google Sheet Apps Script backend. No database, no server, zero cost.
 
 ## 1. Open your Sheet's Apps Script
 
 Open the sheet ➜ **Extensions ➜ Apps Script**.
 
-## 2. Paste the new backend
+## 2. Paste the Updated Backend Code
 
-Delete everything in `Code.gs` and paste the contents of **`docs/apps-script.js`** from this repo.
+Delete everything in `Code.gs` and paste the exact contents of **`docs/apps-script.js`** from this repo.
 Click **Save** (💾).
 
-## 3. Add these tabs to your Sheet
+## 3. Database Sheet Tabs
 
-You already have **Orders**. Add two more (tab names must match exactly):
+The system automatically initializes and manages **8 dedicated sheet tabs**:
 
-### `Inventory` tab
-Row 1 headers:
+1. **`Config`**: Store settings (`adminPassword`, `ownerEmail`, `siteUrl`).
+2. **`Users`**: User accounts, contact details, authentication & roles (`admin`, `developer`, `staff`, `user`).
+3. **`Products`**: Product catalog (Names, Categories, Descriptions, Badges, Images).
+4. **`Prices`**: Price Master (Product ID, Variant ID, Size, Price, Discount Price).
+5. **`Inventory`**: Stock Master (Variant ID, Product ID, Size, Available Stock, Reorder Level).
+6. **`Orders`**: Customer Orders (Timestamp, Order ID, Customer Info, Items, Total, Status, Payment).
+7. **`Messages`**: Customer messages & wholesale enquiries.
+8. **`Notifications`**: Email delivery log, notification audit trail & bounce tracking.
 
-| variantId | productId | size | stock |
-| --------- | --------- | ---- | ----- |
-
-Leave it empty for now — you'll fill stock from the admin panel. Any variant not
-listed here is treated as **unlimited stock**.
-
-### `Config` tab
-Row 1 headers, then two data rows:
+### `Config` Tab Configuration
+In your Google Sheet's `Config` tab:
 
 | key            | value                          |
 | -------------- | ------------------------------ |
 | adminPassword  | pick-a-strong-password         |
 | ownerEmail     | your-email@gmail.com           |
+| siteUrl        | https://houseofnuts.store      |
 
-`adminPassword` is what you'll type on `/admin/login`.
-`ownerEmail` is where new-order notifications are sent.
+- `adminPassword`: Password required for `/admin/login` and protected admin endpoints.
+- `ownerEmail`: Store owner email where new order & enquiry alerts are sent.
+- `siteUrl`: Production domain (used for customer tracking links `https://houseofnuts.store/orders/<id>`).
 
-## 4. Redeploy
+## 4. Deploy Web App
 
-**Deploy ➜ Manage deployments ➜ pencil icon ➜ Version: New version ➜ Deploy.**
-Keep the same Web App URL (the code is already wired to it).
+**Deploy ➜ Manage deployments ➜ Edit (Pencil) ➜ Version: New version ➜ Deploy.**
 
-The first time Apps Script runs it will ask for permission to send email
-(MailApp) and edit the sheet — approve both.
+*The first time Apps Script runs, approve permissions for MailApp (email sending) and Google Sheets.*
 
-## 5. Test
+## 5. Email & Notification Architecture
 
-- Open the site, add items to cart, checkout with a small order. You should get an email within ~30s.
-- Go to `/admin/login`, enter your password.
-- You'll see the order in the dashboard. Click it, change status to "shipped", save. Confirm the Sheet reflects it.
-- Go to `/admin/inventory`, set stock for a variant to `2`, save. Reload the storefront — "Only 2 left" badge should appear.
+### Customer Transactional Emails (Automatic)
+- **Order Confirmation Receipt**: Sent immediately after successful order placement to the customer's email. Includes HTML formatted itemized table, total amount, shipping address, support phone (+91 96525 26920), and a direct tracking link (`https://houseofnuts.store/orders/<id>`).
+- **Order Status Update Emails**: Automatically sent to the customer whenever an admin updates the order status to `processing`, `shipped`, `delivered`, or `cancelled`.
+- **Reply-To Integration**: All customer notification emails set `replyTo: ownerEmail`. Store owner alerts set `replyTo: customerEmail` so replying in Gmail directly addresses the customer.
 
-## 6. Publish / Hosting
+### Notification Audit Trail & Health Diagnostics
+- Every email attempt (success or error) is logged with timestamp, recipient, subject, and error details in the **`Notifications`** sheet tab.
+- Admins can trigger the **Email Health Check** diagnostic tool via `/admin` to verify remaining daily MailApp quota (100/day on free Gmail, 1,500/day on Workspace) and test configuration.
 
-You can host **House of Nuts** on any static host or platform:
+## 6. Security & Google OAuth 2.0 Token Verification
 
-### Option A: Vercel / Netlify / Cloudflare Pages
-- Connect this GitHub repository to Vercel or Netlify.
-- Framework Preset: **Vite**.
-- Build Command: `npm run build`.
-- Output Directory: `dist`.
-- Set your custom domain (e.g. `houseofnuts.in` or `houseofnuts.com`).
-
-### Option B: Lovable Editor
-- Click **Publish** in the Lovable editor to publish immediately to your custom domain or project URL. Add a custom domain under **Project Settings ➜ Domains**.
-
-### Setting your domain in Google Sheet:
-In your Google Sheet's `Config` tab, add a row:
-`siteUrl` | `https://yourdomain.com`
-This ensures customer status update emails link directly to your custom domain's `/track` page.
+- **Google ID Token Server Verification**: Google Identity Services ID tokens are verified against Google's Token Info service (`https://oauth2.googleapis.com/tokeninfo?id_token=`). Signature, issuer, and email verification status are checked server-side.
+- **Server-Derived Roles**: Roles (`admin`, `developer`, `staff`, `user`) are derived exclusively on the server from existing user records or domain allowlists—never from client request parameters.
+- **Anti-Spam & Rate Limiting**: Form submissions contain hidden honeypot fields (`hp_field`) and IP/email rate limiting (max attempts per 10 minutes) to block automated web spammers.
 
 ---
 
-### Notes
+## 7. Hosting & Domain Setup
 
-- **Admin URL is public** (`/admin/login`) but useless without your password. Pick a strong one and keep it out of chat/email.
-- **Inventory is per size variant** and updated atomically via `LockService`, so two customers can't oversell the last unit.
-- **Local order history** on customer devices still works via `localStorage` — the Sheet is the source of truth.
+### Deploying Frontend (Vercel / Netlify / Cloudflare Pages)
+1. Framework Preset: **Vite**.
+2. Build Command: `npm run build`.
+3. Output Directory: `dist`.
+4. Environment Variables:
+   - `VITE_APPS_SCRIPT_URL`: Your Apps Script Web App URL (`https://script.google.com/macros/s/.../exec`).
+   - `VITE_GOOGLE_CLIENT_ID`: Your Google OAuth Client ID (`9652526920-houseofnuts.apps.googleusercontent.com`).
+   - `VITE_GOOGLE_DRIVE_FOLDER_ID`: `16BLOa7rZQ1O6Ob54l89ABTbVSfi1xui3`.
 
-## 7. Customer notifications (email + SMS)
-
-Whenever the admin changes an order's status (confirmed / shipped / delivered / cancelled)
-or marks it paid, the customer is notified automatically.
-
-### Email — free, works out of the box
-Uses Google's built-in `MailApp` in Apps Script. Sent from your Google account,
-no setup needed. Goes to the email the customer entered at checkout (if any).
-Daily quota: 100 recipients/day on free Gmail, 1,500/day on Workspace.
-
-### SMS — optional, activate when ready
-SMS uses [Fast2SMS](https://www.fast2sms.com/) (India-focused, prepaid, ~₹0.20-0.30 per SMS).
-
-To turn it on:
-1. Create a Fast2SMS account and buy a small credit pack.
-2. Copy your API key from Fast2SMS → **Dev API**.
-3. In Apps Script open **Project Settings** (⚙️) → **Script Properties** → **Add script property**.
-4. Name: `FAST2SMS_API_KEY`, Value: *(paste your key)* → **Save**.
-5. Redeploy the web app (Deploy → Manage deployments → edit → New version).
-
-That's it — SMS starts flowing on the next status change. Remove the property
-to disable SMS again; email keeps working.
-
-### What triggers what
-| Admin action        | Email | SMS |
-| ------------------- | :---: | :-: |
-| Confirm order       |  ✅   | ✅  |
-| Mark Shipped (+ tracking#) | ✅ | ✅ |
-| Mark Delivered      |  ✅   | ✅  |
-| Cancel Order        |  ✅   | ✅  |
-| Mark Paid           |  ✅   | ✅  |
-
-When marking shipped, you'll be prompted for an optional tracking number that's
-included in the message.
