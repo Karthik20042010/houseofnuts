@@ -12,11 +12,9 @@ export interface SEOHeadProps {
 
 const DEFAULT_TITLE = "House of Nuts — Buy Premium Dry Fruits, Mamra Almonds & Wild Honey Online";
 const DEFAULT_DESCRIPTION =
-  "Shop premium quality dry fruits, Mamra almonds, jumbo cashews, Iranian pistachios, Kashmiri saffron & raw wild honey online in India & Proddatur. Best prices, 100% natural, direct farm source.";
-const DEFAULT_KEYWORDS =
-  "buy dry fruits online, house of nuts proddatur, mamra almonds price, jumbo cashews online, iranian pistachios, kashmiri saffron, wild honey proddatur, dry fruit store proddatur, dry fruits store near me, organic dry fruits online";
+  "Shop premium quality dry fruits, Mamra almonds, jumbo cashews, Iranian pistachios, organic spices & raw wild honey online in India & Proddatur. Best prices, 100% natural, direct farm source.";
 const DEFAULT_OG_IMAGE =
-  "https://images.unsplash.com/photo-1608797178974-15b35a64ede9?w=1200&h=630&fit=crop";
+  "https://houseofnuts.store/images/branding/house-of-nuts-banner.png";
 const SITE_NAME = "House of Nuts";
 const BASE_URL = "https://houseofnuts.store";
 
@@ -47,11 +45,18 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
 
     // 2. Meta Description & Keywords
     setMetaTag('meta[name="description"]', "name", "description", description || DEFAULT_DESCRIPTION);
-    setMetaTag('meta[name="keywords"]', "name", "keywords", keywords || DEFAULT_KEYWORDS);
     setMetaTag('meta[name="author"]', "name", "author", SITE_NAME);
 
+    const kwElement = document.querySelector('meta[name="keywords"]');
+    if (keywords) {
+      setMetaTag('meta[name="keywords"]', "name", "keywords", keywords);
+    } else if (kwElement) {
+      kwElement.remove();
+    }
+
     // 3. Canonical URL
-    const targetCanonical = canonicalUrl ? `${BASE_URL}${canonicalUrl}` : window.location.href;
+    const cleanPath = canonicalUrl ? canonicalUrl : window.location.pathname;
+    const targetCanonical = `${BASE_URL}${cleanPath === "/" ? "" : cleanPath}`;
     let canonicalElement = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!canonicalElement) {
       canonicalElement = document.createElement("link");

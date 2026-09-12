@@ -99,13 +99,27 @@ const Index = () => {
     document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const homeJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "House of Nuts Featured Products",
+    "url": "https://houseofnuts.store/",
+    "numberOfItems": 6,
+    "itemListElement": products.slice(0, 6).map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "url": `https://houseofnuts.store/product/${item.id}`,
+      "name": item.name
+    }))
+  };
+
   return (
     <div className="min-h-screen">
       <SEOHead
         title="Buy Premium Dry Fruits, Badam, Pista & Honey Online in Proddatur"
         description="Shop 100% natural Mamra almonds (Badam), Iranian pistachios (Pista), jumbo cashews, organic spices & raw wild honey online in Proddatur, Andhra Pradesh. Best prices, direct farm source."
-        keywords="house of nuts proddatur, buy dry fruits online proddatur, badam price proddatur, pista online, mamra almonds proddatur, dry fruit shop in proddatur, cashews, kashmiri saffron, wild honey india, organic dry fruits online"
         canonicalUrl="/"
+        jsonLd={homeJsonLd}
       />
       <PromoBanner />
       <Header />

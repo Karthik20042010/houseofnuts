@@ -27,46 +27,25 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const permAllowed = !requiredPermission || hasPermission(requiredPermission);
 
   if (!roleAllowed || !permAllowed) {
+    if (role === "user") {
+      return <Navigate to="/account" replace />;
+    }
+
     const badge = ROLE_BADGES[role];
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center">
-        <div className="size-16 rounded-full bg-destructive/10 text-destructive grid place-items-center mb-4 animate-bounce">
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center font-body">
+        <div className="size-16 rounded-full bg-destructive/10 text-destructive grid place-items-center mb-4">
           <ShieldAlert size={32} />
         </div>
-        <h2 className="font-display text-2xl font-semibold mb-2">Access Denied</h2>
-        <p className="text-muted-foreground max-w-md text-sm mb-4">
-          Your current role (<Badge variant={badge.variant}>{ROLE_LABELS[role]}</Badge>) does not have permission to view this page.
+        <h2 className="font-display text-2xl font-semibold mb-2">Restricted Access</h2>
+        <p className="text-muted-foreground max-w-md text-xs mb-5">
+          Your account role (<Badge variant={badge.variant}>{ROLE_LABELS[role]}</Badge>) is restricted from accessing this area.
         </p>
-
-        <div className="bg-card border border-border p-4 rounded-md max-w-md w-full mb-6 text-left">
-          <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-            <KeyRound size={14} /> Available Role Testing
-          </p>
-          <p className="text-xs text-muted-foreground mb-3">
-            Switch your role to access this area:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {(["admin", "developer", "staff"] as UserRole[]).map((r) => (
-              <button
-                key={r}
-                onClick={() => switchRole(r)}
-                className={`text-xs px-3 py-1.5 rounded border transition-colors ${
-                  role === r
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-muted text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground"
-                }`}
-              >
-                Switch to {ROLE_LABELS[r]}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <a
-          href="/admin"
-          className="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium"
+          href="/account"
+          className="inline-flex items-center gap-2 text-xs bg-primary text-primary-foreground px-4 py-2.5 rounded-xl font-medium hover:bg-accent transition-colors shadow-xs"
         >
-          <ArrowLeft size={16} /> Return to Admin Dashboard
+          <ArrowLeft size={15} /> Return to My Account
         </a>
       </div>
     );

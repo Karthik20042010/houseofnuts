@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, deriveRoleFromEmail } from "@/contexts/AuthContext";
 import { UserRole, ROLE_LABELS } from "@/types/auth";
 import { adminLogin, isAdminLoggedIn } from "@/lib/admin";
 import Header from "@/components/Header";
@@ -59,15 +59,11 @@ const AdminLogin = () => {
   }
 
   const performRedirect = (email: string) => {
-    const lower = email.toLowerCase().trim();
-    if (
-      lower.startsWith("admin") ||
-      lower.includes("admin") ||
-      lower.includes("staff")
-    ) {
-      navigate("/admin", { replace: true });
-    } else if (lower.includes("developer")) {
+    const userRole = deriveRoleFromEmail(email);
+    if (userRole === "developer") {
       navigate("/admin/developer", { replace: true });
+    } else if (userRole === "admin" || userRole === "staff") {
+      navigate("/admin", { replace: true });
     } else {
       navigate("/account", { replace: true });
     }

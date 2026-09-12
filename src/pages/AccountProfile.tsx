@@ -91,24 +91,18 @@ export const AccountProfile: React.FC = () => {
     const raw = localStorage.getItem(userAddressKey) || localStorage.getItem(LOCAL_ADDRESSES_KEY);
     if (raw) {
       try {
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter(
+            (a: Address) => !a.street?.includes("Palm Heights") && a.pincode !== "560103"
+          );
+          return filtered;
+        }
       } catch {
         // fallback
       }
     }
-    return [
-      {
-        id: "addr_1",
-        name: googleUser ? googleUser.name : "Customer Name",
-        phone: "+91 98765 43210",
-        street: "#42, Palm Heights, Outer Ring Road, Bellandur",
-        city: "Bengaluru",
-        state: "Karnataka",
-        pincode: "560103",
-        landmark: "Near EcoSpace Tech Park",
-        isDefault: true,
-      },
-    ];
+    return [];
   });
 
   // Re-sync profile and address when user session changes
@@ -129,7 +123,13 @@ export const AccountProfile: React.FC = () => {
     const rawAddr = localStorage.getItem(userAddressKey);
     if (rawAddr) {
       try {
-        setAddresses(JSON.parse(rawAddr));
+        const parsed = JSON.parse(rawAddr);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter(
+            (a: Address) => !a.street?.includes("Palm Heights") && a.pincode !== "560103"
+          );
+          setAddresses(filtered);
+        }
       } catch {}
     }
   }, [userProfileKey, userAddressKey, googleUser]);

@@ -31,6 +31,7 @@ interface AuthContextType {
   isGoogleAuthenticated: boolean;
   login: (password: string, role: UserRole) => Promise<{ ok: boolean; error?: string }>;
   loginWithGoogle: (email: string, name: string, picture?: string) => Promise<GoogleUser>;
+  loginWithGoogleCredential: (idToken: string) => Promise<GoogleUser | null>;
   logoutGoogle: () => void;
   logout: () => void;
   switchRole: (newRole: UserRole) => void;
@@ -126,6 +127,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return user;
   };
 
+  const loginWithGoogleCredential = async (idToken: string): Promise<GoogleUser | null> => {
+    try {
+      const base64Url = idToken.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        window
+          .atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+      const payload = JSON.parse(jsonPayload);
+      if (payload && payload.email) {
+        return await loginWithGoogle(
+          payload.email,
+          payload.name || payload.email.split("@")[0],
+          payload.picture
+        );
+      }
+    } catch {
+      // Fallback
+    }
+    return null;
+  };
+
   const logoutGoogle = () => {
     localStorage.removeItem(GOOGLE_USER_KEY);
     setGoogleUser(null);
@@ -163,6 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isGoogleAuthenticated: !!googleUser,
         login,
         loginWithGoogle,
+        loginWithGoogleCredential,
         logoutGoogle,
         logout,
         switchRole,

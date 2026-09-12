@@ -27,7 +27,8 @@ const Header = () => {
   const displayEmail = googleUser ? googleUser.email : isLoggedIn ? `${role}@houseofnuts.com` : "";
 
   const handleAccountClick = () => {
-    if (isLoggedIn || googleUser?.email?.toLowerCase().includes("admin") || googleUser?.email === "houseofnutsproddatur@gmail.com") {
+    const isStaffOrAdmin = role === "admin" || role === "staff" || role === "developer";
+    if (isStaffOrAdmin) {
       navigate("/admin");
     } else {
       navigate("/account");

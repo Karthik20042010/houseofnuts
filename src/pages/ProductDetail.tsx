@@ -85,12 +85,12 @@ const ProductDetail = () => {
       /* user cancelled the share sheet */
     }
   };
-  const productJsonLd = {
+  const productJsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
     "name": product.name,
     "description": product.description || `Buy 100% pure premium ${product.name} online from House of Nuts Proddatur. Fresh farm harvest.`,
-    "image": [product.image.startsWith("http") ? product.image : `https://houseofnuts.in${product.image}`],
+    "image": [product.image.startsWith("http") ? product.image : `https://houseofnuts.store${product.image}`],
     "sku": product.id,
     "brand": {
       "@type": "Brand",
@@ -108,6 +108,16 @@ const ProductDetail = () => {
       }
     }
   };
+
+  if (reviewCount > 0) {
+    productJsonLd.aggregateRating = {
+      "@type": "AggregateRating",
+      "ratingValue": avgRating,
+      "reviewCount": reviewCount,
+      "bestRating": 5,
+      "worstRating": 1
+    };
+  }
 
   return (
     <div className="min-h-screen">

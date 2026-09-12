@@ -161,7 +161,7 @@ const Category = () => {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://houseofnuts.in/"
+        "item": "https://houseofnuts.store/"
       },
       {
         "@type": "ListItem",
@@ -182,14 +182,27 @@ const Category = () => {
     ],
   };
 
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": cat ? `${cat.label} Collection` : "House of Nuts Collection",
+    "url": `https://houseofnuts.store${effectiveSlug === "all" ? "/shop" : `/category/${effectiveSlug}`}`,
+    "numberOfItems": paginated.length,
+    "itemListElement": paginated.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "url": `https://houseofnuts.store/product/${item.id}`,
+      "name": item.name
+    }))
+  };
+
   return (
     <div className="min-h-screen">
       <SEOHead
         title={cat ? `${cat.label} Collection` : "Shop Premium Dry Fruits & Nuts"}
         description={`Explore our handpicked collection of ${cat?.label || 'dry fruits'} at House of Nuts Proddatur. 100% natural, farm-fresh harvest delivered fast.`}
-        keywords={`${cat?.label.toLowerCase()}, buy ${cat?.label.toLowerCase()} online, dry fruits proddatur, house of nuts proddatur`}
         canonicalUrl={effectiveSlug === "all" ? "/shop" : `/category/${effectiveSlug}`}
-        jsonLd={breadcrumbJsonLd}
+        jsonLd={[breadcrumbJsonLd, collectionJsonLd]}
       />
       <PromoBanner />
       <Header />
