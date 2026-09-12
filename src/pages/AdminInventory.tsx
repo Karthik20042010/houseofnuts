@@ -261,6 +261,20 @@ export const AdminInventory = () => {
     }
   };
 
+  // Helper to check if an image file is a duplicate of existing gallery URLs
+  const isDuplicateImageFile = async (file: File, existingUrls: string[]): Promise<boolean> => {
+    const newDataUrl = await fileToDataUrl(file);
+    for (const url of existingUrls) {
+      if (url === newDataUrl) return true;
+      if (url.startsWith("data:") && newDataUrl.startsWith("data:")) {
+        const c1 = url.split(",")[1];
+        const c2 = newDataUrl.split(",")[1];
+        if (c1 && c2 && c1 === c2) return true;
+      }
+    }
+    return false;
+  };
+
   // Helper for Uploading an Image File to Drive / Data URL
   const processImageFileUpload = async (
     file: File,
@@ -305,12 +319,27 @@ export const AdminInventory = () => {
     setImageUploading(true);
     try {
       const newUrls: string[] = [];
+      let skippedCount = 0;
+
       for (const file of Array.from(files)) {
-        if (file.type.startsWith("image/")) {
-          const url = await processImageFileUpload(file, newProdCategory);
+        if (!file.type.startsWith("image/")) continue;
+
+        const isDup = await isDuplicateImageFile(file, newProdImages);
+        if (isDup) {
+          skippedCount++;
+          continue;
+        }
+
+        const url = await processImageFileUpload(file, newProdCategory);
+        if (url && !newProdImages.includes(url) && !newUrls.includes(url)) {
           newUrls.push(url);
         }
       }
+
+      if (skippedCount > 0) {
+        toast.info(`Skipped ${skippedCount} duplicate photo(s) already in gallery.`);
+      }
+
       if (newUrls.length > 0) {
         setNewProdImages((prev) => Array.from(new Set([...prev, ...newUrls])));
         toast.success(`Attached ${newUrls.length} image(s) to product!`);
@@ -333,12 +362,27 @@ export const AdminInventory = () => {
     setImageUploading(true);
     try {
       const newUrls: string[] = [];
+      let skippedCount = 0;
+
       for (const file of Array.from(files)) {
-        if (file.type.startsWith("image/")) {
-          const url = await processImageFileUpload(file, targetItem.category, targetItem.id);
+        if (!file.type.startsWith("image/")) continue;
+
+        const isDup = await isDuplicateImageFile(file, editingProductImages);
+        if (isDup) {
+          skippedCount++;
+          continue;
+        }
+
+        const url = await processImageFileUpload(file, targetItem.category, targetItem.id);
+        if (url && !editingProductImages.includes(url) && !newUrls.includes(url)) {
           newUrls.push(url);
         }
       }
+
+      if (skippedCount > 0) {
+        toast.info(`Skipped ${skippedCount} duplicate photo(s) already in gallery.`);
+      }
+
       if (newUrls.length > 0) {
         setEditingProductImages((prev) => Array.from(new Set([...prev, ...newUrls])));
         toast.success(`Added ${newUrls.length} new photo(s) to ${targetItem.name}'s gallery!`);
