@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
+import SEOHead from "@/components/SEOHead";
 import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
 import { ProductCardSkeletonGrid } from "@/components/ProductCardSkeleton";
@@ -100,6 +101,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <SEOHead
+        title="Buy Premium Dry Fruits, Badam, Pista & Honey Online in Proddatur"
+        description="Shop 100% natural Mamra almonds (Badam), Iranian pistachios (Pista), jumbo cashews, organic spices & raw wild honey online in Proddatur, Andhra Pradesh. Best prices, direct farm source."
+        keywords="house of nuts proddatur, buy dry fruits online proddatur, badam price proddatur, pista online, mamra almonds proddatur, dry fruit shop in proddatur, cashews, kashmiri saffron, wild honey india, organic dry fruits online"
+        canonicalUrl="/"
+      />
       <PromoBanner />
       <Header />
       <CategoryStrip />

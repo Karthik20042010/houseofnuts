@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, ChevronRight as Crumb, SlidersHorizontal, X } from "lucide-react";
 import Header from "@/components/Header";
+import SEOHead from "@/components/SEOHead";
 import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
 import { ProductCardSkeletonGrid } from "@/components/ProductCardSkeleton";
@@ -152,8 +153,44 @@ const Category = () => {
     </div>
   );
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://houseofnuts.in/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Shop",
+        "item": "https://houseofnuts.in/shop"
+      },
+      ...(cat && cat.id !== "all"
+        ? [
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": cat.label,
+              "item": `https://houseofnuts.in/category/${cat.id}`,
+            },
+          ]
+        : [])
+    ],
+  };
+
   return (
     <div className="min-h-screen">
+      <SEOHead
+        title={cat ? `${cat.label} Collection` : "Shop Premium Dry Fruits & Nuts"}
+        description={`Explore our handpicked collection of ${cat?.label || 'dry fruits'} at House of Nuts Proddatur. 100% natural, farm-fresh harvest delivered fast.`}
+        keywords={`${cat?.label.toLowerCase()}, buy ${cat?.label.toLowerCase()} online, dry fruits proddatur, house of nuts proddatur`}
+        canonicalUrl={effectiveSlug === "all" ? "/shop" : `/category/${effectiveSlug}`}
+        jsonLd={breadcrumbJsonLd}
+      />
       <PromoBanner />
       <Header />
       <CategoryStrip />

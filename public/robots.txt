@@ -3,9 +3,16 @@ Allow: /
 Allow: /shop
 Allow: /category/
 Allow: /product/
+Allow: /gifting
+Allow: /journal
+Allow: /faq
+Allow: /shipping
+Allow: /returns
+Allow: /contact
 
 Disallow: /admin
 Disallow: /admin/
 Disallow: /checkout
+Disallow: /account
 
 Sitemap: https://houseofnuts.in/sitemap.xml

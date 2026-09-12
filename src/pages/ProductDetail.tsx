@@ -6,6 +6,7 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { isCategoryComingSoon } from "@/lib/accessControl";
 import Header from "@/components/Header";
+import SEOHead from "@/components/SEOHead";
 import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
 import DeliveryEstimate from "@/components/DeliveryEstimate";
@@ -84,10 +85,41 @@ const ProductDetail = () => {
       /* user cancelled the share sheet */
     }
   };
-
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.name,
+    "description": product.description || `Buy 100% pure premium ${product.name} online from House of Nuts Proddatur. Fresh farm harvest.`,
+    "image": [product.image.startsWith("http") ? product.image : `https://houseofnuts.in${product.image}`],
+    "sku": product.id,
+    "brand": {
+      "@type": "Brand",
+      "name": "House of Nuts"
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": `https://houseofnuts.in/product/${product.id}`,
+      "priceCurrency": "INR",
+      "price": variant ? variant.price : product.price,
+      "availability": product.inStock !== false ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "seller": {
+        "@type": "Organization",
+        "name": "House of Nuts Proddatur"
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen">
+      <SEOHead
+        title={`Buy ${product.name} Online`}
+        description={`Shop premium quality ${product.name} (${variant?.weight || '100% Natural'}) at House of Nuts Proddatur. Best prices, fresh harvest, fast delivery.`}
+        keywords={`${product.name.toLowerCase()}, buy ${product.name.toLowerCase()} online, ${product.name.toLowerCase()} proddatur, house of nuts, dry fruits proddatur`}
+        canonicalUrl={`/product/${product.id}`}
+        ogImage={product.image.startsWith("http") ? product.image : `https://houseofnuts.in${product.image}`}
+        ogType="product"
+        jsonLd={productJsonLd}
+      />
       <Header />
       <CartDrawer />
 

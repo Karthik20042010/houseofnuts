@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
+import SEOHead from "@/components/SEOHead";
 import CartDrawer from "@/components/CartDrawer";
 
 const articles = [
@@ -13,6 +14,12 @@ const articles = [
 
 const Journal = () => (
   <div className="min-h-screen bg-background">
+    <SEOHead
+      title="Dry Fruits Journal & Healthy Snacking Guides"
+      description="Discover recipes, dry fruit storage guides, nutritional benefits of Mamra almonds, cashews, pistachios, and buying tips from House of Nuts Proddatur."
+      keywords="dry fruits guide, almond benefits, how to store dry fruits, mamra vs california almonds proddatur, house of nuts journal"
+      canonicalUrl="/journal"
+    />
     <Header />
     <CartDrawer />
     <main>
@@ -27,7 +34,7 @@ const Journal = () => (
         <div className="mx-auto grid max-w-[1400px] gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {articles.map(([title, category, image]) => (
             <article key={title} className="group overflow-hidden border border-border bg-card">
-              <img src={image} alt="" className="aspect-[4/3] w-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+              <img src={image} alt={title} className="aspect-[4/3] w-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
               <div className="p-6">
                 <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-accent font-body">{category}</p>
                 <h2 className="mt-3 font-display text-2xl leading-tight">{title}</h2>

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Building2, Gift, Heart, PackageCheck, Sparkles } from "lucide-react";
 import Header from "@/components/Header";
+import SEOHead from "@/components/SEOHead";
 import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
 import { products } from "@/data/products";
@@ -15,6 +16,12 @@ const occasions = [
 
 const Gifting = () => (
   <div className="min-h-screen bg-background">
+    <SEOHead
+      title="Luxury Dry Fruit Gift Boxes & Corporate Hampers"
+      description="Shop elegant dry fruit gift boxes and custom hampers for weddings, Diwali, celebrations, and corporate events at House of Nuts Proddatur."
+      keywords="dry fruit gift boxes, corporate gifting proddatur, festive hampers proddatur, house of nuts gift hamper, luxury nuts gift box"
+      canonicalUrl="/gifting"
+    />
     <Header />
     <CartDrawer />
 

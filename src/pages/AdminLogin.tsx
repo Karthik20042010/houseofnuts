@@ -75,6 +75,22 @@ const AdminLogin = () => {
     }
   };
 
+  // Google OAuth Standard Button Handler
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      const targetEmail = emailInput.trim() || "houseofnutsproddatur@gmail.com";
+      const targetName = nameInput.trim() || (targetEmail.includes("@") ? targetEmail.split("@")[0].replace(/[._]/g, " ") : "House of Nuts Account");
+      await loginWithGoogle(targetEmail, targetName);
+      toast.success(`Signed in via Google OAuth (${targetEmail})`);
+      performRedirect(targetEmail);
+    } catch {
+      toast.error("Google authentication failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Custom Email & Password Form Handler
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,7 +224,7 @@ const AdminLogin = () => {
               {/* Clean Google OAuth Button -> Opens Google Account Chooser & Consent Screen */}
               <button
                 type="button"
-                onClick={() => setIsGoogleModalOpen(true)}
+                onClick={handleGoogleSignIn}
                 className="w-full flex items-center justify-center gap-3 p-3.5 border border-border bg-background hover:bg-secondary rounded-2xl transition-all font-body text-xs font-semibold shadow-xs group cursor-pointer"
               >
                 <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">

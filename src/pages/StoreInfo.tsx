@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { MessageCircle, Search, Phone, MapPin, Mail, HelpCircle, ShieldCheck, Truck, RefreshCw, Lock, FileText, ChevronDown } from "lucide-react";
 import Header from "@/components/Header";
+import SEOHead from "@/components/SEOHead";
 import CartDrawer from "@/components/CartDrawer";
 import ContactMessageForm from "@/components/ContactMessageForm";
 
@@ -112,6 +113,12 @@ const StoreInfo = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title={page.title}
+        description={`${page.intro} — House of Nuts Proddatur, Gandhi Road, Proddatur, Andhra Pradesh.`}
+        keywords={`house of nuts proddatur, house of nuts contact, dry fruits store proddatur, ${pathname.replace('/', '')} house of nuts`}
+        canonicalUrl={pathname}
+      />
       <Header />
       <CartDrawer />
       <main className="px-4 sm:px-6 md:px-12 py-10 md:py-16">
