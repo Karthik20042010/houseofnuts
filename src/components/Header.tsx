@@ -161,13 +161,12 @@ const Header = () => {
             </div>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setIsLoginModalOpen(true)}
+          <Link
+            to="/login"
             className="bg-primary text-primary-foreground hover:bg-accent transition-colors px-4 py-2 text-xs font-medium uppercase tracking-wider font-body rounded-sm shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
             <User size={14} /> Login
-          </button>
+          </Link>
         )}
 
         {/* Basket Button */}
@@ -190,16 +189,13 @@ const Header = () => {
       {mobileMenuOpen && (
         <div className="absolute top-full left-0 right-0 bg-background border-b border-border p-6 flex flex-col gap-4 md:hidden max-h-[80vh] overflow-auto shadow-xl z-50">
           {!isAuthenticated ? (
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setIsLoginModalOpen(true);
-              }}
+            <Link
+              to="/login"
+              onClick={() => setMobileMenuOpen(false)}
               className="w-full bg-primary text-primary-foreground py-2.5 text-xs font-semibold uppercase tracking-wider font-body rounded flex items-center justify-center gap-2"
             >
               <User size={16} /> Sign In / Register
-            </button>
+            </Link>
           ) : (
             <div className="p-3 bg-clay-light rounded-lg flex items-center justify-between">
               <div>
