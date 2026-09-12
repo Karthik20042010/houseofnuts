@@ -1,10 +1,7 @@
 import { checkRateLimit } from "./rateLimiter";
 import { obfuscatePayload } from "./encryption";
 
-// Central Google Apps Script endpoint pulled securely from environment variables
-export const API_URL =
-  (import.meta.env.VITE_APPS_SCRIPT_URL as string) ||
-  "https://script.google.com/macros/s/AKfycbyomb0F_ardu7ESJxebSBu6Qady4RXo4bLjzYbuY1AF6WIUQ4osA3hT1oeOTPi2S2sM/exec";
+export const API_URL = (import.meta.env.VITE_APPS_SCRIPT_URL as string) || "";
 
 // Sensitive actions subjected to rate limiting
 const SENSITIVE_ACTIONS: Record<string, { max: number; windowMs: number }> = {
