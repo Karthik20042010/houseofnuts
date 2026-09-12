@@ -46,8 +46,6 @@ interface SavedAccount {
 }
 
 const SAVED_ACCOUNTS_KEY = "hon_saved_google_accounts";
-const DEFAULT_CLIENT_ID = "44044910111-c8b1sf7e2l6sfi45ls3jtse68n9ubv8m.apps.googleusercontent.com";
-
 
 export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
   isOpen,
@@ -121,7 +119,12 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
   useEffect(() => {
     if (!isOpen || activeTab !== "google") return;
 
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || DEFAULT_CLIENT_ID;
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      setGisError(true);
+      return;
+    }
+
 
     const initGis = () => {
       if (!window.google?.accounts?.id) return false;
