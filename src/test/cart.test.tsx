@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { CartProvider, useCart } from "@/contexts/CartContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { products } from "@/data/products";
 
 describe("Shopping Cart Context", () => {
@@ -9,7 +10,9 @@ describe("Shopping Cart Context", () => {
   });
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <CartProvider>{children}</CartProvider>
+    <AuthProvider>
+      <CartProvider>{children}</CartProvider>
+    </AuthProvider>
   );
 
   it("should start with an empty cart", () => {
