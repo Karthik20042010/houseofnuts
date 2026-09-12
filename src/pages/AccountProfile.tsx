@@ -270,6 +270,7 @@ export const AccountProfile: React.FC = () => {
 
   const displayName = profileData.name;
   const displayEmail = profileData.email;
+  const [imgError, setImgError] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-clay-light text-foreground">
@@ -280,11 +281,16 @@ export const AccountProfile: React.FC = () => {
           {/* User Banner Header */}
           <div className="bg-background border border-border rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="size-16 rounded-full bg-accent/10 text-accent grid place-items-center font-display text-2xl font-bold shrink-0">
-                {googleUser?.picture ? (
-                  <img src={googleUser.picture} alt={displayName} className="w-full h-full rounded-full object-cover" />
+              <div className="size-16 rounded-full bg-accent/15 text-accent grid place-items-center font-display text-2xl font-bold shrink-0 overflow-hidden border border-accent/20">
+                {googleUser?.picture && !imgError ? (
+                  <img
+                    src={googleUser.picture}
+                    alt=""
+                    onError={() => setImgError(true)}
+                    className="w-full h-full rounded-full object-cover"
+                  />
                 ) : (
-                  <User size={28} />
+                  <span>{displayName.charAt(0).toUpperCase()}</span>
                 )}
               </div>
               <div>

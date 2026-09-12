@@ -304,7 +304,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
                 <div className="flex items-center gap-3">
                   <div className="size-10 rounded-full bg-accent text-accent-foreground grid place-items-center font-bold text-sm shrink-0 overflow-hidden">
                     {googleUser?.picture ? (
-                      <img src={googleUser.picture} alt={googleUser.name} className="size-full object-cover" />
+                      <img src={googleUser.picture} alt="" className="size-full object-cover" />
                     ) : (
                       (googleUser?.name || ROLE_LABELS[role] || "U")[0].toUpperCase()
                     )}
@@ -402,7 +402,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
                           <div className="flex items-center gap-2.5 min-w-0">
                             <div className="size-8 rounded-full bg-accent/20 text-accent grid place-items-center font-bold text-xs shrink-0 overflow-hidden">
                               {acct.avatar ? (
-                                <img src={acct.avatar} alt={acct.name} className="size-full object-cover" />
+                                <img src={acct.avatar} alt="" className="size-full object-cover" />
                               ) : (
                                 acct.name.charAt(0).toUpperCase()
                               )}

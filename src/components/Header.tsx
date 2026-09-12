@@ -113,9 +113,9 @@ const Header = () => {
               onClick={handleAccountClick}
               className="flex items-center gap-2 text-xs font-body hover:text-accent transition-colors py-1 cursor-pointer"
             >
-              <div className="size-7 rounded-full bg-accent/10 text-accent grid place-items-center font-bold text-xs">
+              <div className="size-7 rounded-full bg-accent/10 text-accent grid place-items-center font-bold text-xs shrink-0 overflow-hidden border border-accent/20">
                 {googleUser?.picture ? (
-                  <img src={googleUser.picture} alt={displayName} className="w-full h-full rounded-full object-cover" />
+                  <img src={googleUser.picture} alt="" className="w-full h-full rounded-full object-cover" />
                 ) : (
                   displayName.charAt(0).toUpperCase()
                 )}
