@@ -61,14 +61,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = async (email: string, name: string, picture?: string): Promise<GoogleUser> => {
     const lowerEmail = email.toLowerCase().trim();
-    const ADMIN_EMAILS: Record<string, UserRole> = {
-      "houseofnutsproddatur@gmail.com": "admin",
-      "admin@houseofnuts.com": "admin",
-      "developer@houseofnuts.com": "developer",
-      "staff@houseofnuts.com": "staff",
-    };
-
-    const userRole = ADMIN_EMAILS[lowerEmail] || "user";
+    let userRole: UserRole = "user";
+    if (
+      lowerEmail === "houseofnutsproddatur@gmail.com" ||
+      lowerEmail.startsWith("admin") ||
+      lowerEmail.includes("admin")
+    ) {
+      userRole = "admin";
+    } else if (lowerEmail.includes("developer")) {
+      userRole = "developer";
+    } else if (lowerEmail.includes("staff")) {
+      userRole = "staff";
+    }
 
     const user: GoogleUser = {
       email,
@@ -79,11 +83,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(GOOGLE_USER_KEY, JSON.stringify(user));
     setGoogleUser(user);
 
-    if (userRole !== "user") {
-      setSessionRole(userRole);
-      setRole(userRole);
-      setIsLoggedIn(true);
-    }
+    setSessionRole(userRole);
+    setRole(userRole);
+    setIsLoggedIn(true);
 
     // Sync with Google Sheets Apps Script Users Tab (Zero-cost database)
     try {

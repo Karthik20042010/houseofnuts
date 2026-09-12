@@ -39,12 +39,14 @@ export function getActiveRole(): UserRole {
 }
 
 export function setSessionRole(role: UserRole) {
-  const s = readSession();
+  let s = readSession();
   if (s) {
     s.role = role;
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
-    window.dispatchEvent(new CustomEvent("hon-auth-change", { detail: { role } }));
+  } else {
+    s = { password: "oauth-session-token", role, loggedInAt: Date.now() };
   }
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
+  window.dispatchEvent(new CustomEvent("hon-auth-change", { detail: { role } }));
 }
 
 export function isAdminLoggedIn(): boolean {
