@@ -29,7 +29,7 @@ const Header = () => {
   };
 
   return (
-    <header className="flex items-center justify-between px-6 md:px-8 py-4 border-b border-border sticky top-0 bg-background/90 backdrop-blur-md z-50">
+    <header className="flex items-center justify-between px-6 md:px-8 py-3.5 border-b border-border/60 sticky top-0 bg-background/85 backdrop-blur-xl z-50 shadow-xs transition-all duration-300">
       {/* Login Modal Popup */}
       <GoogleLoginModal
         isOpen={isLoginModalOpen}

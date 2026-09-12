@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400&family=Work+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -48,6 +48,7 @@
     --gradient-warm: linear-gradient(135deg, hsl(var(--sun)), hsl(var(--sun-glow)));
     --gradient-earth: linear-gradient(160deg, hsl(var(--earth)), hsl(18 30% 24%));
     --gradient-linen: linear-gradient(180deg, hsl(var(--linen)), hsl(30 30% 92%));
+    --gradient-gold: linear-gradient(135deg, #d4af37 0%, #f3e5ab 50%, #aa7c11 100%);
     --gradient-sheen: linear-gradient(105deg, transparent 35%, hsl(0 0% 100% / 0.35) 50%, transparent 65%);
     --shadow-soft: 0 4px 16px -6px hsl(18 28% 17% / 0.16);
     --shadow-card: 0 18px 40px -22px hsl(18 28% 17% / 0.35);
@@ -78,10 +79,9 @@
     --sidebar-border: 18 15% 82%;
     --sidebar-ring: 27 55% 52%;
 
-    --font-display: 'Fraunces', serif;
-    --font-body: 'Work Sans', sans-serif;
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
   }
-
 
   .dark {
     --background: 18 28% 10%;
@@ -112,7 +112,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
   }
 
@@ -126,12 +126,37 @@
   .gradient-earth { background-image: var(--gradient-earth); }
   .gradient-linen { background-image: var(--gradient-linen); }
 
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+
+  .dark .glass-panel {
+    background: rgba(20, 15, 12, 0.75);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  }
+
+  .gold-gradient-text {
+    background: linear-gradient(135deg, #b8860b 0%, #d4af37 50%, #8b6508 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
   .shadow-soft { box-shadow: var(--shadow-soft); }
   .shadow-card { box-shadow: var(--shadow-card); }
   .shadow-glow { box-shadow: var(--shadow-glow); }
 
   .eyebrow {
-    @apply flex items-center gap-3 text-accent uppercase tracking-[0.22em] text-[11px] font-medium font-body;
+    @apply flex items-center gap-3 text-accent uppercase tracking-[0.22em] text-[11px] font-semibold font-body;
   }
   .eyebrow::before {
     content: "";
@@ -143,7 +168,7 @@
     background-image: var(--gradient-warm);
     box-shadow: var(--shadow-glow);
   }
-  .btn-warm:hover { transform: translateY(-2px); filter: saturate(1.08); }
+  .btn-warm:hover { transform: translateY(-2px); filter: saturate(1.1); }
 
   .btn-earth {
     @apply text-primary-foreground rounded-full px-7 py-3.5 uppercase tracking-[0.15em] text-[11px] font-semibold font-body transition-all duration-300;
@@ -153,11 +178,7 @@
   .btn-earth:hover { transform: translateY(-2px); }
 
   .card-lift {
-    @apply transition-all duration-500;
-  }
-  .card-lift:hover {
-    transform: translateY(-6px);
-    box-shadow: var(--shadow-card);
+    @apply transition-all duration-500 hover:-translate-y-2.5 hover:shadow-2xl;
   }
 
   .shine::after {
