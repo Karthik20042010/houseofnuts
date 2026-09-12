@@ -46,7 +46,8 @@ interface SavedAccount {
 }
 
 const SAVED_ACCOUNTS_KEY = "hon_saved_google_accounts";
-const DEFAULT_CLIENT_ID = "9652526920-houseofnuts.apps.googleusercontent.com";
+const DEFAULT_CLIENT_ID = "44044910111-c8b1sf7e2l6sfi45ls3jtse68n9ubv8m.apps.googleusercontent.com";
+
 
 export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
   isOpen,
