@@ -46,7 +46,7 @@ flowchart TD
 - **Trigger**: Clicking **"Continue with Google"** on `/login`.
 - **Account Selection**: Triggers Google OAuth modal allowing the user to select from available browser Google accounts.
 - **Role Assignment**: Automatically assigns application role based on email patterns:
-  - `houseofnutsproddatur@gmail.com` or `admin*` $\rightarrow$ **Admin (`admin`)**
+  - `admin*` or email containing `admin` $\rightarrow$ **Admin (`admin`)**
   - `*developer*` $\rightarrow$ **Developer (`developer`)**
   - `*staff*` $\rightarrow$ **Staff (`staff`)**
   - All other emails $\rightarrow$ **Customer (`user`)**

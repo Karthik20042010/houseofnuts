@@ -63,7 +63,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const lowerEmail = email.toLowerCase().trim();
     let userRole: UserRole = "user";
     if (
-      lowerEmail === "houseofnutsproddatur@gmail.com" ||
       lowerEmail.startsWith("admin") ||
       lowerEmail.includes("admin")
     ) {

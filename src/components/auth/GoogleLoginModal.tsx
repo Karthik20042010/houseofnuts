@@ -84,7 +84,6 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
   const performNavigation = (email: string) => {
     const lower = email.toLowerCase();
     if (
-      lower === "houseofnutsproddatur@gmail.com" ||
       lower.startsWith("admin") ||
       lower.includes("admin") ||
       lower.includes("staff")
@@ -272,7 +271,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
                 </div>
               </div>
 
-              {(isLoggedIn || googleUser?.email?.toLowerCase().includes("admin") || googleUser?.email === "houseofnutsproddatur@gmail.com") && (
+              {(isLoggedIn || googleUser?.email?.toLowerCase().includes("admin")) && (
                 <Link
                   to="/admin"
                   onClick={onClose}
@@ -347,7 +346,31 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
                         type="button"
                         onClick={() =>
                           handleSelectGoogleAccount({
-                            email: "houseofnutsproddatur@gmail.com",
+                            email: "customer@houseofnuts.com",
+                            name: "House of Nuts Customer",
+                            avatar: "https://ui-avatars.com/api/?name=Customer+User&background=2b2419&color=faf7f2",
+                            roleNote: "Retail Customer Account",
+                          })
+                        }
+                        className="w-full flex items-center justify-between p-3 border border-border bg-background hover:bg-secondary rounded-2xl transition-all font-body text-left group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-8 rounded-full gradient-warm text-accent-foreground grid place-items-center font-bold text-xs shrink-0">
+                            C
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-semibold truncate">customer@houseofnuts.com</div>
+                            <div className="text-[11px] text-muted-foreground">Retail Customer Account</div>
+                          </div>
+                        </div>
+                        <ChevronRight size={15} className="text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleSelectGoogleAccount({
+                            email: "admin@houseofnuts.com",
                             name: "House of Nuts Admin",
                             avatar: "/images/branding/house-of-nuts-logo-hd.png",
                             roleNote: "Store Owner & Admin",
@@ -363,7 +386,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
                           />
                           <div className="min-w-0">
                             <div className="text-xs font-semibold font-body text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                              houseofnutsproddatur@gmail.com
+                              admin@houseofnuts.com
                               <span className="text-[9px] bg-amber-600 text-white px-1.5 py-0.2 rounded-full uppercase font-mono">
                                 Admin
                               </span>
@@ -378,33 +401,10 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
 
                       <button
                         type="button"
-                        onClick={() =>
-                          handleSelectGoogleAccount({
-                            email: "karthikeya.j04@gmail.com",
-                            name: "Karthikeya J",
-                            avatar: "https://ui-avatars.com/api/?name=Karthikeya+J&background=2b2419&color=faf7f2",
-                          })
-                        }
-                        className="w-full flex items-center justify-between p-3 border border-border bg-background hover:bg-secondary rounded-2xl transition-all font-body text-left group"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="size-8 rounded-full gradient-warm text-accent-foreground grid place-items-center font-bold text-xs shrink-0">
-                            K
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-xs font-semibold truncate">karthikeya.j04@gmail.com</div>
-                            <div className="text-[11px] text-muted-foreground">Karthikeya J</div>
-                          </div>
-                        </div>
-                        <ChevronRight size={15} className="text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-                      </button>
-
-                      <button
-                        type="button"
                         onClick={() => setGoogleStep("custom_email")}
                         className="w-full flex items-center justify-center gap-2 p-2.5 border border-dashed border-border hover:border-accent text-xs text-muted-foreground hover:text-accent rounded-2xl transition-colors font-body font-medium"
                       >
-                        <UserPlus size={14} /> Sign in with another email or password
+                        <UserPlus size={14} /> Sign in with your Google email or password
                       </button>
                     </>
                   )}

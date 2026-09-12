@@ -49,8 +49,7 @@ const AdminLogin = () => {
     } else if (
       role === "admin" ||
       role === "staff" ||
-      googleUser?.email?.toLowerCase().includes("admin") ||
-      googleUser?.email === "houseofnutsproddatur@gmail.com"
+      googleUser?.email?.toLowerCase().includes("admin")
     ) {
       navigate("/admin", { replace: true });
     } else {
@@ -62,7 +61,6 @@ const AdminLogin = () => {
   const performRedirect = (email: string) => {
     const lower = email.toLowerCase().trim();
     if (
-      lower === "houseofnutsproddatur@gmail.com" ||
       lower.startsWith("admin") ||
       lower.includes("admin") ||
       lower.includes("staff")
@@ -75,20 +73,9 @@ const AdminLogin = () => {
     }
   };
 
-  // Google OAuth Standard Button Handler
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    try {
-      const targetEmail = emailInput.trim() || "houseofnutsproddatur@gmail.com";
-      const targetName = nameInput.trim() || (targetEmail.includes("@") ? targetEmail.split("@")[0].replace(/[._]/g, " ") : "House of Nuts Account");
-      await loginWithGoogle(targetEmail, targetName);
-      toast.success(`Signed in via Google OAuth (${targetEmail})`);
-      performRedirect(targetEmail);
-    } catch {
-      toast.error("Google authentication failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+  // Google OAuth Standard Button Handler -> Opens Google Login Choice Modal
+  const handleGoogleSignIn = () => {
+    setIsGoogleModalOpen(true);
   };
 
   // Custom Email & Password Form Handler
