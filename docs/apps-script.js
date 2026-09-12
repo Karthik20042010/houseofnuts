@@ -281,11 +281,13 @@ function registerGoogleUser(body) {
   }
   if (existingRow > 0) {
     if (body.name) sh.getRange(existingRow, 3).setValue(body.name);
-    return { ok: true, userId: values[existingRow - 1][0], updated: true };
+    var savedRole = String(values[existingRow - 1][4] || "user");
+    return { ok: true, userId: values[existingRow - 1][0], role: savedRole, updated: true };
   } else {
     var uId = body.userId || ("usr_" + Math.random().toString(36).substring(2, 9));
-    sh.appendRow([uId, body.email, body.name || "", body.phone || "", body.role || "user", "google_oauth", new Date().toISOString()]);
-    return { ok: true, userId: uId, created: true };
+    var assignedRole = body.role || "user";
+    sh.appendRow([uId, body.email, body.name || "", body.phone || "", assignedRole, "google_oauth", new Date().toISOString()]);
+    return { ok: true, userId: uId, role: assignedRole, created: true };
   }
 }
 

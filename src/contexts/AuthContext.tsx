@@ -114,12 +114,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Sync with Google Sheets Apps Script Users Tab (Zero-cost database)
     try {
-      await apiPost("registerGoogleUser", {
+      const res = await apiPost<{ ok: boolean; role?: UserRole }>("registerGoogleUser", {
         userId: user.googleId,
         email: user.email,
         name: user.name,
         role: userRole,
       });
+      if (res && res.ok && res.role) {
+        setSessionRole(res.role);
+        setRole(res.role);
+      }
     } catch (e) {
       // Ignore background sync errors
     }

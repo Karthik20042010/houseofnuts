@@ -1,145 +1,223 @@
-# House of Nuts — Authentication Architecture & Data Security Specification
+# "Continue with Google" — Full Integration Guide
 
-> **Status**: Production Ready (v1 Release)  
-> **Last Updated**: September 2026  
-> **Primary Components**: [`AuthContext.tsx`](file:///c:/Users/DELL/OneDrive/Desktop/houseofnuts/src/contexts/AuthContext.tsx), [`AdminLogin.tsx`](file:///c:/Users/DELL/OneDrive/Desktop/houseofnuts/src/pages/AdminLogin.tsx), [`AccountProfile.tsx`](file:///c:/Users/DELL/OneDrive/Desktop/houseofnuts/src/pages/AccountProfile.tsx)
+A complete walkthrough for adding Google Sign-In to a website: how it works, setup steps, frontend + backend code, session handling, and production checklist.
 
 ---
 
-## 1. Executive Summary & Security Principles
+## 1. How It Works (Overview)
 
-The **House of Nuts** authentication system provides a secure, role-aware, and seamless sign-in experience for customers, store staff, administrators, and system developers.
+"Continue with Google" uses **OAuth 2.0 / OpenID Connect** via Google Identity Services (GIS) — the modern replacement for the old Google Sign-In JS library.
 
-### Core Architecture & Privacy Principles
-1. **Google OAuth Account Choice Selector**: Clicking "Continue with Google" launches a standard Google authentication consent modal displaying all logged-in Google accounts on the user's browser, allowing explicit account selection.
-2. **Public Data Privacy & UI Isolation**: Public login forms (`/login`) never reveal internal system roles (e.g. `Developer`, `Super Admin`) or hardcoded private user credentials. Internal portal authentication is cleanly isolated under a dedicated **Staff Login** portal tab.
-3. **Locked Mobile OTP (Roadmap v2)**: Phone OTP authentication is explicitly disabled and badged as **"Coming Soon"** for the initial v1 deployment to ensure stability.
-4. **User Profile & Address CRUD Management**: Logged-in customers gain full control over their profile details and delivery address book (Add, Edit, Delete, Set Default) via [`AccountProfile.tsx`](file:///c:/Users/DELL/OneDrive/Desktop/houseofnuts/src/pages/AccountProfile.tsx).
-5. **Instant Logout Lifecycle & Route Guarding**: Signing out immediately purges local session state and redirects the browser from protected routes (`/account`, `/admin`) directly to `/login`.
+**The flow, end to end:**
+
+1. Your site loads a Google-provided script and renders a "Sign in with Google" button (or a One Tap prompt).
+2. User clicks it → Google shows their account picker/consent screen.
+3. Google returns an **ID token** (a signed JWT) to your frontend containing the user's verified email, name, and profile photo.
+4. Your frontend sends that ID token to **your backend**.
+5. Your backend **verifies the token's signature** with Google's public keys (never trust it blindly).
+6. Once verified, your backend creates or looks up the user in your database, then starts a session (cookie or your own JWT) — this is what actually logs the user into *your* app.
+
+Key point: Google's token proves *who the person is*. It does **not** create a session in your app — you have to do that yourself on your backend.
 
 ---
 
-## 2. Authentication Workflows & Authentication Modes
+## 2. Google Cloud Console Setup
 
-```mermaid
-flowchart TD
-    A[User visits /login] --> B{Choose Auth Method}
-    B -->|Google OAuth| C[Google Account Chooser]
-    B -->|Email & Password| D[Email Auth Form]
-    B -->|Staff Portal| E[Staff / Admin Password Form]
-    B -->|Mobile OTP| F[Locked: Coming Soon v2 Badge]
+### Step 1 — Create a project
+1. Go to [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project (or select an existing one) — e.g. "House of Nuts".
 
-    C --> G[Evaluate Role from Email Mapping]
-    D --> G
-    E --> H[Validate Role Password]
+### Step 2 — Configure the OAuth consent screen
+1. Navigate to **APIs & Services → OAuth consent screen**.
+2. Choose **External** (unless this is an internal company tool).
+3. Fill in:
+   - App name (shown to users on the consent screen)
+   - Support email
+   - App logo (recommended — builds trust)
+   - Authorized domains (e.g. `houseofnuts.store`)
+   - Privacy policy & terms of service URLs (**required** to go live — Google will keep your app in "testing" mode without these, capped at 100 test users)
+4. Add scopes: `email`, `profile`, `openid` (the defaults are usually enough).
+5. Save.
 
-    G --> I[Store GoogleUser & Session Role]
-    H --> I
+### Step 3 — Create OAuth credentials
+1. Go to **APIs & Services → Credentials → Create Credentials → OAuth Client ID**.
+2. Application type: **Web application**.
+3. Add:
+   - **Authorized JavaScript origins**: `https://houseofnuts.store` (and `http://localhost:3000` for local dev)
+   - **Authorized redirect URIs**: only needed if using the redirect-based flow (not needed for the popup/One Tap flow described below)
+4. Save — you'll get a **Client ID** (public, safe to expose in frontend code) and a **Client Secret** (backend only, never expose this).
 
-    I --> J{Check Role}
-    J -->|User| K[Redirect to /account]
-    J -->|Staff / Admin| L[Redirect to /admin]
-    J -->|Developer| M[Redirect to /admin/developer]
+### Step 4 — Publish the app
+- While in "Testing" mode, only pre-approved test users can sign in.
+- Once ready, submit for **verification** (required if requesting sensitive scopes, or once you exceed 100 users) — Google reviews it, which can take a few days.
+
+---
+
+## 3. Frontend Implementation
+
+### Step 1 — Load the Google script
+```html
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 ```
 
-### A. Google OAuth Workflow
-- **Trigger**: Clicking **"Continue with Google"** on `/login`.
-- **Account Selection**: Triggers Google OAuth modal allowing the user to select from available browser Google accounts.
-- **Role Assignment**: Automatically assigns application role based on email patterns:
-  - `admin*` or email containing `admin` $\rightarrow$ **Admin (`admin`)**
-  - `*developer*` $\rightarrow$ **Developer (`developer`)**
-  - `*staff*` $\rightarrow$ **Staff (`staff`)**
-  - All other emails $\rightarrow$ **Customer (`user`)**
-- **Persistence & Sync**: Stores user token payload in `localStorage` (`hon-google-user`) and asynchronously registers user record with the Google Sheets Apps Script zero-cost backend API (`registerGoogleUser`).
+### Step 2 — Render the button
+```html
+<div id="g_id_onload"
+     data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+     data-callback="handleGoogleCredentialResponse"
+     data-auto_prompt="false">
+</div>
 
-### B. Email & Password Sign-In
-- **Inputs**: Clean, unrevealed email address and optional password fields.
-- **Validation**: Accepts standard user logins or upgrades session permissions when valid admin credentials are presented.
+<div class="g_id_signin"
+     data-type="standard"
+     data-size="large"
+     data-theme="outline"
+     data-text="continue_with"
+     data-shape="pill"
+     data-logo_alignment="left">
+</div>
+```
 
-### C. Staff & Admin Portal Sign-In
-- **Access**: Accessible under the **Staff Login** tab on `/login`.
-- **Selector**: Allows toggling between **Staff Portal** and **Admin Portal**.
-- **Security**: Authenticates against encrypted role keys without exposing role structures to standard retail customers.
+### Step 3 — Handle the returned token
+```javascript
+function handleGoogleCredentialResponse(response) {
+  const idToken = response.credential; // JWT from Google
 
-### D. Mobile Phone OTP (v1 Lock Status)
-- **Status**: Disabled for v1 release.
-- **UI Presentation**: Displays a locked container with a **"Coming Soon (v2 Release)"** badge, directing users to Google/Email login.
+  fetch("/api/auth/google", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: idToken }),
+    credentials: "include" // so the session cookie gets set
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        window.location.href = "/dashboard"; // or wherever post-login goes
+      } else {
+        alert("Login failed. Please try again.");
+      }
+    });
+}
+```
+
+**Optional — One Tap prompt** (shows a floating prompt without the user clicking a button, for returning visitors):
+```javascript
+google.accounts.id.prompt();
+```
 
 ---
 
-## 3. Account Profile & Delivery Address Book (CRUD)
+## 4. Backend Implementation (Node.js / Express example)
 
-Customers manage their preferences and order fulfillment data on the `/account` route via [`AccountProfile.tsx`](file:///c:/Users/DELL/OneDrive/Desktop/houseofnuts/src/pages/AccountProfile.tsx).
+### Step 1 — Install the verification library
+```bash
+npm install google-auth-library
+```
 
-### A. Personal Information Editing
-- **Editable Fields**: Full Name, Contact Phone Number.
-- **Read-Only Fields**: Email Address (locked to preserve identity integrity across orders).
-- **Storage**: Persisted to `localStorage` under `hon_user_profile_data`.
+### Step 2 — Verify the token and create a session
+```javascript
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-### B. Delivery Address CRUD Operations
-Customers can maintain multiple delivery addresses for smooth checkout:
+app.post("/api/auth/google", async (req, res) => {
+  const { token } = req.body;
 
-| Action | Functionality | UI Trigger |
-| :--- | :--- | :--- |
-| **Add Address** | Opens full modal requiring street, city, state, pincode, optional landmark. | `+ Add New Address` button |
-| **Edit Address** | Pre-fills modal with existing address details for inline updating. | Pencil edit icon on address card |
-| **Delete Address** | Removes address entry and automatically reassigns default status if needed. | Trash icon on address card |
-| **Set Default** | Sets selected address as primary choice for one-click checkout. | `Make Default` button |
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
 
-- **Storage**: Persisted to `localStorage` under `hon_user_addresses`.
+    const payload = ticket.getPayload();
+    // payload contains: sub (Google user ID), email, email_verified, name, picture
 
----
+    if (!payload.email_verified) {
+      return res.status(401).json({ success: false, error: "Email not verified" });
+    }
 
-## 4. Route Protection & Logout Lifecycle
+    // Look up or create the user in your database
+    let user = await db.users.findOne({ googleId: payload.sub });
+    if (!user) {
+      user = await db.users.create({
+        googleId: payload.sub,
+        email: payload.email,
+        name: payload.name,
+        avatar: payload.picture,
+      });
+    }
 
-### A. Protected Route Enforcement
-Both `/account` and `/admin` routes include reactive lifecycle guards (`useEffect` Hooks):
-```tsx
-useEffect(() => {
-  if (!isLoggedIn && !isGoogleAuthenticated) {
-    navigate("/login", { replace: true });
+    // Create YOUR app's session (example: signed cookie with your own JWT)
+    const sessionToken = createSessionJWT(user); // your own function
+    res.cookie("session", sessionToken, {
+      httpOnly: true,
+      secure: true,       // HTTPS only
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Google token verification failed:", err);
+    res.status(401).json({ success: false, error: "Invalid token" });
   }
-}, [isLoggedIn, isGoogleAuthenticated, navigate]);
+});
 ```
 
-### B. Instant Logout Execution
-When a user clicks **"Sign Out"**:
-1. Purges `hon-google-user` from `localStorage`.
-2. Clears active session roles (`adminLogout()`).
-3. Resets `AuthContext` state to unauthenticated `user`.
-4. Replaces history stack to redirect from `/account` or `/admin` directly to `/login`.
+**Why verify server-side and never trust the frontend token directly:** anyone can forge a request claiming to be any email if you skip signature verification. `verifyIdToken` checks the JWT signature against Google's public keys, confirms the audience matches your client ID, and confirms it hasn't expired.
 
 ---
 
-## 5. System Role & Permission Matrix
+## 5. Linking Google Login with Existing Accounts
 
-| Role | Access Portal | Permissions | Primary Route |
-| :--- | :--- | :--- | :--- |
-| **Customer (`user`)** | Retail Storefront | Order placement, address book CRUD, wishlist, tracking. | `/account` |
-| **Staff (`staff`)** | Staff Portal | Inventory updates, order status fulfillment, store messages. | `/admin` |
-| **Admin (`admin`)** | Admin Portal | Full store analytics, product CRUD, user role management, orders. | `/admin` |
-| **Developer (`developer`)** | Dev Console | System diagnostics, feature flag controls, API logs. | `/admin/developer` |
+If users can already sign up with email/password, decide how to handle overlap:
+
+- **Match by email**: if a Google sign-in email matches an existing account, link the Google ID to that account rather than creating a duplicate.
+- **Flag unverified matches**: only auto-link if `email_verified` is `true` in the Google payload — otherwise, ask the user to confirm/verify first.
+- Store `googleId` as a separate field so a user can have both a password login and a Google login pointing to the same account.
 
 ---
 
-## 6. Developer Code References & API Snippets
+## 6. Session & Security Checklist
 
-### Using Auth Context in Components
-```tsx
-import { useAuth } from "@/contexts/AuthContext";
+- [ ] Store sessions as `httpOnly`, `secure`, `sameSite` cookies — never in `localStorage` (vulnerable to XSS).
+- [ ] Always verify the ID token server-side — never trust decoded frontend JWT claims.
+- [ ] Check `email_verified === true` before treating the email as trustworthy.
+- [ ] Set a reasonable session expiry and support logout (clear the cookie + any server-side session record).
+- [ ] Use HTTPS everywhere — Google Sign-In requires it in production (localhost is exempted for dev).
+- [ ] Rate-limit the `/api/auth/google` endpoint to prevent abuse.
+- [ ] Keep your Client Secret out of frontend code and out of version control (use environment variables).
 
-const MyComponent = () => {
-  const { role, googleUser, isLoggedIn, logout, hasPermission } = useAuth();
+---
 
-  if (!isLoggedIn) {
-    return <p>Please sign in.</p>;
-  }
+## 7. Common Pitfalls
 
-  return (
-    <div>
-      <p>Welcome back, {googleUser?.name} ({role})</p>
-      <button onClick={logout}>Sign Out</button>
-    </div>
-  );
-};
-```
+| Issue | Cause | Fix |
+|---|---|---|
+| Button doesn't render | Script blocked/adblocker, or wrong client ID | Check browser console for errors; verify client ID matches Cloud Console |
+| "redirect_uri_mismatch" error | Origin/redirect URI not added in Cloud Console | Add exact URL (including https/http and port) to Authorized JavaScript origins |
+| Works on localhost, fails in production | Production domain not added to Authorized origins, or site not on HTTPS | Add production domain; ensure HTTPS is enforced |
+| Token verification fails | Verifying against wrong `audience`, or expired token | Ensure `audience` matches your Client ID exactly; tokens expire ~1 hour after issue — verify immediately after receipt |
+| Stuck in "Testing" mode / limited to 100 users | OAuth consent screen not submitted for verification | Complete consent screen requirements (privacy policy, logo, etc.) and submit for Google review |
+| One Tap not showing for returning users | Browser blocking third-party cookies, or user dismissed it recently | Google enforces a cool-down after dismissal; test in a fresh browser profile |
+
+---
+
+## 8. Testing Checklist Before Launch
+
+- [ ] Test sign-in with a brand-new Google account (first-time user creation flow)
+- [ ] Test sign-in with an existing Google account (returning user, correct data loaded)
+- [ ] Test on mobile browsers (Safari iOS often behaves differently with third-party cookies)
+- [ ] Test logout — confirm session is fully cleared
+- [ ] Test what happens if the user denies/cancels the Google consent prompt
+- [ ] Confirm HTTPS is enforced sitewide
+- [ ] Confirm privacy policy and terms links are live (required for consent screen approval)
+
+---
+
+## Summary of What You Need
+1. Google Cloud project + OAuth consent screen configured and (eventually) verified
+2. Client ID (frontend) and Client Secret (backend, kept private)
+3. Frontend button + callback handler
+4. Backend endpoint that verifies the token and creates your own session
+5. Database fields to store `googleId`, `email`, `name`, `avatar`
+6. Secure cookie-based session handling

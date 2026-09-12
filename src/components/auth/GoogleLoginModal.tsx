@@ -127,6 +127,17 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
           }
         },
       });
+      const container = document.getElementById("google-signin-btn-container");
+      if (container) {
+        window.google.accounts.id.renderButton(container, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          shape: "pill",
+          logo_alignment: "left",
+        });
+      }
     } catch {
       // Graceful fallback
     }
@@ -355,6 +366,9 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
                         to continue to <span className="text-blue-600 dark:text-blue-400 font-medium">House of Nuts</span>
                       </p>
                     </div>
+
+                    {/* Official Google Identity Services OAuth Button */}
+                    <div id="google-signin-btn-container" className="flex justify-center my-3 min-h-[40px]"></div>
 
                     {/* Accounts List */}
                     <div className="border-t border-b border-border/80 divide-y divide-border/60">
