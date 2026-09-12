@@ -84,7 +84,8 @@ const App = () => (
                       <Route path="/terms" element={<StoreInfo />} />
                       <Route path="/contact" element={<StoreInfo />} />
 
-                      {/* Authentication Login Route */}
+                      {/* Authentication Login Routes */}
+                      <Route path="/login" element={<AdminLogin />} />
                       <Route path="/admin/login" element={<AdminLogin />} />
 
                       {/* Role Protected Administration Routes */}

@@ -3,7 +3,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { isCategoryVisibleToUser } from "@/lib/accessControl";
 import { useWishlist } from "@/contexts/WishlistContext";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import { categories } from "@/data/products";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { GoogleLoginModal } from "@/components/auth/GoogleLoginModal";
 
 const Header = () => {
+  const navigate = useNavigate();
   const { totalItems, setIsCartOpen } = useCart();
   const auth = useAuth();
   const { isLoggedIn, role, googleUser, isGoogleAuthenticated, logout } = auth;
@@ -24,6 +25,14 @@ const Header = () => {
   const isAuthenticated = isLoggedIn || isGoogleAuthenticated;
   const displayName = googleUser ? googleUser.name : isLoggedIn ? ROLE_LABELS[role] : "Customer";
   const displayEmail = googleUser ? googleUser.email : isLoggedIn ? `${role}@houseofnuts.com` : "";
+
+  const handleAccountClick = () => {
+    if (isLoggedIn || googleUser?.email?.toLowerCase().includes("admin") || googleUser?.email === "houseofnutsproddatur@gmail.com") {
+      navigate("/admin");
+    } else {
+      navigate("/account");
+    }
+  };
 
   const scrollToContact = () => {
     document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
@@ -99,7 +108,10 @@ const Header = () => {
         {/* Flipkart-Style Login Button & Account Dropdown */}
         {isAuthenticated ? (
           <div className="relative group">
-            <button className="flex items-center gap-2 text-xs font-body hover:text-accent transition-colors py-1">
+            <button
+              onClick={handleAccountClick}
+              className="flex items-center gap-2 text-xs font-body hover:text-accent transition-colors py-1 cursor-pointer"
+            >
               <div className="size-7 rounded-full bg-accent/10 text-accent grid place-items-center font-bold text-xs">
                 {googleUser?.picture ? (
                   <img src={googleUser.picture} alt={displayName} className="w-full h-full rounded-full object-cover" />
