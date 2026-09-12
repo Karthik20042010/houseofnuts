@@ -580,6 +580,7 @@ export const AdminInventory = () => {
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
+            {/*
             <button
               type="button"
               onClick={() => setSelectedParentCategory("all")}
@@ -591,6 +592,7 @@ export const AdminInventory = () => {
             >
               All Categories ({allProds.length})
             </button>
+            */}
             {categoriesList
               .filter((c) => c.id !== "all")
               .map((c) => {
@@ -634,6 +636,7 @@ export const AdminInventory = () => {
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
+            {/*
             <button
               type="button"
               onClick={() => setSelectedSubcategory("all")}
@@ -645,6 +648,7 @@ export const AdminInventory = () => {
             >
               All Subcategories
             </button>
+            */}
             {activeSubcategoriesList.map((sub) => {
               const count = allProds.filter(
                 (p) =>
