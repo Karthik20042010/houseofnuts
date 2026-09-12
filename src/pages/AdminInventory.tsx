@@ -86,6 +86,12 @@ export const AdminInventory = () => {
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [isAddSubcategoryOpen, setIsAddSubcategoryOpen] = useState(false);
 
+  // Store Media Gallery & Multi-Product Mapper Modal State
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
+  const [selectedMediaUrls, setSelectedMediaUrls] = useState<string[]>([]);
+  const [targetMappingProductIds, setTargetMappingProductIds] = useState<string[]>([]);
+  const [mediaSearchQuery, setMediaSearchQuery] = useState("");
+
   // Existing Product Image Editing Modal State
   const [editingImageProduct, setEditingImageProduct] = useState<Product | null>(null);
   const [editingProductImages, setEditingProductImages] = useState<string[]>([]);
@@ -159,6 +165,66 @@ export const AdminInventory = () => {
   const activeSubcategoriesList = useMemo(() => {
     return getSubcategoriesForCategory(selectedParentCategory);
   }, [selectedParentCategory]);
+
+  // Aggregate all store media photos across catalog products & presets
+  const storeMediaLibrary = useMemo(() => {
+    const map = new Map<string, string>();
+    presetCatalogImages.forEach((p) => map.set(p.url, `Preset: ${p.label}`));
+    allProds.forEach((p) => {
+      const gallery = getProductGallery(p);
+      gallery.forEach((url) => {
+        if (!map.has(url)) {
+          map.set(url, p.name);
+        }
+      });
+    });
+    return Array.from(map.entries()).map(([url, source]) => ({ url, source }));
+  }, [allProds]);
+
+  // Multi-Product Image Mapping Handler
+  const handleApplyMultiProductMapping = () => {
+    if (selectedMediaUrls.length === 0) {
+      toast.error("Please select at least one photo from the store gallery.");
+      return;
+    }
+
+    if (editingImageProduct) {
+      setEditingProductImages((prev) => Array.from(new Set([...prev, ...selectedMediaUrls])));
+    }
+
+    if (targetMappingProductIds.length === 0 && !editingImageProduct) {
+      toast.error("Please select at least one product ID to map photos to.");
+      return;
+    }
+
+    let updatedCount = 0;
+    for (const pId of targetMappingProductIds) {
+      const targetProd = allProds.find((p) => p.id === pId);
+      if (!targetProd) continue;
+
+      const existingGallery = getProductGallery(targetProd);
+      const merged = Array.from(new Set([...selectedMediaUrls, ...existingGallery]));
+
+      setProductGallery(pId, merged);
+      addCustomProduct({
+        ...targetProd,
+        image: merged[0],
+        images: merged,
+      });
+      updatedCount++;
+    }
+
+    if (updatedCount > 0) {
+      toast.success(`Mapped ${selectedMediaUrls.length} photo(s) to ${updatedCount} product(s)!`);
+    } else if (editingImageProduct) {
+      toast.success(`Attached ${selectedMediaUrls.length} photo(s) to ${editingImageProduct.name}!`);
+    }
+
+    setIsMediaPickerOpen(false);
+    setSelectedMediaUrls([]);
+    setTargetMappingProductIds([]);
+    loadData();
+  };
 
   // Reset subcategory selection when parent category changes
   useEffect(() => {
@@ -575,6 +641,17 @@ export const AdminInventory = () => {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedMediaUrls([]);
+              setTargetMappingProductIds([]);
+              setIsMediaPickerOpen(true);
+            }}
+            className="px-3.5 py-2 border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+          >
+            <Images size={15} /> Media Library & Multi-Mapper
+          </button>
           <button
             type="button"
             onClick={() => setIsAddCategoryOpen(true)}
@@ -1231,6 +1308,20 @@ export const AdminInventory = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Choose from Media Library & Multi-Product Mapper Trigger */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (editingImageProduct) {
+                    setTargetMappingProductIds([editingImageProduct.id]);
+                  }
+                  setIsMediaPickerOpen(true);
+                }}
+                className="w-full py-2 px-3 border border-accent/40 bg-accent/10 hover:bg-accent/20 text-accent rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Images size={15} /> Choose from Store Gallery Library & Map to Products
+              </button>
             </div>
 
             <div className="flex justify-end gap-2 pt-3 border-t border-border">
@@ -1660,6 +1751,172 @@ export const AdminInventory = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL 4: Store Media Gallery Library & Multi-Product Mapper */}
+      {isMediaPickerOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto font-body">
+          <div className="bg-background border border-border rounded-2xl p-6 w-full max-w-3xl shadow-2xl space-y-5 my-auto max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div>
+                <h3 className="font-display font-bold text-lg flex items-center gap-2">
+                  <Images size={20} className="text-accent" /> Store Media Library & Multi-Product Mapper
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Select existing photos and map them to multiple product IDs simultaneously.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsMediaPickerOpen(false)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Search Media Library */}
+            <div className="flex items-center gap-2 border border-border rounded-xl px-3 py-2 bg-muted/20">
+              <Search size={15} className="text-muted-foreground" />
+              <input
+                type="text"
+                value={mediaSearchQuery}
+                onChange={(e) => setMediaSearchQuery(e.target.value)}
+                placeholder="Search photos by product name or preset label..."
+                className="w-full bg-transparent text-xs outline-none"
+              />
+            </div>
+
+            {/* 1. SELECT PHOTOS GRID */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                  1. Choose Photos ({selectedMediaUrls.length} Selected)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const filtered = storeMediaLibrary
+                      .filter((m) => !mediaSearchQuery || m.source.toLowerCase().includes(mediaSearchQuery.toLowerCase()))
+                      .map((m) => m.url);
+                    setSelectedMediaUrls(selectedMediaUrls.length === filtered.length ? [] : filtered);
+                  }}
+                  className="text-[11px] text-accent font-semibold hover:underline cursor-pointer"
+                >
+                  {selectedMediaUrls.length > 0 ? "Clear Selection" : "Select All Visible"}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5 max-h-56 overflow-y-auto p-1.5 border border-border rounded-xl bg-muted/10">
+                {storeMediaLibrary
+                  .filter((m) => !mediaSearchQuery || m.source.toLowerCase().includes(mediaSearchQuery.toLowerCase()))
+                  .map((m, i) => {
+                    const isSelected = selectedMediaUrls.includes(m.url);
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => {
+                          setSelectedMediaUrls((prev) =>
+                            isSelected ? prev.filter((u) => u !== m.url) : [...prev, m.url]
+                          );
+                        }}
+                        className={`relative rounded-xl overflow-hidden border-2 aspect-square cursor-pointer transition-all ${
+                          isSelected
+                            ? "border-accent ring-2 ring-accent/40 scale-95"
+                            : "border-border/60 hover:border-accent/60 opacity-80 hover:opacity-100"
+                        }`}
+                      >
+                        <img src={m.url} alt={m.source} className="w-full h-full object-cover" />
+                        {isSelected && (
+                          <div className="absolute inset-0 bg-accent/20 flex items-center justify-center">
+                            <CheckCircle2 size={20} className="text-accent fill-background" />
+                          </div>
+                        )}
+                        <span className="absolute bottom-0 inset-x-0 bg-black/75 text-white text-[8px] truncate px-1 text-center font-mono">
+                          {m.source}
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* 2. MAP TO MULTIPLE PRODUCT IDS */}
+            <div className="space-y-2 border-t border-border pt-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                  2. Select Product IDs to Map Photos To ({targetMappingProductIds.length} Selected)
+                </span>
+                <div className="flex items-center gap-3 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setTargetMappingProductIds(allProds.map((p) => p.id))}
+                    className="text-accent font-semibold hover:underline cursor-pointer"
+                  >
+                    Select All Products
+                  </button>
+                  <span>•</span>
+                  <button
+                    type="button"
+                    onClick={() => setTargetMappingProductIds([])}
+                    className="text-muted-foreground font-semibold hover:underline cursor-pointer"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 border border-border rounded-xl bg-muted/10">
+                {allProds.map((p) => {
+                  const isChecked = targetMappingProductIds.includes(p.id);
+                  return (
+                    <label
+                      key={p.id}
+                      className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs transition-colors ${
+                        isChecked
+                          ? "border-accent bg-accent/10 font-semibold"
+                          : "border-border bg-background hover:bg-secondary"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setTargetMappingProductIds((prev) => [...prev, p.id]);
+                          } else {
+                            setTargetMappingProductIds((prev) => prev.filter((id) => id !== p.id));
+                          }
+                        }}
+                        className="accent-accent"
+                      />
+                      <img src={getProductImageSrc(p)} alt={p.name} className="size-6 rounded object-cover border border-border shrink-0" />
+                      <div className="truncate">
+                        <div className="truncate font-medium">{p.name}</div>
+                        <div className="text-[9px] text-muted-foreground font-mono truncate">ID: {p.id}</div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setIsMediaPickerOpen(false)}
+                className="px-4 py-2 border border-border rounded-xl hover:bg-secondary text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyMultiProductMapping}
+                className="px-6 py-2 bg-accent text-accent-foreground font-semibold rounded-xl text-xs shadow-md hover:bg-accent/90 cursor-pointer"
+              >
+                Apply Photo Mapping ({selectedMediaUrls.length} photos &rarr; {targetMappingProductIds.length || (editingImageProduct ? 1 : 0)} products)
+              </button>
+            </div>
           </div>
         </div>
       )}
