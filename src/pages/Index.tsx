@@ -13,11 +13,16 @@ const heroImage = "/images/branding/cinematic-store-banner.jpg";
 const festiveImage = "https://images.unsplash.com/photo-1548907040-4baa42d10919?w=1440&h=800&fit=crop";
 const grandOpeningImage = "/images/branding/grand-opening-banner.jpg";
 const categoryImages: Record<string, string> = {
-  nuts: "/images/reference-site/cats/nuts.jpg",
-  "dry-fruits": "/images/reference-site/cats/dry-fruits.jpg",
-  seeds: "/images/reference-site/cats/seeds.jpg",
-  mixes: "/images/reference-site/cats/mixes.jpg",
+  nuts: "/images/nuts/almonds.jpg",
+  "dry-fruits": "/images/dry-fruits/anjeer.jpg",
+  chocolates: "/images/chocolates/lindt-lindor-red-main.jpeg",
+  mixes: "/images/mixes/berry-mix.jpg",
+  gifting: "/images/gifting/gift-box-classic.jpg",
+  spices: "/images/products/product-gallery-04.jpg",
+  seeds: "/images/seeds/pumpkin-seeds.jpg",
+  "solar-dried": "/images/dry-fruits/dried-kiwi.jpg",
 };
+
 import PromoBanner from "@/components/PromoBanner";
 import CategoryStrip from "@/components/CategoryStrip";
 import BuildBox from "@/components/BuildBox";
