@@ -262,7 +262,11 @@ export const AdminInventory = () => {
   };
 
   // Helper for Uploading an Image File to Drive / Data URL
-  const processImageFileUpload = async (file: File, category: string): Promise<string> => {
+  const processImageFileUpload = async (
+    file: File,
+    category: string,
+    targetProductId?: string
+  ): Promise<string> => {
     try {
       const base64Raw = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -276,7 +280,7 @@ export const AdminInventory = () => {
       });
 
       const driveRes = await adminUploadImage({
-        productId: file.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        productId: targetProductId || file.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
         dataBase64: base64Raw,
         filename: file.name,
         mimeType: file.type,
@@ -315,12 +319,14 @@ export const AdminInventory = () => {
       toast.error("Failed to read image files.");
     } finally {
       setImageUploading(false);
+      e.target.value = "";
     }
   };
 
   // Multiple Image File Upload for Existing Item Editing
   const handleExistingProdImageFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!editingImageProduct) return;
+    const targetItem = editingImageProduct;
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -329,19 +335,19 @@ export const AdminInventory = () => {
       const newUrls: string[] = [];
       for (const file of Array.from(files)) {
         if (file.type.startsWith("image/")) {
-          const url = await processImageFileUpload(file, editingImageProduct.category);
+          const url = await processImageFileUpload(file, targetItem.category, targetItem.id);
           newUrls.push(url);
         }
       }
       if (newUrls.length > 0) {
-        const updated = Array.from(new Set([...editingProductImages, ...newUrls]));
-        setEditingProductImages(updated);
-        toast.success(`Added ${newUrls.length} new photo(s) to gallery!`);
+        setEditingProductImages((prev) => Array.from(new Set([...prev, ...newUrls])));
+        toast.success(`Added ${newUrls.length} new photo(s) to ${targetItem.name}'s gallery!`);
       }
     } catch {
       toast.error("Failed to upload image files.");
     } finally {
       setImageUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -369,7 +375,7 @@ export const AdminInventory = () => {
       images: editingProductImages,
     });
 
-    toast.success(`Updated images for ${editingImageProduct.name}!`);
+    toast.success(`Saved updated image gallery for ${editingImageProduct.name}!`);
     setEditingImageProduct(null);
     loadData();
   };
@@ -1165,10 +1171,13 @@ export const AdminInventory = () => {
                       key={img.url}
                       type="button"
                       onClick={() => {
-                        if (!editingProductImages.includes(img.url)) {
-                          setEditingProductImages([...editingProductImages, img.url]);
-                          toast.success(`Attached preset ${img.label} photo!`);
-                        }
+                        setEditingProductImages((prev) => {
+                          if (!prev.includes(img.url)) {
+                            toast.success(`Attached preset ${img.label} photo!`);
+                            return [...prev, img.url];
+                          }
+                          return prev;
+                        });
                       }}
                       className="size-9 rounded-lg border border-border overflow-hidden shrink-0 opacity-70 hover:opacity-100 hover:border-accent transition-all cursor-pointer"
                       title={`Add ${img.label}`}
