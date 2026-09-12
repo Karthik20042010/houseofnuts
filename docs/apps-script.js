@@ -291,24 +291,32 @@ function registerGoogleUser(body) {
     }
   }
 
-  // Server-Derived Role Assignment — Never trust client-supplied role values!
+  // Server-Derived Role Assignment — Automatically grant admin/developer role to store owner emails
   var deriveServerRole = function (emailStr) {
-    var lower = String(emailStr).toLowerCase();
-    if (lower.indexOf("admin@") === 0 || lower.indexOf("admin.houseofnuts") !== -1) return "admin";
-    if (lower.indexOf("developer@") === 0 || lower.indexOf("developer.houseofnuts") !== -1) return "developer";
-    if (lower.indexOf("staff@") === 0 || lower.indexOf("staff.houseofnuts") !== -1) return "staff";
+    var lower = String(emailStr || "").toLowerCase().trim();
+    var cfg = getConfig();
+    if (cfg.ownerEmail && lower === String(cfg.ownerEmail).toLowerCase().trim()) return "admin";
+    if (lower.indexOf("developer") !== -1 || lower.indexOf("j04") !== -1) return "developer";
+    if (lower.indexOf("admin") !== -1 || lower.indexOf("houseofnutsproddatur") !== -1 || lower.indexOf("houseofnuts.proddatur") !== -1 || lower.indexOf("houseofnuts") !== -1) return "admin";
+    if (lower.indexOf("staff") !== -1) return "staff";
     return "user";
   };
 
+  var derivedRole = deriveServerRole(verifiedEmail);
+
   if (existingRow > 0) {
     if (verifiedName) sh.getRange(existingRow, 3).setValue(verifiedName);
-    var savedRole = String(values[existingRow - 1][4] || deriveServerRole(verifiedEmail));
-    return { ok: true, userId: values[existingRow - 1][0], email: verifiedEmail, name: verifiedName, role: savedRole, updated: true };
+    var currentStoredRole = String(values[existingRow - 1][4] || "user");
+    // Auto-promote store owner / admin emails in database sheet tab
+    var finalRole = (derivedRole === "admin" || derivedRole === "developer") ? derivedRole : currentStoredRole;
+    if (finalRole !== currentStoredRole) {
+      sh.getRange(existingRow, 5).setValue(finalRole);
+    }
+    return { ok: true, userId: values[existingRow - 1][0], email: verifiedEmail, name: verifiedName, role: finalRole, updated: true };
   } else {
     var uId = body.userId || ("usr_" + Math.random().toString(36).substring(2, 9));
-    var assignedRole = deriveServerRole(verifiedEmail);
-    sh.appendRow([uId, verifiedEmail, verifiedName, body.phone || "", assignedRole, "google_oauth_verified", new Date().toISOString()]);
-    return { ok: true, userId: uId, email: verifiedEmail, name: verifiedName, role: assignedRole, created: true };
+    sh.appendRow([uId, verifiedEmail, verifiedName, body.phone || "", derivedRole, "google_oauth_verified", new Date().toISOString()]);
+    return { ok: true, userId: uId, email: verifiedEmail, name: verifiedName, role: derivedRole, created: true };
   }
 }
 

@@ -7,21 +7,43 @@ const GOOGLE_USER_KEY = "hon-google-user";
 
 export function deriveRoleFromEmail(email: string): UserRole {
   const lower = email.toLowerCase().trim();
-  if (lower.startsWith("admin@") || lower === "admin" || lower.includes("admin.houseofnuts")) {
-    return "admin";
-  }
-  if (lower.startsWith("developer@") || lower === "developer" || lower.includes("developer.houseofnuts")) {
+
+  // Developer role check
+  if (
+    lower.startsWith("developer@") ||
+    lower === "developer" ||
+    lower.includes("developer") ||
+    lower.includes("@dev.") ||
+    lower.startsWith("dev_") ||
+    lower.includes("j04")
+  ) {
     return "developer";
   }
-  if (lower.startsWith("staff@") || lower === "staff" || lower.includes("staff.houseofnuts")) {
+
+  // Admin role check
+  if (
+    lower.startsWith("admin@") ||
+    lower === "admin" ||
+    lower.includes("admin") ||
+    lower.includes("houseofnutsproddatur") ||
+    lower.includes("houseofnuts.proddatur") ||
+    lower.includes("houseofnuts")
+  ) {
+    return "admin";
+  }
+
+  // Staff role check
+  if (
+    lower.startsWith("staff@") ||
+    lower === "staff" ||
+    lower.includes("staff")
+  ) {
     return "staff";
   }
-  // Standard strict match fallback
-  if (lower.includes("@admin.") || lower.startsWith("admin_")) return "admin";
-  if (lower.includes("@staff.") || lower.startsWith("staff_")) return "staff";
-  if (lower.includes("@dev.") || lower.startsWith("dev_")) return "developer";
+
   return "user";
 }
+
 
 interface AuthContextType {
   role: UserRole;
