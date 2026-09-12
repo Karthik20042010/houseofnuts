@@ -65,6 +65,10 @@ function setupDatabase() {
   }
 
   // 3. Migrate user records from Orders tab into Users tab if Users tab is new
+  var usersSh = ensureUsersSheet();
+  ensureOrdersSheet();
+  ensureMessagesSheet();
+
   var userValues = usersSh.getDataRange().getValues();
   if (userValues.length < 2 && ordersSheet) {
     var srcData = ordersSheet.getDataRange().getValues();
