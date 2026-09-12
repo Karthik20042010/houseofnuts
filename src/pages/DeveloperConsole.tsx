@@ -13,7 +13,7 @@ export const DeveloperConsole: React.FC = () => {
   const [inventoryJson, setInventoryJson] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"health" | "logs" | "payload">("health");
 
-  const oneDriveExcelUrl = import.meta.env.VITE_ONEDRIVE_EXCEL_URL as string || "https://1drv.ms/x/c/4ce278ef9bf5ebd6/IQCN8-hhvvf5TYKdAOg6ULN1AR8N2otsJ772B2GiAgQqpUg?e=8k7QJN";
+  const oneDriveExcelUrl = import.meta.env.VITE_ONEDRIVE_EXCEL_URL as string || "https://1drv.ms/x/c/4ce278ef9bf5ebd6/IQCN8-hhvvf5TYKdAOg6ULN1AR8N2otsJ772B2GiAgQqpUg?e=qKZOjX";
 
   const addLog = (msg: string) => {
     setLogs((prev) => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
