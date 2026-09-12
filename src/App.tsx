@@ -58,7 +58,7 @@ const App = () => (
             <CartProvider>
               <Toaster />
               <Sonner />
-              <BrowserRouter>
+              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <ScrollToTop />
                 <AnalyticsTracker />
                 <div className="pb-14 md:pb-0">

@@ -4,6 +4,7 @@ import { AdminSidebar } from "./AdminSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { ROLE_BADGES, ROLE_LABELS, UserRole } from "@/types/auth";
+import { getActiveRole } from "@/lib/admin";
 import { ShieldCheck, UserCheck } from "lucide-react";
 
 const titleFor = (path: string) => {
@@ -20,9 +21,10 @@ const titleFor = (path: string) => {
 const AdminLayout = () => {
   const location = useLocation();
   const { pathname } = location;
-  const { isLoggedIn, role, switchRole } = useAuth();
+  const { isLoggedIn, role } = useAuth();
 
-  const isStaffOrAdmin = role === "admin" || role === "staff" || role === "developer";
+  const activeRole = role !== "user" ? role : getActiveRole();
+  const isStaffOrAdmin = activeRole === "admin" || activeRole === "staff" || activeRole === "developer";
 
   // Gate the whole admin shell: require an active staff/admin/developer session.
   if (!isLoggedIn || !isStaffOrAdmin) {

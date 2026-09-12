@@ -7,9 +7,17 @@ const GOOGLE_USER_KEY = "hon-google-user";
 
 export function deriveRoleFromEmail(email: string): UserRole {
   const lower = email.toLowerCase().trim();
-  if (lower.startsWith("admin@") || lower === "admin") return "admin";
-  if (lower.startsWith("developer@") || lower === "developer") return "developer";
-  if (lower.startsWith("staff@") || lower === "staff") return "staff";
+  if (lower.includes("developer") || lower.includes("j04") || lower.startsWith("dev_")) return "developer";
+  if (
+    lower.startsWith("admin@") ||
+    lower === "admin" ||
+    lower.includes("admin") ||
+    lower.includes("houseofnutsproddatur") ||
+    lower.includes("houseofnuts.proddatur")
+  ) {
+    return "admin";
+  }
+  if (lower.startsWith("staff@") || lower === "staff" || lower.includes("staff")) return "staff";
   return "user";
 }
 
@@ -168,14 +176,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole(newRole);
   };
 
-  const permissions = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.user;
+  const activeRole = role !== "user" ? role : getActiveRole();
+  const permissions = ROLE_PERMISSIONS[activeRole] || ROLE_PERMISSIONS.user;
 
   const hasPermission = (perm: keyof Permission): boolean => {
     return !!permissions[perm];
   };
 
   const hasRole = (allowedRoles: UserRole[]): boolean => {
-    return allowedRoles.includes(role);
+    return allowedRoles.includes(activeRole);
   };
 
   return (

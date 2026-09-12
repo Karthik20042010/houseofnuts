@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth, deriveRoleFromEmail } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { UserRole, ROLE_LABELS } from "@/types/auth";
-import { adminLogin, isAdminLoggedIn } from "@/lib/admin";
+import { adminLogin, isAdminLoggedIn, getActiveRole } from "@/lib/admin";
 import Header from "@/components/Header";
 import { GoogleLoginModal } from "@/components/auth/GoogleLoginModal";
 import {
@@ -42,17 +42,19 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Auto-redirect if already authenticated
-  if (isLoggedIn || isAdminLoggedIn() || googleUser) {
-    if (role === "developer") {
-      navigate("/admin/developer", { replace: true });
-    } else if (role === "admin" || role === "staff") {
-      navigate("/admin", { replace: true });
-    } else {
-      navigate("/account", { replace: true });
+  // Auto-redirect if already authenticated (wrapped in useEffect to avoid React render side-effects)
+  useEffect(() => {
+    if (isLoggedIn || isAdminLoggedIn() || googleUser) {
+      const activeRole = role !== "user" ? role : getActiveRole();
+      if (activeRole === "developer") {
+        navigate("/admin/developer", { replace: true });
+      } else if (activeRole === "admin" || activeRole === "staff") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/account", { replace: true });
+      }
     }
-    return null;
-  }
+  }, [isLoggedIn, googleUser, role, navigate]);
 
   const performRedirect = (targetRole?: string) => {
     const activeRole = targetRole || role;
