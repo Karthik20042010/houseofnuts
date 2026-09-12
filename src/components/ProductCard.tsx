@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useInventory } from "@/contexts/InventoryContext";
 import { isLowStock, isOutOfStock, stockOf } from "@/lib/inventory";
-import { ShoppingBag, Star, Check, Heart, Zap } from "lucide-react";
+import { ShoppingBag, Star, Check, Heart, Zap, Eye } from "lucide-react";
 import { getAverageRating } from "@/lib/reviews";
 import { useProductImage } from "@/lib/productImages";
 import ProductImage from "@/components/ProductImage";
+import QuickView from "@/components/QuickView";
 
 interface ProductCardProps {
   product: Product;
@@ -18,6 +19,7 @@ interface ProductCardProps {
 const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
   const [selectedVariant, setSelectedVariant] = useState(0);
   const [justAdded, setJustAdded] = useState(false);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { stock } = useInventory();
@@ -31,6 +33,12 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
   const remaining = stockOf(stock, variant.id);
   const allOos = product.variants.every((v) => isOutOfStock(stock, v.id));
   const inWishlist = isInWishlist(product.id);
+
+  useEffect(() => {
+    if (!isOutOfStock(stock, variant.id)) return;
+    const firstAvailable = product.variants.findIndex((item) => !isOutOfStock(stock, item.id));
+    if (firstAvailable >= 0) setSelectedVariant(firstAvailable);
+  }, [product.variants, stock, variant.id]);
 
   const handleAdd = () => {
     addToCart(product, variant);
@@ -56,6 +64,14 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
             className="w-full h-full object-cover rounded-lg group-hover:scale-[1.07] [transition:opacity_500ms,transform_1000ms]"
           />
         </Link>
+
+        <button
+          type="button"
+          onClick={() => setQuickViewOpen(true)}
+          className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 min-h-[36px] px-3 bg-background/95 text-foreground text-[10px] uppercase tracking-[0.14em] font-semibold font-body rounded-full shadow-soft transition-all duration-200 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 focus:opacity-100 focus:translate-y-0"
+        >
+          <span className="flex items-center gap-1.5"><Eye size={13} /> Quick view</span>
+        </button>
 
 
         {/* Badge */}
@@ -119,15 +135,17 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
         {product.variants.map((v, i) => {
           const vOos = isOutOfStock(stock, v.id);
           return (
-            <button
-              key={v.id}
-              onClick={() => setSelectedVariant(i)}
-              aria-pressed={i === selectedVariant}
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => setSelectedVariant(i)}
+            aria-pressed={i === selectedVariant}
+            disabled={vOos}
               className={`text-[10px] px-2.5 sm:px-3 py-2 sm:py-1.5 min-h-[32px] border transition-all duration-200 font-body tracking-wide rounded-full ${
                 i === selectedVariant
                   ? "gradient-earth text-primary-foreground border-transparent shadow-soft"
                   : "border-border hover:border-accent/50 hover:text-accent"
-              } ${vOos ? "line-through opacity-50" : ""}`}
+              } ${vOos ? "line-through opacity-50 cursor-not-allowed" : ""}`}
               title={vOos ? "Out of stock" : undefined}
             >
               {v.size}
@@ -185,6 +203,13 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
         </div>
 
       </div>
+      <QuickView
+        product={product}
+        open={quickViewOpen}
+        selectedVariant={selectedVariant}
+        onOpenChange={setQuickViewOpen}
+        onVariantChange={setSelectedVariant}
+      />
     </div>
   );
 };
