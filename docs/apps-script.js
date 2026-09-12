@@ -20,6 +20,19 @@
  *    - Click Deploy (Copy the Web App URL into your React app).
  */
 
+// -------- Setup Function --------
+
+function setupDatabase() {
+  getConfig();
+  ensureUsersSheet();
+  ensureProductsSheet();
+  ensurePricesSheet();
+  ensureInventorySheet();
+  ensureOrdersSheet();
+  ensureMessagesSheet();
+  Logger.log("✅ All 7 database sheets (Config, Users, Products, Prices, Inventory, Orders, Messages) initialized successfully!");
+}
+
 // -------- Endpoint Routing --------
 
 function doGet(e) {
