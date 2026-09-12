@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,52 +6,55 @@
 
 @layer base {
   :root {
-    --background: 36 33% 96%;
-    --foreground: 18 28% 17%;
+    /* Autumn Harvest — burgundy, sienna, amber, gold on warm off-white */
+    --background: 38 43% 98%;
+    --foreground: 7 59% 23%;
 
-    --card: 40 25% 97%;
-    --card-foreground: 18 28% 17%;
+    --card: 0 0% 100%;
+    --card-foreground: 7 59% 23%;
 
-    --popover: 40 25% 97%;
-    --popover-foreground: 18 28% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 7 59% 23%;
 
-    --primary: 18 28% 17%;
-    --primary-foreground: 36 33% 96%;
+    --primary: 7 59% 23%;
+    --primary-foreground: 38 43% 98%;
 
-    --secondary: 30 25% 85%;
-    --secondary-foreground: 18 28% 17%;
+    --secondary: 33 38% 93%;
+    --secondary-foreground: 7 59% 23%;
 
-    --muted: 30 25% 85%;
-    --muted-foreground: 18 15% 45%;
+    --muted: 33 32% 92%;
+    --muted-foreground: 17 35% 42%;
 
-    --accent: 27 55% 52%;
-    --accent-foreground: 36 33% 96%;
+    --accent: 32 67% 50%;
+    --accent-foreground: 38 43% 98%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 38 43% 98%;
 
-    --border: 18 15% 88%;
-    --input: 18 15% 88%;
-    --ring: 27 55% 52%;
+    --border: 17 28% 88%;
+    --input: 17 28% 88%;
+    --ring: 32 67% 50%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     /* Custom tokens */
-    --linen: 36 33% 96%;
-    --earth: 18 28% 17%;
-    --sun: 27 55% 52%;
-    --sun-glow: 34 78% 62%;
-    --clay: 30 25% 85%;
-    --clay-light: 30 25% 92%;
+    --linen: 38 43% 98%;
+    --earth: 7 59% 23%;
+    --sun: 32 67% 50%;
+    --sun-glow: 42 77% 60%;
+    --gold: 42 77% 60%;
+    --sienna: 17 63% 37%;
+    --clay: 33 35% 90%;
+    --clay-light: 36 40% 95%;
 
     /* Gradients & shadows */
     --gradient-warm: linear-gradient(135deg, hsl(var(--sun)), hsl(var(--sun-glow)));
-    --gradient-earth: linear-gradient(160deg, hsl(var(--earth)), hsl(18 30% 24%));
-    --gradient-linen: linear-gradient(180deg, hsl(var(--linen)), hsl(30 30% 92%));
-    --gradient-gold: linear-gradient(135deg, #d4af37 0%, #f3e5ab 50%, #aa7c11 100%);
+    --gradient-earth: linear-gradient(160deg, hsl(var(--earth)), hsl(var(--sienna)));
+    --gradient-linen: linear-gradient(180deg, hsl(var(--linen)), hsl(36 40% 95%));
+    --gradient-gold: linear-gradient(135deg, hsl(var(--sun)) 0%, hsl(var(--gold)) 50%, hsl(17 63% 37%) 100%);
     --gradient-sheen: linear-gradient(105deg, transparent 35%, hsl(0 0% 100% / 0.35) 50%, transparent 65%);
-    --shadow-soft: 0 4px 16px -6px hsl(18 28% 17% / 0.16);
-    --shadow-card: 0 18px 40px -22px hsl(18 28% 17% / 0.35);
+    --shadow-soft: 0 4px 16px -6px hsl(7 59% 23% / 0.16);
+    --shadow-card: 0 18px 44px -22px hsl(7 59% 23% / 0.38);
     --shadow-glow: 0 12px 30px -10px hsl(var(--sun) / 0.45);
 
 
@@ -62,48 +65,52 @@
     --status-confirmed-fg: 210 60% 98%;
     --status-shipped: 265 55% 55%;
     --status-shipped-fg: 265 60% 98%;
-    --status-delivered: 145 55% 38%;
+    --status-delivered: 145 55% 34%;
     --status-delivered-fg: 145 60% 98%;
     --status-cancelled: 0 70% 50%;
     --status-cancelled-fg: 0 60% 98%;
-    --status-paid: 145 55% 38%;
+    --status-paid: 145 55% 34%;
     --status-refunded: 25 70% 50%;
 
     /* Sidebar tokens */
-    --sidebar-background: 30 25% 94%;
-    --sidebar-foreground: 18 28% 17%;
-    --sidebar-primary: 18 28% 17%;
-    --sidebar-primary-foreground: 36 33% 96%;
-    --sidebar-accent: 30 25% 88%;
-    --sidebar-accent-foreground: 18 28% 17%;
-    --sidebar-border: 18 15% 82%;
-    --sidebar-ring: 27 55% 52%;
+    --sidebar-background: 36 40% 95%;
+    --sidebar-foreground: 7 59% 23%;
+    --sidebar-primary: 7 59% 23%;
+    --sidebar-primary-foreground: 38 43% 98%;
+    --sidebar-accent: 33 35% 90%;
+    --sidebar-accent-foreground: 7 59% 23%;
+    --sidebar-border: 17 28% 86%;
+    --sidebar-ring: 32 67% 50%;
 
-    --font-display: 'Playfair Display', serif;
-    --font-body: 'Plus Jakarta Sans', sans-serif;
+    --font-display: 'Instrument Serif', serif;
+    --font-body: 'Work Sans', sans-serif;
   }
+
 
   .dark {
-    --background: 18 28% 10%;
-    --foreground: 36 33% 96%;
-    --card: 18 28% 12%;
-    --card-foreground: 36 33% 96%;
-    --popover: 18 28% 12%;
-    --popover-foreground: 36 33% 96%;
-    --primary: 36 33% 96%;
-    --primary-foreground: 18 28% 17%;
-    --secondary: 18 20% 20%;
-    --secondary-foreground: 36 33% 96%;
-    --muted: 18 20% 20%;
-    --muted-foreground: 30 15% 65%;
-    --accent: 27 55% 52%;
-    --accent-foreground: 36 33% 96%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 18 20% 20%;
-    --input: 18 20% 20%;
-    --ring: 27 55% 52%;
+    --background: 7 40% 8%;
+    --foreground: 38 43% 96%;
+    --card: 7 38% 11%;
+    --card-foreground: 38 43% 96%;
+    --popover: 7 38% 11%;
+    --popover-foreground: 38 43% 96%;
+    --primary: 38 43% 96%;
+    --primary-foreground: 7 59% 23%;
+    --secondary: 10 25% 18%;
+    --secondary-foreground: 38 43% 96%;
+    --muted: 10 25% 18%;
+    --muted-foreground: 33 25% 70%;
+    --accent: 42 77% 60%;
+    --accent-foreground: 7 59% 15%;
+    --destructive: 0 62% 34%;
+    --destructive-foreground: 38 43% 96%;
+    --border: 10 25% 20%;
+    --input: 10 25% 20%;
+    --ring: 42 77% 60%;
+    --clay: 10 25% 18%;
+    --clay-light: 10 25% 14%;
   }
+
 }
 
 @layer base {

@@ -15,9 +15,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["'Fraunces'", "serif"],
+        display: ["'Instrument Serif'", "serif"],
         body: ["'Work Sans'", "sans-serif"],
       },
+
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -27,6 +28,9 @@ export default {
         linen: "hsl(var(--linen))",
         earth: "hsl(var(--earth))",
         sun: "hsl(var(--sun))",
+        gold: "hsl(var(--gold))",
+        sienna: "hsl(var(--sienna))",
+
         clay: {
           DEFAULT: "hsl(var(--clay))",
           light: "hsl(var(--clay-light))",
