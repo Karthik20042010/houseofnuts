@@ -16,8 +16,11 @@ import {
   Filter,
   X,
   Tag,
+  Upload,
+  Image as ImageIcon,
+  CheckCircle2,
 } from "lucide-react";
-import { adminUpdateInventory } from "@/lib/admin";
+import { adminUpdateInventory, adminUploadImage } from "@/lib/admin";
 import { fetchInventory, StockMap } from "@/lib/inventory";
 import { products as baseProducts, Product, ProductVariant } from "@/data/products";
 import {
@@ -30,18 +33,30 @@ import {
   getPriceOverrides,
   savePriceOverrides,
   PriceOverride,
-  CustomSubcategory,
 } from "@/lib/customCatalog";
+import { fileToDataUrl, getProductImageSrc } from "@/lib/productImages";
 import { toast } from "sonner";
-import { getProductImageSrc } from "@/lib/productImages";
 import { Badge } from "@/components/ui/badge";
 
 const UNTRACKED = -1;
 
+const presetCatalogImages = [
+  { label: "Almonds", url: "/images/catalog/almonds.jpg" },
+  { label: "Mamra Badam", url: "/images/catalog/mamra-almonds.jpg" },
+  { label: "Cashews", url: "/images/catalog/cashews.jpg" },
+  { label: "Pistachios", url: "/images/catalog/mamra-pistachios.jpg" },
+  { label: "Walnuts", url: "/images/catalog/walnuts.jpg" },
+  { label: "Saffron", url: "/images/catalog/saffron.jpg" },
+  { label: "Wild Honey", url: "/images/catalog/honey.jpg" },
+  { label: "Berry Mix", url: "/images/catalog/berry-mix.jpg" },
+  { label: "Gift Box", url: "/images/catalog/luxury-box.jpg" },
+  { label: "Chocolates", url: "/images/catalog/chocolate-box.jpg" },
+];
+
 export const AdminInventory = () => {
   const [allProds, setAllProds] = useState<Product[]>([]);
   const [categoriesList, setCategoriesList] = useState(getCustomCategories());
-  
+
   // Selection states for Category -> Subcategory hierarchy workflow
   const [selectedParentCategory, setSelectedParentCategory] = useState<string>("all");
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>("all");
@@ -61,6 +76,9 @@ export const AdminInventory = () => {
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [isAddSubcategoryOpen, setIsAddSubcategoryOpen] = useState(false);
+
+  // Image Uploading State
+  const [imageUploading, setImageUploading] = useState(false);
 
   // New Parent Category Form state
   const [newCatLabel, setNewCatLabel] = useState("");
@@ -235,6 +253,59 @@ export const AdminInventory = () => {
     }
   };
 
+  // Image File Selection & Direct Upload Handler
+  const handleImageFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image file (JPG, PNG, WEBP).");
+      return;
+    }
+
+    setImageUploading(true);
+    try {
+      // 1. Try Google Drive cloud upload if backend is accessible
+      try {
+        const base64Raw = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const res = String(reader.result || "");
+            const commaIdx = res.indexOf(",");
+            resolve(commaIdx !== -1 ? res.substring(commaIdx + 1) : res);
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+
+        const driveRes = await adminUploadImage({
+          productId: newProdName ? newProdName.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "new-item",
+          dataBase64: base64Raw,
+          filename: file.name,
+          mimeType: file.type,
+          category: newProdCategory,
+        });
+
+        if (driveRes && driveRes.ok && driveRes.url) {
+          setNewProdImage(driveRes.url);
+          toast.success("Image uploaded to Google Drive CDN successfully!");
+          setImageUploading(false);
+          return;
+        }
+      } catch {
+        // Fallback to local Data URL
+      }
+
+      const dataUrl = await fileToDataUrl(file);
+      setNewProdImage(dataUrl);
+      toast.success("Image file attached successfully!");
+    } catch {
+      toast.error("Failed to read image file.");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
   // Handle Add New Parent Category
   const handleAddCategorySubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -285,6 +356,10 @@ export const AdminInventory = () => {
       toast.error("Please enter a product name.");
       return;
     }
+    if (!newProdImage.trim()) {
+      toast.error("Please select or upload a product image.");
+      return;
+    }
     if (newProdVariants.length === 0) {
       toast.error("Please add at least one variant rate.");
       return;
@@ -296,7 +371,7 @@ export const AdminInventory = () => {
       category: newProdCategory as any,
       subcategory: newProdSubcategory,
       description: newProdDescription.trim() || "Hand-selected premium dry fruits",
-      image: newProdImage.trim() || "/images/catalog/almonds.jpg",
+      image: newProdImage.trim(),
       badge: newProdBadge.trim() || undefined,
       variants: newProdVariants.map((v) => ({
         id: "",
@@ -316,7 +391,7 @@ export const AdminInventory = () => {
     });
     setStock(newStockMap);
 
-    toast.success(`Product "${createdProd.name}" created under ${newProdCategory} -> ${newProdSubcategory}!`);
+    toast.success(`Product "${createdProd.name}" created with attached image!`);
     setIsAddProductOpen(false);
 
     // Reset form
@@ -373,7 +448,7 @@ export const AdminInventory = () => {
             <Layers className="h-6 w-6 text-accent" /> Category, Subcategory & Inventory Manager
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
-            Hierarchical workflow: Select Parent Category &rarr; Subcategory &rarr; Update Items & Rates.
+            Hierarchical workflow: Select Parent Category &rarr; Subcategory &rarr; Upload Image & Update Rates.
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -1006,7 +1081,7 @@ export const AdminInventory = () => {
                   <PackagePlus size={18} className="text-accent" /> Add New Item / Product to Store
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Create a new product with category, subcategory, weight sizes, rates (Price ₹), and initial stock.
+                  Create a new product with image upload, category, subcategory, rates, and stock.
                 </p>
               </div>
               <button onClick={() => setIsAddProductOpen(false)} className="text-muted-foreground hover:text-foreground">
@@ -1015,6 +1090,88 @@ export const AdminInventory = () => {
             </div>
 
             <form onSubmit={handleAddProductSubmit} className="space-y-4 text-xs">
+              {/* Product Image Picker & Direct File Upload */}
+              <div className="space-y-2 border border-border rounded-xl p-3.5 bg-muted/10 font-body text-xs">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <ImageIcon size={15} className="text-accent" /> Product Image File Upload / Selector <span className="text-destructive">*</span>
+                  </label>
+                  {newProdImage && (
+                    <button
+                      type="button"
+                      onClick={() => setNewProdImage("")}
+                      className="text-[10px] text-destructive hover:underline"
+                    >
+                      Clear Image
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-start gap-4">
+                  {/* Live Image Preview Thumbnail */}
+                  <div className="size-20 rounded-xl border border-border bg-background flex flex-col items-center justify-center overflow-hidden shrink-0 shadow-xs relative">
+                    {newProdImage ? (
+                      <img src={newProdImage} alt="Product preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-center p-2 text-muted-foreground text-[10px]">
+                        <Upload size={16} className="mx-auto mb-1 opacity-50 text-accent" />
+                        No Image
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-2.5 min-w-0">
+                    {/* Direct File Upload Trigger */}
+                    <div>
+                      <label className="w-full border border-dashed border-accent/50 hover:border-accent bg-accent/5 hover:bg-accent/10 transition-colors rounded-xl p-2.5 cursor-pointer flex items-center justify-center gap-2 text-xs font-semibold text-accent shadow-xs">
+                        {imageUploading ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin" /> Uploading & Processing Image...
+                          </>
+                        ) : (
+                          <>
+                            <Upload size={14} /> Choose Image File from Computer / Device
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageFileSelect}
+                        />
+                      </label>
+                    </div>
+
+                    {/* Quick Preset Selector */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5">
+                      <span className="text-[10px] text-muted-foreground font-semibold shrink-0">Presets:</span>
+                      {presetCatalogImages.map((img) => (
+                        <button
+                          key={img.url}
+                          type="button"
+                          onClick={() => setNewProdImage(img.url)}
+                          className={`size-7 rounded-lg border shrink-0 overflow-hidden transition-transform cursor-pointer ${
+                            newProdImage === img.url ? "border-accent ring-2 ring-accent/30 scale-105" : "border-border opacity-70 hover:opacity-100"
+                          }`}
+                          title={img.label}
+                        >
+                          <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Image URL Input */}
+                    <input
+                      type="text"
+                      value={newProdImage}
+                      onChange={(e) => setNewProdImage(e.target.value)}
+                      placeholder="Or paste external image URL / path (e.g. /images/catalog/almonds.jpg)"
+                      className="w-full px-3 py-1.5 border border-border rounded-lg bg-background text-[11px] font-mono focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-foreground mb-1">
@@ -1103,29 +1260,16 @@ export const AdminInventory = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-foreground mb-1">
-                    Product Image Link / Path
+                    Product Description
                   </label>
                   <input
                     type="text"
-                    value={newProdImage}
-                    onChange={(e) => setNewProdImage(e.target.value)}
-                    placeholder="/images/catalog/almonds.jpg or Drive image URL"
+                    value={newProdDescription}
+                    onChange={(e) => setNewProdDescription(e.target.value)}
+                    placeholder="Short overview of farm source or health benefits..."
                     className="w-full px-3 py-2 border border-border rounded-lg bg-background text-xs focus:outline-none focus:border-accent"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-foreground mb-1">
-                  Product Overview & Health Benefits
-                </label>
-                <textarea
-                  rows={2}
-                  value={newProdDescription}
-                  onChange={(e) => setNewProdDescription(e.target.value)}
-                  placeholder="Short overview of the product, farm source, or health benefits..."
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-xs focus:outline-none focus:border-accent resize-none"
-                />
               </div>
 
               {/* Product Weight Rates & MRP Table */}
