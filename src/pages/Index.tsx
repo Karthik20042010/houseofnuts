@@ -8,7 +8,7 @@ import { useGridReady } from "@/hooks/useGridReady";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import WholesaleForm from "@/components/WholesaleForm";
 import { products, categories } from "@/data/products";
-import { ChevronLeft, ChevronRight, ArrowRight, Phone, MessageCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, Phone, MessageCircle, Instagram } from "lucide-react";
 const heroImage = "/images/branding/cinematic-store-banner.jpg";
 const festiveImage = "https://images.unsplash.com/photo-1548907040-4baa42d10919?w=1440&h=800&fit=crop";
 const grandOpeningImage = "/images/branding/grand-opening-banner.jpg";
@@ -488,13 +488,22 @@ const Index = () => {
               <MessageCircle size={16} />
               WhatsApp
             </a>
+            <a
+              href="https://www.instagram.com/houseofnuts_proddatur"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-3 border border-accent text-accent px-8 py-4 text-[11px] uppercase tracking-[0.2em] font-body font-medium hover:bg-accent hover:text-accent-foreground transition-all duration-300"
+            >
+              <Instagram size={16} />
+              Instagram
+            </a>
           </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="bg-primary text-primary-foreground/60 py-12 px-6 border-t border-primary-foreground/10">
-        <div className="max-w-[1600px] mx-auto grid md:grid-cols-3 gap-8 text-center md:text-left">
+        <div className="max-w-[1600px] mx-auto grid md:grid-cols-4 gap-8 text-center md:text-left">
           <div>
             <h4 className="font-display text-xl text-primary-foreground mb-3">House of Nuts</h4>
             <p className="text-xs font-body leading-relaxed">
@@ -514,6 +523,19 @@ const Index = () => {
             <p className="text-xs font-body leading-relaxed">
               <a href="tel:+919652526920" className="hover:text-accent transition-colors">+91 96525 26920</a><br />
               <a href="https://wa.me/919652526920" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors">WhatsApp Support</a>
+            </p>
+          </div>
+          <div>
+            <h4 className="text-[11px] uppercase tracking-[0.2em] text-accent font-body font-medium mb-3">Follow Us</h4>
+            <p className="text-xs font-body leading-relaxed">
+              <a
+                href="https://www.instagram.com/houseofnuts_proddatur"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-accent hover:underline font-medium"
+              >
+                <Instagram size={14} /> @houseofnuts_proddatur
+              </a>
             </p>
           </div>
         </div>
