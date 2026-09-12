@@ -90,65 +90,106 @@ const Index = () => {
       <CategoryStrip />
       <CartDrawer />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden gradient-linen">
-        <div className="pointer-events-none absolute -top-24 -left-24 size-72 rounded-full bg-accent/20 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-0 size-80 rounded-full bg-accent/10 blur-3xl" />
-        <div className="relative px-6 md:px-12 py-16 md:py-24 max-w-[1600px] mx-auto w-full grid md:grid-cols-12 gap-12 md:gap-8 items-center">
-          <div className="md:col-span-5 flex flex-col gap-7 order-2 md:order-1 animate-fade-up">
-            <p className="eyebrow">Premium Quality</p>
-            <h1 className="font-display text-5xl md:text-7xl leading-[0.95] tracking-tight">
-              Earth's{" "}
-              <span className="bg-gradient-warm bg-clip-text text-transparent italic font-light">richest</span>{" "}
-              yield.
-            </h1>
-            <p className="text-lg leading-relaxed max-w-[42ch] text-muted-foreground font-light font-body">
-              Sun-cured pistachios, wild honey from deep forests, and spices
-              ground under heavy stone. We bring nature's finest directly to your
-              table.
-            </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() =>
-                  document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })
-                }
-                className="btn-earth"
-              >
-                Explore Collection
-              </button>
-              <button onClick={() => setGameOpen(true)} className="btn-warm">
-                🎮 Play & Win 20% OFF
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2 font-body text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              <span>Free delivery</span>
-              <span>·</span>
-              <span>Fresh roasted</span>
-              <span>·</span>
-              <span>No preservatives</span>
+      {/* Hero — editorial bento */}
+      <section className="px-4 sm:px-6 md:px-12 pt-6 pb-10 md:pt-10 md:pb-16">
+        <div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 lg:h-[620px]">
+          {/* Main tile */}
+          <div className="lg:col-span-8 relative overflow-hidden rounded-3xl group min-h-[440px] shadow-card animate-fade-in">
+            <img
+              src={heroImage}
+              alt="Premium dry fruits, nuts, spices and honey collection"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+              width={1440}
+              height={900}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              sizes="(max-width: 1024px) 100vw, 66vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-primary/85 via-primary/35 to-transparent" />
+            <div className="relative h-full flex flex-col justify-end p-6 sm:p-10 md:p-12 text-primary-foreground max-w-2xl">
+              <span className="w-fit mb-4 rounded-full bg-gold/95 text-earth px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] font-body">
+                Premium Quality
+              </span>
+              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl leading-[1.02] tracking-tight mb-4">
+                Nature's finest,{" "}
+                <span className="italic text-gold">handpicked harvest.</span>
+              </h1>
+              <p className="text-base md:text-lg text-primary-foreground/90 font-light font-body mb-7 max-w-[46ch]">
+                Sun-cured pistachios, wild forest honey and stone-ground spices — sourced
+                direct from partner farms and packed fresh for your table.
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() =>
+                    document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })
+                  }
+                  className="rounded-full bg-gold px-8 py-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] font-body text-earth transition-colors hover:bg-background"
+                >
+                  Explore Collection
+                </button>
+                <button
+                  onClick={() => setGameOpen(true)}
+                  className="rounded-full border border-primary-foreground/40 px-8 py-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] font-body text-primary-foreground transition-colors hover:bg-primary-foreground/10"
+                >
+                  Play & Win 20% Off
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-x-5 gap-y-1 pt-6 font-body text-[10px] uppercase tracking-[0.2em] text-primary-foreground/70">
+                <span>Free delivery</span>
+                <span>·</span>
+                <span>Fresh roasted</span>
+                <span>·</span>
+                <span>No preservatives</span>
+              </div>
             </div>
           </div>
-          <div className="md:col-span-7 relative group order-1 md:order-2 animate-fade-in">
-            <div className="bg-clay/70 backdrop-blur-sm p-4 md:p-6 pb-10 md:pb-14 rounded-t-[100px] md:rounded-t-[140px] rounded-b-3xl shadow-card">
+
+          {/* Side tiles */}
+          <div className="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+            <Link
+              to="/gifting"
+              className="relative overflow-hidden rounded-3xl group min-h-[220px] shadow-soft"
+            >
               <img
-                src={heroImage}
-                alt="Premium dry fruits, nuts, spices and honey collection"
-                className="w-full h-[40vh] md:h-[65vh] object-cover rounded-t-[90px] md:rounded-t-[130px] rounded-b-2xl shadow-card transition-transform duration-1000 group-hover:scale-[1.02] origin-bottom"
-                width={1440}
-                height={900}
-                loading="eager"
-                fetchPriority="high"
+                src="/images/gifting/gift-hamper-luxury.jpg"
+                alt="Festive gift hampers"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                loading="lazy"
                 decoding="async"
-                sizes="(max-width: 768px) 100vw, 58vw"
+                width={600}
+                height={600}
               />
-            </div>
-            <div className="absolute -bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur px-6 py-3 rounded-full border border-border shadow-soft whitespace-nowrap z-10">
-              <span className="font-display italic text-muted-foreground mr-2">Fresh stock:</span>
-              <span className="font-medium tracking-wide font-body">Kashmiri Walnuts & Saffron</span>
-            </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-earth/85 to-earth/10" />
+              <div className="absolute inset-0 flex flex-col justify-end p-7 text-primary-foreground">
+                <h2 className="font-display text-3xl leading-tight">Festive Gift Hampers</h2>
+                <p className="text-xs text-primary-foreground/80 font-body mt-1">
+                  Curated boxes, ready to gift.
+                </p>
+              </div>
+            </Link>
+
+            <Link
+              to="/category/honey"
+              className="relative overflow-hidden rounded-3xl bg-primary text-gold p-7 flex flex-col justify-between min-h-[220px] shadow-soft group"
+            >
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.2em] font-body border border-gold/30 px-2 py-1 rounded-full">
+                  Small batch
+                </span>
+                <h2 className="font-display text-3xl mt-5 leading-tight">
+                  Wild Forest Honey<br />& Artisanal Spices
+                </h2>
+              </div>
+              <span className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] font-body font-medium">
+                Shop now
+                <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+              </span>
+            </Link>
           </div>
         </div>
       </section>
+
 
 
       {/* Value Propositions / Brand Pillars */}
