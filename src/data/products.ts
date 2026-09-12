@@ -11,7 +11,8 @@ export interface Product {
   name: string;
   /** Local / Hindi name shown as a small chip on the card, e.g. "Badam". */
   localName?: string;
-  category: "nuts" | "dry-fruits" | "spices" | "honey" | "solar-dried" | "seeds" | "chocolates" | "mixes" | "gifting";
+  category: "nuts" | "dry-fruits" | "spices" | "honey" | "solar-dried" | "seeds" | "chocolates" | "mixes" | "gifting" | (string & {});
+  subcategory?: string;
   description: string;
   image: string;
   variants: ProductVariant[];

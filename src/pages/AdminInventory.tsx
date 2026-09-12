@@ -9,12 +9,13 @@ import {
   Infinity as InfIcon,
   PlusCircle,
   FolderPlus,
-  DollarSign,
-  Tag,
-  X,
   PackagePlus,
   Layers,
   Sparkles,
+  ChevronRight,
+  Filter,
+  X,
+  Tag,
 } from "lucide-react";
 import { adminUpdateInventory } from "@/lib/admin";
 import { fetchInventory, StockMap } from "@/lib/inventory";
@@ -23,10 +24,13 @@ import {
   getAllProducts,
   getCustomCategories,
   addCustomCategory,
+  getSubcategoriesForCategory,
+  addCustomSubcategory,
   addCustomProduct,
   getPriceOverrides,
   savePriceOverrides,
   PriceOverride,
+  CustomSubcategory,
 } from "@/lib/customCatalog";
 import { toast } from "sonner";
 import { getProductImageSrc } from "@/lib/productImages";
@@ -37,6 +41,11 @@ const UNTRACKED = -1;
 export const AdminInventory = () => {
   const [allProds, setAllProds] = useState<Product[]>([]);
   const [categoriesList, setCategoriesList] = useState(getCustomCategories());
+  
+  // Selection states for Category -> Subcategory hierarchy workflow
+  const [selectedParentCategory, setSelectedParentCategory] = useState<string>("all");
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("all");
+
   const [stock, setStock] = useState<Record<string, number>>({});
   const [initialStock, setInitialStock] = useState<Record<string, number>>({});
 
@@ -46,28 +55,33 @@ export const AdminInventory = () => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [q, setQ] = useState("");
-  const [cat, setCat] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Modals state
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+  const [isAddSubcategoryOpen, setIsAddSubcategoryOpen] = useState(false);
 
-  // New Category Form state
+  // New Parent Category Form state
   const [newCatLabel, setNewCatLabel] = useState("");
+
+  // New Subcategory Form state
+  const [newSubcatParent, setNewSubcatParent] = useState("nuts");
+  const [newSubcatLabel, setNewSubcatLabel] = useState("");
 
   // New Product Form state
   const [newProdName, setNewProdName] = useState("");
   const [newProdLocalName, setNewProdLocalName] = useState("");
   const [newProdCategory, setNewProdCategory] = useState("nuts");
+  const [newProdSubcategory, setNewProdSubcategory] = useState("almonds");
   const [newProdDescription, setNewProdDescription] = useState("");
   const [newProdImage, setNewProdImage] = useState("/images/catalog/almonds.jpg");
   const [newProdBadge, setNewProdBadge] = useState("Fresh Harvest");
   const [newProdVariants, setNewProdVariants] = useState<
     Array<{ size: string; price: number; mrp: number; stock: number }>
   >([
-    { size: "250g", price: 299, mrp: 399, stock: 50 },
-    { size: "500g", price: 549, mrp: 749, stock: 30 },
+    { size: "250g", price: 350, mrp: 450, stock: 50 },
+    { size: "500g", price: 650, mrp: 850, stock: 30 },
   ]);
 
   // Inline Add Variant state (per product)
@@ -110,16 +124,35 @@ export const AdminInventory = () => {
     return () => window.removeEventListener("hon-catalog-update", handleCatalogUpdate);
   }, []);
 
+  // Available Subcategories based on selected Parent Category
+  const activeSubcategoriesList = useMemo(() => {
+    return getSubcategoriesForCategory(selectedParentCategory);
+  }, [selectedParentCategory]);
+
+  // Reset subcategory selection when parent category changes
+  useEffect(() => {
+    setSelectedSubcategory("all");
+  }, [selectedParentCategory]);
+
+  // Filter products by Search Query, Parent Category, and Subcategory
   const filteredProducts = useMemo(() => {
-    const searchStr = q.toLowerCase().trim();
+    const q = searchQuery.toLowerCase().trim();
     return allProds.filter((p) => {
-      if (cat !== "all" && p.category !== cat) return false;
-      if (searchStr && !p.name.toLowerCase().includes(searchStr) && !p.localName?.toLowerCase().includes(searchStr)) {
+      // 1. Check Parent Category filter
+      if (selectedParentCategory !== "all" && p.category !== selectedParentCategory) {
+        return false;
+      }
+      // 2. Check Subcategory filter
+      if (selectedSubcategory !== "all" && p.subcategory !== selectedSubcategory) {
+        return false;
+      }
+      // 3. Check Search Query filter
+      if (q && !p.name.toLowerCase().includes(q) && !p.localName?.toLowerCase().includes(q)) {
         return false;
       }
       return true;
     });
-  }, [allProds, q, cat]);
+  }, [allProds, searchQuery, selectedParentCategory, selectedSubcategory]);
 
   // Compute dirty stock changes
   const dirtyStockIds = useMemo(
@@ -202,7 +235,7 @@ export const AdminInventory = () => {
     }
   };
 
-  // Handle Add New Category
+  // Handle Add New Parent Category
   const handleAddCategorySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatLabel.trim()) {
@@ -210,14 +243,42 @@ export const AdminInventory = () => {
       return;
     }
     const created = addCustomCategory(newCatLabel);
-    toast.success(`New category "${created.label}" created successfully!`);
-    setCat(created.id);
+    toast.success(`Category "${created.label}" created successfully!`);
+    setSelectedParentCategory(created.id);
     setNewCatLabel("");
     setIsAddCategoryOpen(false);
     loadData();
   };
 
-  // Handle Add New Item / Product
+  // Handle Add New Subcategory
+  const handleAddSubcategorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSubcatLabel.trim()) {
+      toast.error("Please enter a subcategory name.");
+      return;
+    }
+    const created = addCustomSubcategory(newSubcatParent, newSubcatLabel);
+    toast.success(`Subcategory "${created.label}" added under category!`);
+    setSelectedParentCategory(newSubcatParent);
+    setSelectedSubcategory(created.id);
+    setNewSubcatLabel("");
+    setIsAddSubcategoryOpen(false);
+    loadData();
+  };
+
+  // Open Product Creation Modal with pre-selected Category & Subcategory
+  const openAddProductModal = () => {
+    const parent = selectedParentCategory === "all" ? "nuts" : selectedParentCategory;
+    setNewProdCategory(parent);
+
+    const availableSubcats = getSubcategoriesForCategory(parent);
+    const sub = selectedSubcategory !== "all" ? selectedSubcategory : (availableSubcats[0]?.id || "almonds");
+    setNewProdSubcategory(sub);
+
+    setIsAddProductOpen(true);
+  };
+
+  // Handle Add New Product / Item
   const handleAddProductSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProdName.trim()) {
@@ -233,6 +294,7 @@ export const AdminInventory = () => {
       name: newProdName.trim(),
       localName: newProdLocalName.trim() || undefined,
       category: newProdCategory as any,
+      subcategory: newProdSubcategory,
       description: newProdDescription.trim() || "Hand-selected premium dry fruits",
       image: newProdImage.trim() || "/images/catalog/almonds.jpg",
       badge: newProdBadge.trim() || undefined,
@@ -254,7 +316,7 @@ export const AdminInventory = () => {
     });
     setStock(newStockMap);
 
-    toast.success(`Product "${createdProd.name}" created & added to inventory!`);
+    toast.success(`Product "${createdProd.name}" created under ${newProdCategory} -> ${newProdSubcategory}!`);
     setIsAddProductOpen(false);
 
     // Reset form
@@ -293,7 +355,7 @@ export const AdminInventory = () => {
   if (loading) {
     return (
       <div className="p-20 flex justify-center items-center gap-2 text-xs text-muted-foreground font-body">
-        <Loader2 className="animate-spin text-accent" /> Loading inventory catalog & pricing matrix...
+        <Loader2 className="animate-spin text-accent" /> Loading category hierarchy & inventory catalog matrix...
       </div>
     );
   }
@@ -308,330 +370,483 @@ export const AdminInventory = () => {
       <div className="bg-background border border-border rounded-xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-            <Layers className="h-6 w-6 text-accent" /> Catalog, Category & Inventory Manager
+            <Layers className="h-6 w-6 text-accent" /> Category, Subcategory & Inventory Manager
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
-            Manage product items, category classifications, variant rates (Price ₹ / MRP ₹), and live stock.
+            Hierarchical workflow: Select Parent Category &rarr; Subcategory &rarr; Update Items & Rates.
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => setIsAddCategoryOpen(true)}
-            className="px-3.5 py-2 border border-border hover:bg-secondary rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+            className="px-3 py-2 border border-border hover:bg-secondary rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
           >
-            <FolderPlus size={15} className="text-accent" /> + Add Category
+            <FolderPlus size={14} className="text-accent" /> + Category
           </button>
           <button
             type="button"
-            onClick={() => setIsAddProductOpen(true)}
+            onClick={() => {
+              setNewSubcatParent(selectedParentCategory === "all" ? "nuts" : selectedParentCategory);
+              setIsAddSubcategoryOpen(true);
+            }}
+            className="px-3 py-2 border border-border hover:bg-secondary rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+          >
+            <FolderPlus size={14} className="text-accent" /> + Subcategory
+          </button>
+          <button
+            type="button"
+            onClick={openAddProductModal}
             className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:bg-accent/90 cursor-pointer transition-colors shadow-xs"
           >
-            <PackagePlus size={15} /> + Add New Product / Item
+            <PackagePlus size={15} /> + Add Product Item
           </button>
         </div>
       </div>
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Summary label="Total Items in Store" value={allProds.length} sub={`${categoriesList.length} Categories`} />
-        <Summary label="Tracked Variants" value={trackedCount} />
+        <Summary label="Products in Store" value={allProds.length} sub={`${categoriesList.length} Categories`} />
+        <Summary label="Tracked Weight Variants" value={trackedCount} />
         <Summary label="Low Stock (≤5)" value={lowCount} tone="pending" />
         <Summary label="Out of Stock (0)" value={outCount} tone="cancelled" />
       </div>
 
-      {/* Filter & Action Bar */}
-      <div className="bg-card border border-border rounded-xl p-4 flex flex-wrap gap-3 items-center justify-between shadow-xs">
-        <div className="flex items-center gap-3 flex-1 min-w-[280px]">
+      {/* STEP 1 & STEP 2 HIERARCHICAL CATEGORY SELECTOR */}
+      <div className="bg-card border border-border rounded-xl p-4 space-y-4 shadow-xs">
+        {/* STEP 1: Select Parent Category */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <span className="size-5 rounded-full bg-accent text-accent-foreground grid place-items-center text-[10px]">
+                1
+              </span>
+              Select Parent Category
+            </span>
+            <button
+              onClick={() => setIsAddCategoryOpen(true)}
+              className="text-[11px] text-accent font-semibold hover:underline"
+            >
+              + Add Category
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setSelectedParentCategory("all")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+                selectedParentCategory === "all"
+                  ? "bg-accent text-accent-foreground font-bold shadow-xs"
+                  : "bg-muted/40 hover:bg-secondary text-muted-foreground"
+              }`}
+            >
+              All Categories ({allProds.length})
+            </button>
+            {categoriesList
+              .filter((c) => c.id !== "all")
+              .map((c) => {
+                const count = allProds.filter((p) => p.category === c.id).length;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setSelectedParentCategory(c.id)}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+                      selectedParentCategory === c.id
+                        ? "bg-accent text-accent-foreground font-bold shadow-xs"
+                        : "bg-muted/40 hover:bg-secondary text-foreground"
+                    }`}
+                  >
+                    {c.label} ({count})
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+
+        {/* STEP 2: Select Subcategory */}
+        <div className="space-y-2 border-t border-border/60 pt-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <span className="size-5 rounded-full bg-accent text-accent-foreground grid place-items-center text-[10px]">
+                2
+              </span>
+              Select Subcategory ({selectedParentCategory === "all" ? "All Categories" : categoriesList.find((c) => c.id === selectedParentCategory)?.label})
+            </span>
+            <button
+              onClick={() => {
+                setNewSubcatParent(selectedParentCategory === "all" ? "nuts" : selectedParentCategory);
+                setIsAddSubcategoryOpen(true);
+              }}
+              className="text-[11px] text-accent font-semibold hover:underline"
+            >
+              + Add Subcategory under this Category
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setSelectedSubcategory("all")}
+              className={`px-3 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
+                selectedSubcategory === "all"
+                  ? "bg-primary text-primary-foreground font-semibold"
+                  : "border border-border/80 bg-background hover:bg-secondary text-muted-foreground"
+              }`}
+            >
+              All Subcategories
+            </button>
+            {activeSubcategoriesList.map((sub) => {
+              const count = allProds.filter(
+                (p) =>
+                  (selectedParentCategory === "all" || p.category === selectedParentCategory) &&
+                  p.subcategory === sub.id
+              ).length;
+              return (
+                <button
+                  key={sub.id}
+                  type="button"
+                  onClick={() => setSelectedSubcategory(sub.id)}
+                  className={`px-3 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
+                    selectedSubcategory === sub.id
+                      ? "bg-primary text-primary-foreground font-semibold"
+                      : "border border-border/80 bg-background hover:bg-secondary text-foreground"
+                  }`}
+                >
+                  {sub.label} ({count})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* STEP 3: Search & Stock Filters */}
+        <div className="flex items-center gap-3 pt-2 border-t border-border/60">
           <div className="flex-1 relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search products by English or regional name (e.g. Badam, Pista)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search items by English name or regional Hindi name (e.g. Badam, Pista, Kaju)..."
               className="w-full pl-9 pr-3 py-2 border border-border bg-background text-xs font-body focus:outline-none focus:border-accent rounded-lg"
             />
           </div>
-          <select
-            value={cat}
-            onChange={(e) => setCat(e.target.value)}
-            className="border border-border bg-background px-3 py-2 text-xs font-body focus:outline-none rounded-lg cursor-pointer max-w-[180px]"
-          >
-            <option value="all">All Categories ({categoriesList.length})</option>
-            {categoriesList.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setAllInViewStock(UNTRACKED)}
-            className="px-3 py-1.5 text-xs font-body border border-border rounded-lg hover:bg-secondary transition-colors"
-            title="Untrack stock for visible products"
-          >
-            Set All Visible to Unlimited (∞)
-          </button>
-          <button
-            type="button"
-            onClick={() => setAllInViewStock(0)}
-            className="px-3 py-1.5 text-xs font-body border border-border rounded-lg hover:bg-secondary transition-colors text-destructive"
-          >
-            Set All Visible to 0 (Out of Stock)
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setAllInViewStock(UNTRACKED)}
+              className="px-3 py-1.5 text-xs font-body border border-border rounded-lg hover:bg-secondary transition-colors"
+              title="Untrack stock for visible products"
+            >
+              Set Visible to Unlimited (∞)
+            </button>
+            <button
+              type="button"
+              onClick={() => setAllInViewStock(0)}
+              className="px-3 py-1.5 text-xs font-body border border-border rounded-lg hover:bg-secondary transition-colors text-destructive"
+            >
+              Set Visible to Out of Stock (0)
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Active Breadcrumb Summary */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground font-body bg-muted/20 px-4 py-2 rounded-lg border border-border/60">
+        <Filter size={13} className="text-accent" />
+        <span>Showing:</span>
+        <span className="font-semibold text-foreground">
+          {selectedParentCategory === "all" ? "All Categories" : categoriesList.find((c) => c.id === selectedParentCategory)?.label}
+        </span>
+        <ChevronRight size={12} />
+        <span className="font-semibold text-foreground">
+          {selectedSubcategory === "all"
+            ? "All Subcategories"
+            : activeSubcategoriesList.find((s) => s.id === selectedSubcategory)?.label || selectedSubcategory}
+        </span>
+        <span className="ml-auto font-mono text-[11px] text-accent font-bold">
+          {filteredProducts.length} Product Item{filteredProducts.length === 1 ? "" : "s"} Found
+        </span>
       </div>
 
       {/* Catalog & Inventory Product Grid */}
       <div className="space-y-4">
-        {filteredProducts.map((p) => (
-          <div key={p.id} className="bg-card border border-border rounded-xl overflow-hidden shadow-xs">
-            {/* Product Banner */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-b border-border bg-muted/20">
-              <div className="flex items-center gap-3">
-                <img src={getProductImageSrc(p)} alt={p.name} className="size-12 object-cover rounded-lg border border-border" />
-                <div>
-                  <div className="font-display font-bold text-base flex items-center gap-2">
-                    {p.name}
-                    {p.localName && (
-                      <span className="text-[10px] bg-accent/15 text-accent px-2 py-0.5 rounded font-mono font-medium">
-                        {p.localName}
-                      </span>
-                    )}
-                    {p.badge && (
-                      <Badge variant="outline" className="text-[9px] uppercase font-mono">
-                        {p.badge}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="text-xs text-muted-foreground font-body mt-0.5 flex items-center gap-2">
-                    <span className="capitalize font-medium text-foreground">Category: {p.category.replace("-", " ")}</span>
-                    <span>•</span>
-                    <span className="truncate max-w-md">{p.description}</span>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setAddingVariantForProductId(addingVariantForProductId === p.id ? null : p.id);
-                }}
-                className="text-xs border border-border hover:bg-accent hover:text-accent-foreground px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors font-medium cursor-pointer"
-              >
-                <PlusCircle size={13} /> + Add Weight Variant / Rate
-              </button>
+        {filteredProducts.length === 0 ? (
+          <div className="bg-card border border-border rounded-xl p-12 text-center space-y-3 font-body">
+            <div className="size-12 rounded-full bg-accent/10 text-accent grid place-items-center mx-auto">
+              <PackagePlus size={24} />
             </div>
-
-            {/* Inline Add Variant Form */}
-            {addingVariantForProductId === p.id && (
-              <div className="p-4 bg-accent/5 border-b border-border space-y-3 font-body text-xs">
-                <div className="font-semibold text-foreground flex items-center gap-1.5">
-                  <Sparkles size={14} className="text-accent" /> Add New Weight Variant & Rate for {p.name}
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div>
-                    <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
-                      Weight Size
-                    </label>
-                    <input
-                      type="text"
-                      value={variantSize}
-                      onChange={(e) => setVariantSize(e.target.value)}
-                      placeholder="e.g. 100g, 500g, 1 Kg"
-                      className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
-                      Selling Rate (Price ₹)
-                    </label>
-                    <input
-                      type="number"
-                      value={variantPrice}
-                      onChange={(e) => setVariantPrice(Number(e.target.value))}
-                      placeholder="350"
-                      className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
-                      Original MRP ₹
-                    </label>
-                    <input
-                      type="number"
-                      value={variantMrp}
-                      onChange={(e) => setVariantMrp(Number(e.target.value))}
-                      placeholder="450"
-                      className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
-                      Initial Stock
-                    </label>
-                    <input
-                      type="number"
-                      value={variantStock}
-                      onChange={(e) => setVariantStock(Number(e.target.value))}
-                      placeholder="50"
-                      className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setAddingVariantForProductId(null)}
-                    className="px-3 py-1.5 border border-border rounded-lg hover:bg-secondary text-xs"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleAddVariantToProduct(p)}
-                    className="px-4 py-1.5 bg-accent text-accent-foreground rounded-lg text-xs font-semibold hover:bg-accent/90"
-                  >
-                    Save Variant Rate
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Variants Matrix (Rates, MRP, Stock) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-              {p.variants.map((v) => {
-                const stockVal = stock[v.id];
-                const untracked = stockVal === UNTRACKED || stockVal === undefined;
-                const low = !untracked && stockVal > 0 && stockVal <= 5;
-                const out = !untracked && stockVal <= 0;
-
-                const currentPrice = pricesMap[v.id]?.price ?? v.price;
-                const currentMrp = pricesMap[v.id]?.mrp ?? (v.mrp || Math.round(v.price * 1.25));
-
-                const isPriceDirty =
-                  currentPrice !== (initialPrices[v.id]?.price ?? v.price) ||
-                  currentMrp !== (initialPrices[v.id]?.mrp ?? (v.mrp || Math.round(v.price * 1.25)));
-                const isStockDirty = stockVal !== initialStock[v.id];
-
-                return (
-                  <div
-                    key={v.id}
-                    className={`border rounded-xl p-3.5 transition-colors space-y-3 ${
-                      isPriceDirty || isStockDirty ? "border-accent bg-accent/5" : "border-border/80 bg-background"
-                    }`}
-                  >
-                    {/* Size & Status Badges */}
-                    <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                      <span className="font-semibold text-xs text-foreground font-mono">{v.size} Variant</span>
-                      <div className="flex gap-1 items-center">
-                        {out && (
-                          <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-status-cancelled/15 text-status-cancelled rounded">
-                            Out of Stock
-                          </span>
-                        )}
-                        {low && (
-                          <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-status-pending/15 text-status-pending rounded">
-                            Low Stock ({stockVal})
-                          </span>
-                        )}
-                        {(isPriceDirty || isStockDirty) && (
-                          <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-accent/20 text-accent rounded font-mono">
-                            Edited
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Rate & Pricing Controls */}
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <label className="block text-[9px] uppercase font-semibold text-muted-foreground mb-1">
-                          Selling Rate (₹)
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">
-                            ₹
-                          </span>
-                          <input
-                            type="number"
-                            value={currentPrice}
-                            onChange={(e) => setRateVal(v.id, "price", Number(e.target.value))}
-                            className="w-full pl-6 pr-2 py-1 border border-border rounded bg-background text-xs font-bold tabular-nums text-foreground focus:outline-none focus:border-accent"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-[9px] uppercase font-semibold text-muted-foreground mb-1">
-                          Original MRP (₹)
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">
-                            ₹
-                          </span>
-                          <input
-                            type="number"
-                            value={currentMrp}
-                            onChange={(e) => setRateVal(v.id, "mrp", Number(e.target.value))}
-                            className="w-full pl-6 pr-2 py-1 border border-border rounded bg-background text-xs font-semibold tabular-nums text-muted-foreground focus:outline-none focus:border-accent"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Stock Counter Controls */}
-                    <div>
-                      <label className="block text-[9px] uppercase font-semibold text-muted-foreground mb-1">
-                        Stock Inventory Level
-                      </label>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setStockVal(v.id, Math.max(0, (untracked ? 0 : stockVal) - 1))}
-                          disabled={untracked}
-                          className="p-1.5 border border-border rounded-lg hover:bg-secondary disabled:opacity-40"
-                        >
-                          <Minus size={12} />
-                        </button>
-                        <input
-                          type="number"
-                          min={0}
-                          disabled={untracked}
-                          value={untracked ? "" : stockVal}
-                          onChange={(e) => setStockVal(v.id, e.target.value === "" ? 0 : Number(e.target.value))}
-                          className="flex-1 border border-border px-2 py-1 text-xs font-body tabular-nums text-center focus:outline-none focus:border-accent rounded-lg disabled:bg-muted/50 font-bold"
-                          placeholder={untracked ? "Unlimited (∞)" : "0"}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setStockVal(v.id, (untracked ? 0 : stockVal) + 1)}
-                          disabled={untracked}
-                          className="p-1.5 border border-border rounded-lg hover:bg-secondary disabled:opacity-40"
-                        >
-                          <Plus size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setStockVal(v.id, untracked ? 0 : UNTRACKED)}
-                          title={untracked ? "Enable tracked stock counter" : "Set to unlimited stock (∞)"}
-                          className={`p-1.5 border rounded-lg transition-colors ${
-                            untracked ? "border-accent text-accent font-bold bg-accent/10" : "border-border hover:bg-secondary"
-                          }`}
-                        >
-                          <InfIcon size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <h3 className="font-display font-bold text-lg">No Products Found in Selected Category</h3>
+            <p className="text-xs text-muted-foreground max-w-md mx-auto">
+              No items match the selected category & subcategory combination. Click below to create a new product item in this category!
+            </p>
+            <button
+              type="button"
+              onClick={openAddProductModal}
+              className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-xs font-semibold hover:bg-accent/90 cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <Plus size={14} /> Add Product to {selectedParentCategory === "all" ? "Inventory" : selectedParentCategory}
+            </button>
           </div>
-        ))}
+        ) : (
+          filteredProducts.map((p) => (
+            <div key={p.id} className="bg-card border border-border rounded-xl overflow-hidden shadow-xs">
+              {/* Product Header */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-b border-border bg-muted/20">
+                <div className="flex items-center gap-3">
+                  <img src={getProductImageSrc(p)} alt={p.name} className="size-12 object-cover rounded-lg border border-border" />
+                  <div>
+                    <div className="font-display font-bold text-base flex items-center gap-2">
+                      {p.name}
+                      {p.localName && (
+                        <span className="text-[10px] bg-accent/15 text-accent px-2 py-0.5 rounded font-mono font-medium">
+                          {p.localName}
+                        </span>
+                      )}
+                      {p.badge && (
+                        <Badge variant="outline" className="text-[9px] uppercase font-mono">
+                          {p.badge}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground font-body mt-0.5 flex items-center gap-2 flex-wrap">
+                      <span className="capitalize font-semibold text-foreground">
+                        {p.category.replace("-", " ")}
+                      </span>
+                      {p.subcategory && (
+                        <>
+                          <ChevronRight size={12} className="text-muted-foreground" />
+                          <span className="bg-primary/10 text-primary font-mono text-[10px] px-2 py-0.5 rounded font-medium capitalize">
+                            Sub: {p.subcategory.replace("-", " ")}
+                          </span>
+                        </>
+                      )}
+                      <span>•</span>
+                      <span className="truncate max-w-md">{p.description}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddingVariantForProductId(addingVariantForProductId === p.id ? null : p.id);
+                  }}
+                  className="text-xs border border-border hover:bg-accent hover:text-accent-foreground px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors font-medium cursor-pointer"
+                >
+                  <PlusCircle size={13} /> + Add Weight Variant / Rate
+                </button>
+              </div>
+
+              {/* Inline Add Variant Form */}
+              {addingVariantForProductId === p.id && (
+                <div className="p-4 bg-accent/5 border-b border-border space-y-3 font-body text-xs">
+                  <div className="font-semibold text-foreground flex items-center gap-1.5">
+                    <Sparkles size={14} className="text-accent" /> Add New Weight Variant & Rate for {p.name}
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
+                        Weight Size
+                      </label>
+                      <input
+                        type="text"
+                        value={variantSize}
+                        onChange={(e) => setVariantSize(e.target.value)}
+                        placeholder="e.g. 100g, 500g, 1 Kg"
+                        className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
+                        Selling Rate (Price ₹)
+                      </label>
+                      <input
+                        type="number"
+                        value={variantPrice}
+                        onChange={(e) => setVariantPrice(Number(e.target.value))}
+                        placeholder="350"
+                        className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
+                        Original MRP ₹
+                      </label>
+                      <input
+                        type="number"
+                        value={variantMrp}
+                        onChange={(e) => setVariantMrp(Number(e.target.value))}
+                        placeholder="450"
+                        className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
+                        Initial Stock
+                      </label>
+                      <input
+                        type="number"
+                        value={variantStock}
+                        onChange={(e) => setVariantStock(Number(e.target.value))}
+                        placeholder="50"
+                        className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setAddingVariantForProductId(null)}
+                      className="px-3 py-1.5 border border-border rounded-lg hover:bg-secondary text-xs"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAddVariantToProduct(p)}
+                      className="px-4 py-1.5 bg-accent text-accent-foreground rounded-lg text-xs font-semibold hover:bg-accent/90"
+                    >
+                      Save Variant Rate
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Variants Matrix (Rates, MRP, Stock) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                {p.variants.map((v) => {
+                  const stockVal = stock[v.id];
+                  const untracked = stockVal === UNTRACKED || stockVal === undefined;
+                  const low = !untracked && stockVal > 0 && stockVal <= 5;
+                  const out = !untracked && stockVal <= 0;
+
+                  const currentPrice = pricesMap[v.id]?.price ?? v.price;
+                  const currentMrp = pricesMap[v.id]?.mrp ?? (v.mrp || Math.round(v.price * 1.25));
+
+                  const isPriceDirty =
+                    currentPrice !== (initialPrices[v.id]?.price ?? v.price) ||
+                    currentMrp !== (initialPrices[v.id]?.mrp ?? (v.mrp || Math.round(v.price * 1.25)));
+                  const isStockDirty = stockVal !== initialStock[v.id];
+
+                  return (
+                    <div
+                      key={v.id}
+                      className={`border rounded-xl p-3.5 transition-colors space-y-3 ${
+                        isPriceDirty || isStockDirty ? "border-accent bg-accent/5" : "border-border/80 bg-background"
+                      }`}
+                    >
+                      {/* Size & Status Badges */}
+                      <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                        <span className="font-semibold text-xs text-foreground font-mono">{v.size} Variant</span>
+                        <div className="flex gap-1 items-center">
+                          {out && (
+                            <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-status-cancelled/15 text-status-cancelled rounded">
+                              Out of Stock
+                            </span>
+                          )}
+                          {low && (
+                            <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-status-pending/15 text-status-pending rounded">
+                              Low Stock ({stockVal})
+                            </span>
+                          )}
+                          {(isPriceDirty || isStockDirty) && (
+                            <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-accent/20 text-accent rounded font-mono">
+                              Edited
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Rate & Pricing Controls */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <label className="block text-[9px] uppercase font-semibold text-muted-foreground mb-1">
+                            Selling Rate (₹)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              value={currentPrice}
+                              onChange={(e) => setRateVal(v.id, "price", Number(e.target.value))}
+                              className="w-full pl-6 pr-2 py-1 border border-border rounded bg-background text-xs font-bold tabular-nums text-foreground focus:outline-none focus:border-accent"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[9px] uppercase font-semibold text-muted-foreground mb-1">
+                            Original MRP (₹)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              value={currentMrp}
+                              onChange={(e) => setRateVal(v.id, "mrp", Number(e.target.value))}
+                              className="w-full pl-6 pr-2 py-1 border border-border rounded bg-background text-xs font-semibold tabular-nums text-muted-foreground focus:outline-none focus:border-accent"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Stock Counter Controls */}
+                      <div>
+                        <label className="block text-[9px] uppercase font-semibold text-muted-foreground mb-1">
+                          Stock Inventory Level
+                        </label>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setStockVal(v.id, Math.max(0, (untracked ? 0 : stockVal) - 1))}
+                            disabled={untracked}
+                            className="p-1.5 border border-border rounded-lg hover:bg-secondary disabled:opacity-40"
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <input
+                            type="number"
+                            min={0}
+                            disabled={untracked}
+                            value={untracked ? "" : stockVal}
+                            onChange={(e) => setStockVal(v.id, e.target.value === "" ? 0 : Number(e.target.value))}
+                            className="flex-1 border border-border px-2 py-1 text-xs font-body tabular-nums text-center focus:outline-none focus:border-accent rounded-lg disabled:bg-muted/50 font-bold"
+                            placeholder={untracked ? "Unlimited (∞)" : "0"}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setStockVal(v.id, (untracked ? 0 : stockVal) + 1)}
+                            disabled={untracked}
+                            className="p-1.5 border border-border rounded-lg hover:bg-secondary disabled:opacity-40"
+                          >
+                            <Plus size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setStockVal(v.id, untracked ? 0 : UNTRACKED)}
+                            title={untracked ? "Enable tracked stock counter" : "Set to unlimited stock (∞)"}
+                            className={`p-1.5 border rounded-lg transition-colors ${
+                              untracked ? "border-accent text-accent font-bold bg-accent/10" : "border-border hover:bg-secondary"
+                            }`}
+                          >
+                            <InfIcon size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Sticky Save Changes Bar */}
@@ -669,13 +884,13 @@ export const AdminInventory = () => {
         </div>
       )}
 
-      {/* MODAL 1: Add New Category Dialog */}
+      {/* MODAL 1: Add New Parent Category Dialog */}
       {isAddCategoryOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-background border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 font-body">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h3 className="font-display font-bold text-lg flex items-center gap-2">
-                <FolderPlus size={18} className="text-accent" /> Create New Product Category
+                <FolderPlus size={18} className="text-accent" /> Create Parent Category
               </h3>
               <button onClick={() => setIsAddCategoryOpen(false)} className="text-muted-foreground hover:text-foreground">
                 <X size={18} />
@@ -715,7 +930,73 @@ export const AdminInventory = () => {
         </div>
       )}
 
-      {/* MODAL 2: Add New Product / Item Dialog */}
+      {/* MODAL 2: Add New Subcategory Dialog */}
+      {isAddSubcategoryOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-background border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 font-body">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="font-display font-bold text-lg flex items-center gap-2">
+                <FolderPlus size={18} className="text-accent" /> Create New Subcategory
+              </h3>
+              <button onClick={() => setIsAddSubcategoryOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleAddSubcategorySubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1">
+                  Select Parent Category <span className="text-destructive">*</span>
+                </label>
+                <select
+                  value={newSubcatParent}
+                  onChange={(e) => setNewSubcatParent(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-xs focus:outline-none focus:border-accent cursor-pointer"
+                >
+                  {categoriesList
+                    .filter((c) => c.id !== "all")
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.label}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1">
+                  Subcategory Name / Label <span className="text-destructive">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newSubcatLabel}
+                  onChange={(e) => setNewSubcatLabel(e.target.value)}
+                  placeholder="e.g. Pekans, Macadamia, Whole Spices, Flavored Honey"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-xs focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddSubcategoryOpen(false)}
+                  className="px-4 py-2 border border-border rounded-lg hover:bg-secondary text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-accent text-accent-foreground font-semibold rounded-lg hover:bg-accent/90 text-xs"
+                >
+                  Create Subcategory
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: Add New Product / Item Dialog */}
       {isAddProductOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-background border border-border rounded-2xl p-6 w-full max-w-2xl shadow-2xl space-y-5 font-body my-auto max-h-[90vh] overflow-y-auto">
@@ -725,7 +1006,7 @@ export const AdminInventory = () => {
                   <PackagePlus size={18} className="text-accent" /> Add New Item / Product to Store
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Create a new product with category, weight sizes, rates (Price ₹), and initial stock.
+                  Create a new product with category, subcategory, weight sizes, rates (Price ₹), and initial stock.
                 </p>
               </div>
               <button onClick={() => setIsAddProductOpen(false)} className="text-muted-foreground hover:text-foreground">
@@ -765,11 +1046,18 @@ export const AdminInventory = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-foreground mb-1">
-                    Category Classification <span className="text-destructive">*</span>
+                    Parent Category Classification <span className="text-destructive">*</span>
                   </label>
                   <select
                     value={newProdCategory}
-                    onChange={(e) => setNewProdCategory(e.target.value)}
+                    onChange={(e) => {
+                      const newCatId = e.target.value;
+                      setNewProdCategory(newCatId);
+                      const subcats = getSubcategoriesForCategory(newCatId);
+                      if (subcats.length > 0) {
+                        setNewProdSubcategory(subcats[0].id);
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-border rounded-lg bg-background text-xs focus:outline-none focus:border-accent cursor-pointer"
                   >
                     {categoriesList
@@ -781,6 +1069,26 @@ export const AdminInventory = () => {
                       ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">
+                    Subcategory Classification
+                  </label>
+                  <select
+                    value={newProdSubcategory}
+                    onChange={(e) => setNewProdSubcategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-xs focus:outline-none focus:border-accent cursor-pointer"
+                  >
+                    {getSubcategoriesForCategory(newProdCategory).map((sub) => (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-foreground mb-1">
                     Badge Label (Optional)
@@ -793,11 +1101,23 @@ export const AdminInventory = () => {
                     className="w-full px-3 py-2 border border-border rounded-lg bg-background text-xs focus:outline-none focus:border-accent"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">
+                    Product Image Link / Path
+                  </label>
+                  <input
+                    type="text"
+                    value={newProdImage}
+                    onChange={(e) => setNewProdImage(e.target.value)}
+                    placeholder="/images/catalog/almonds.jpg or Drive image URL"
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-xs focus:outline-none focus:border-accent"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-foreground mb-1">
-                  Product Description
+                  Product Overview & Health Benefits
                 </label>
                 <textarea
                   rows={2}
@@ -805,19 +1125,6 @@ export const AdminInventory = () => {
                   onChange={(e) => setNewProdDescription(e.target.value)}
                   placeholder="Short overview of the product, farm source, or health benefits..."
                   className="w-full px-3 py-2 border border-border rounded-lg bg-background text-xs focus:outline-none focus:border-accent resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-foreground mb-1">
-                  Product Image Link / Path
-                </label>
-                <input
-                  type="text"
-                  value={newProdImage}
-                  onChange={(e) => setNewProdImage(e.target.value)}
-                  placeholder="/images/catalog/almonds.jpg or Google Drive image URL"
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-xs focus:outline-none focus:border-accent"
                 />
               </div>
 

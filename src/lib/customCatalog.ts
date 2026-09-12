@@ -2,6 +2,7 @@ import { Product, ProductVariant, categories as defaultCategories } from "@/data
 
 const CUSTOM_PRODUCTS_KEY = "hon_custom_products_v1";
 const CUSTOM_CATEGORIES_KEY = "hon_custom_categories_v1";
+const CUSTOM_SUBCATEGORIES_KEY = "hon_custom_subcategories_v1";
 const CUSTOM_PRICE_OVERRIDES_KEY = "hon_custom_price_overrides_v1";
 
 export interface CustomCategory {
@@ -9,17 +10,64 @@ export interface CustomCategory {
   label: string;
 }
 
+export interface CustomSubcategory {
+  id: string;
+  label: string;
+  parentCategory: string;
+}
+
 export interface PriceOverride {
   price: number;
   mrp?: number;
 }
 
+export const DEFAULT_SUBCATEGORIES: CustomSubcategory[] = [
+  // Nuts
+  { id: "almonds", label: "Almonds (Badam)", parentCategory: "nuts" },
+  { id: "cashews", label: "Cashews (Kaju)", parentCategory: "nuts" },
+  { id: "pistachios", label: "Pistachios (Pista)", parentCategory: "nuts" },
+  { id: "walnuts", label: "Walnuts (Akhrot)", parentCategory: "nuts" },
+
+  // Dry Fruits
+  { id: "dates", label: "Dates (Khajur)", parentCategory: "dry-fruits" },
+  { id: "figs", label: "Figs (Anjeer)", parentCategory: "dry-fruits" },
+  { id: "raisins", label: "Raisins (Kishmish)", parentCategory: "dry-fruits" },
+  { id: "berries", label: "Berries & Exotic Fruits", parentCategory: "dry-fruits" },
+
+  // Spices
+  { id: "saffron", label: "Kashmiri Saffron (Kesar)", parentCategory: "spices" },
+  { id: "cardamom", label: "Green Cardamom (Elaichi)", parentCategory: "spices" },
+  { id: "whole-spices", label: "Whole Organic Spices", parentCategory: "spices" },
+
+  // Honey
+  { id: "raw-honey", label: "Raw Wild Forest Honey", parentCategory: "honey" },
+  { id: "infused-honey", label: "Nut & Herbal Infused Honey", parentCategory: "honey" },
+
+  // Chocolates
+  { id: "nut-chocolates", label: "Nut Chocolates & Dragees", parentCategory: "chocolates" },
+  { id: "dark-chocolates", label: "Artisanal Dark Chocolates", parentCategory: "chocolates" },
+
+  // Mixes
+  { id: "trail-mixes", label: "Superfood Trail Mixes", parentCategory: "mixes" },
+  { id: "snack-mixes", label: "Roasted Snack Mixes", parentCategory: "mixes" },
+
+  // Gifting
+  { id: "wooden-boxes", label: "Royal Wooden Gift Boxes", parentCategory: "gifting" },
+  { id: "festive-hampers", label: "Festive Gift Hampers", parentCategory: "gifting" },
+
+  // Seeds
+  { id: "chia-flax", label: "Organic Chia & Flax Seeds", parentCategory: "seeds" },
+  { id: "sunflower-pumpkin", label: "Pumpkin & Sunflower Seeds", parentCategory: "seeds" },
+
+  // Solar Dried
+  { id: "solar-fruits", label: "Solar Dried Natural Fruits", parentCategory: "solar-dried" },
+];
+
 export function getCustomCategories(): CustomCategory[] {
   try {
     const raw = localStorage.getItem(CUSTOM_CATEGORIES_KEY);
     const stored: CustomCategory[] = raw ? JSON.parse(raw) : [];
-    
-    // Combine built-in categories with custom categories
+
     const existingIds = new Set(defaultCategories.map((c) => c.id));
     const merged = [...defaultCategories];
     for (const c of stored) {
@@ -37,7 +85,7 @@ export function getCustomCategories(): CustomCategory[] {
 export function addCustomCategory(label: string): CustomCategory {
   const id = label.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
   const newCat: CustomCategory = { id, label: label.trim() };
-  
+
   try {
     const raw = localStorage.getItem(CUSTOM_CATEGORIES_KEY);
     const stored: CustomCategory[] = raw ? JSON.parse(raw) : [];
@@ -50,6 +98,41 @@ export function addCustomCategory(label: string): CustomCategory {
     // Ignore storage errors
   }
   return newCat;
+}
+
+export function getSubcategoriesForCategory(parentCategoryId: string): CustomSubcategory[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_SUBCATEGORIES_KEY);
+    const stored: CustomSubcategory[] = raw ? JSON.parse(raw) : [];
+    const all = [...DEFAULT_SUBCATEGORIES, ...stored];
+
+    if (parentCategoryId === "all") {
+      return all;
+    }
+    return all.filter((s) => s.parentCategory === parentCategoryId);
+  } catch {
+    return DEFAULT_SUBCATEGORIES.filter(
+      (s) => parentCategoryId === "all" || s.parentCategory === parentCategoryId
+    );
+  }
+}
+
+export function addCustomSubcategory(parentCategory: string, label: string): CustomSubcategory {
+  const id = label.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+  const newSubcat: CustomSubcategory = { id, label: label.trim(), parentCategory };
+
+  try {
+    const raw = localStorage.getItem(CUSTOM_SUBCATEGORIES_KEY);
+    const stored: CustomSubcategory[] = raw ? JSON.parse(raw) : [];
+    if (!stored.some((s) => s.id === id && s.parentCategory === parentCategory)) {
+      stored.push(newSubcat);
+      localStorage.setItem(CUSTOM_SUBCATEGORIES_KEY, JSON.stringify(stored));
+      window.dispatchEvent(new CustomEvent("hon-catalog-update"));
+    }
+  } catch {
+    // Ignore
+  }
+  return newSubcat;
 }
 
 export function getPriceOverrides(): Record<string, PriceOverride> {
@@ -70,6 +153,32 @@ export function savePriceOverrides(overrides: Record<string, PriceOverride>) {
   }
 }
 
+// Auto-infer subcategory for default base products
+function autoInferSubcategory(product: Product): string | undefined {
+  if (product.subcategory) return product.subcategory;
+  const nameLower = product.name.toLowerCase();
+  const idLower = product.id.toLowerCase();
+  const localLower = (product.localName || "").toLowerCase();
+
+  if (nameLower.includes("almond") || localLower.includes("badam") || idLower.includes("almond")) return "almonds";
+  if (nameLower.includes("cashew") || localLower.includes("kaju") || idLower.includes("cashew")) return "cashews";
+  if (nameLower.includes("pista") || nameLower.includes("pistachio") || idLower.includes("pista")) return "pistachios";
+  if (nameLower.includes("walnut") || localLower.includes("akhrot") || idLower.includes("walnut")) return "walnuts";
+
+  if (nameLower.includes("date") || localLower.includes("khajur") || idLower.includes("date")) return "dates";
+  if (nameLower.includes("fig") || localLower.includes("anjeer") || idLower.includes("fig")) return "figs";
+  if (nameLower.includes("raisin") || localLower.includes("kishmish") || idLower.includes("raisin")) return "raisins";
+  if (nameLower.includes("berry") || nameLower.includes("apricot")) return "berries";
+
+  if (nameLower.includes("saffron") || localLower.includes("kesar")) return "saffron";
+  if (nameLower.includes("cardamom") || localLower.includes("elaichi")) return "cardamom";
+
+  if (nameLower.includes("honey")) return "raw-honey";
+  if (nameLower.includes("trail") || nameLower.includes("mix")) return "trail-mixes";
+
+  return undefined;
+}
+
 export function getAllProducts(baseProducts: Product[]): Product[] {
   let customProducts: Product[] = [];
   try {
@@ -82,12 +191,10 @@ export function getAllProducts(baseProducts: Product[]): Product[] {
   }
 
   const overrides = getPriceOverrides();
-
-  // Combine base products and custom products
   const combinedMap = new Map<string, Product>();
 
   for (const p of baseProducts) {
-    // Apply price overrides if any
+    const inferredSubcat = autoInferSubcategory(p);
     const updatedVariants = p.variants.map((v) => {
       const ov = overrides[v.id];
       if (ov) {
@@ -95,7 +202,7 @@ export function getAllProducts(baseProducts: Product[]): Product[] {
       }
       return v;
     });
-    combinedMap.set(p.id, { ...p, variants: updatedVariants });
+    combinedMap.set(p.id, { ...p, subcategory: inferredSubcat, variants: updatedVariants });
   }
 
   for (const cp of customProducts) {
