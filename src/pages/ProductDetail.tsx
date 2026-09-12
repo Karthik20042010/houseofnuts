@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { products } from "@/data/products";
+import { useCatalog } from "@/lib/customCatalog";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,13 +18,13 @@ import { getProductImageSrc, getProductGallery } from "@/lib/productImages";
 import ProductImage from "@/components/ProductImage";
 import { toast } from "sonner";
 
-
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const auth = useAuth();
+  const { products } = useCatalog();
   const [selectedVariant, setSelectedVariant] = useState(0);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);

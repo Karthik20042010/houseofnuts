@@ -128,8 +128,7 @@ export const AdminInventory = () => {
   const [variantMrp, setVariantMrp] = useState<number>(450);
   const [variantStock, setVariantStock] = useState<number>(50);
 
-  const loadData = async () => {
-    setLoading(true);
+  const refreshCatalogLocal = () => {
     const prods = getAllProducts(baseProducts);
     setAllProds(prods);
     setCategoriesList(getCustomCategories());
@@ -137,24 +136,30 @@ export const AdminInventory = () => {
     const initialRates = getPriceOverrides();
     setPricesMap(initialRates);
     setInitialPrices({ ...initialRates });
+  };
 
-    const s: StockMap = await fetchInventory(true);
+  const loadData = async (forceNetwork = false, showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    refreshCatalogLocal();
+
+    const s: StockMap = await fetchInventory(forceNetwork);
+    const prods = getAllProducts(baseProducts);
     const initStock: Record<string, number> = {};
     for (const p of prods) {
       for (const v of p.variants) {
         initStock[v.id] = Object.prototype.hasOwnProperty.call(s, v.id) ? s[v.id] : UNTRACKED;
       }
     }
-    setStock(initStock);
+    setStock((prev) => ({ ...initStock, ...prev }));
     setInitialStock({ ...initStock });
-    setLoading(false);
+    if (showSpinner) setLoading(false);
   };
 
   useEffect(() => {
-    loadData();
+    loadData(true, true);
 
     const handleCatalogUpdate = () => {
-      loadData();
+      refreshCatalogLocal();
     };
 
     window.addEventListener("hon-catalog-update", handleCatalogUpdate);
@@ -223,7 +228,7 @@ export const AdminInventory = () => {
     setIsMediaPickerOpen(false);
     setSelectedMediaUrls([]);
     setTargetMappingProductIds([]);
-    loadData();
+    refreshCatalogLocal();
   };
 
   // Reset subcategory selection when parent category changes
@@ -487,7 +492,7 @@ export const AdminInventory = () => {
 
     toast.success(`Saved updated image gallery for ${editingImageProduct.name}!`);
     setEditingImageProduct(null);
-    loadData();
+    refreshCatalogLocal();
   };
 
   // Handle Add New Parent Category
@@ -502,7 +507,7 @@ export const AdminInventory = () => {
     setSelectedParentCategory(created.id);
     setNewCatLabel("");
     setIsAddCategoryOpen(false);
-    loadData();
+    refreshCatalogLocal();
   };
 
   // Handle Add New Subcategory
@@ -518,7 +523,7 @@ export const AdminInventory = () => {
     setSelectedSubcategory(created.id);
     setNewSubcatLabel("");
     setIsAddSubcategoryOpen(false);
-    loadData();
+    refreshCatalogLocal();
   };
 
   // Open Product Creation Modal with pre-selected Category & Subcategory
@@ -587,7 +592,7 @@ export const AdminInventory = () => {
     setNewProdLocalName("");
     setNewProdDescription("");
     setNewProdImages(["/images/catalog/almonds.jpg"]);
-    loadData();
+    refreshCatalogLocal();
   };
 
   // Handle Adding a new Variant to an existing product
@@ -613,7 +618,7 @@ export const AdminInventory = () => {
     setStock((prev) => ({ ...prev, [vId]: variantStock }));
     toast.success(`Added new variant (${variantSize}) rate to ${product.name}!`);
     setAddingVariantForProductId(null);
-    loadData();
+    refreshCatalogLocal();
   };
 
   if (loading) {

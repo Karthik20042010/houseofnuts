@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { categories, products } from "@/data/products";
+import { useCatalog } from "@/lib/customCatalog";
 import { useAuth } from "@/contexts/AuthContext";
 import { isCategoryVisibleToUser, isPrivilegedUser, RESTRICTED_COMING_SOON_CATEGORIES } from "@/lib/accessControl";
 import { Nut, Cookie, Sparkles, Flame, Droplets, Sun, Sprout, LayoutGrid, Gift, Zap, LucideIcon, ShieldCheck } from "lucide-react";
@@ -21,6 +21,8 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 export const CategoryStrip: React.FC = () => {
   const location = useLocation();
   const auth = useAuth();
+  const { categories, products } = useCatalog();
+
   const currentSlug = location.pathname.startsWith("/category/")
     ? location.pathname.replace("/category/", "")
     : location.pathname === "/shop"
@@ -44,7 +46,7 @@ export const CategoryStrip: React.FC = () => {
             const count =
               cat.id === "all"
                 ? visibleProducts.length
-                : visibleProducts.filter((p) => p.category === cat.id).length;
+                : visibleProducts.filter((p) => p.category === cat.id || p.subcategory === cat.id).length;
 
             const targetUrl = cat.id === "all" ? "/shop" : `/category/${cat.id}`;
 

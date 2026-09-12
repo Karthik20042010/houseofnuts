@@ -6,7 +6,7 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import SearchBar from "@/components/SearchBar";
-import { categories } from "@/data/products";
+import { useCatalog } from "@/lib/customCatalog";
 import { ROLE_BADGES, ROLE_LABELS } from "@/types/auth";
 import { Badge } from "@/components/ui/badge";
 import { GoogleLoginModal } from "@/components/auth/GoogleLoginModal";
@@ -15,6 +15,7 @@ const Header = () => {
   const navigate = useNavigate();
   const { totalItems, setIsCartOpen } = useCart();
   const auth = useAuth();
+  const { categories } = useCatalog();
   const { isLoggedIn, role, googleUser, isGoogleAuthenticated, logout } = auth;
   const { wishlistCount } = useWishlist();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

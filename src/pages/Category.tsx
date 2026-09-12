@@ -9,7 +9,7 @@ import { ProductCardSkeletonGrid } from "@/components/ProductCardSkeleton";
 import { useGridReady } from "@/hooks/useGridReady";
 import PromoBanner from "@/components/PromoBanner";
 import { categories as defaultCategories, products as defaultProducts, Product } from "@/data/products";
-import { getAllProducts, getCustomCategories } from "@/lib/customCatalog";
+import { getAllProducts, getCustomCategories, getSubcategoriesForCategory, useCatalog } from "@/lib/customCatalog";
 import { useInventory } from "@/contexts/InventoryContext";
 import { isOutOfStock } from "@/lib/inventory";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,19 +44,21 @@ const Category = () => {
   const auth = useAuth();
   const effectiveSlug = location.pathname === "/shop" ? "all" : slug;
 
-  const [categoriesList, setCategoriesList] = useState(getCustomCategories());
-  const [allProductsList, setAllProductsList] = useState(() => getAllProducts(defaultProducts));
+  const { categories: categoriesList, products: allProductsList } = useCatalog();
 
-  useEffect(() => {
-    const handleUpdate = () => {
-      setCategoriesList(getCustomCategories());
-      setAllProductsList(getAllProducts(defaultProducts));
-    };
-    window.addEventListener("hon-catalog-update", handleUpdate);
-    return () => window.removeEventListener("hon-catalog-update", handleUpdate);
-  }, []);
+  const cat = useMemo(() => {
+    if (!effectiveSlug) return undefined;
+    if (effectiveSlug === "all") return { id: "all", label: "All Products" };
 
-  const cat = categoriesList.find((c) => c.id === effectiveSlug) || (effectiveSlug === "all" ? { id: "all", label: "All Products" } : undefined);
+    const foundParent = categoriesList.find((c) => c.id === effectiveSlug);
+    if (foundParent) return foundParent;
+
+    const foundSub = getSubcategoriesForCategory("all").find((s) => s.id === effectiveSlug);
+    if (foundSub) return { id: foundSub.id, label: foundSub.label };
+
+    return { id: effectiveSlug, label: effectiveSlug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) };
+  }, [effectiveSlug, categoriesList]);
+
   const { stock } = useInventory();
 
   const [sortBy, setSortBy] = useState<SortOption>("default");
@@ -75,7 +77,7 @@ const Category = () => {
   const filtered = useMemo(() => {
     if (!cat) return [];
     const visibleProducts = allProductsList.filter((p) => isCategoryVisibleToUser(p.category, auth));
-    let base = cat.id === "all" ? [...visibleProducts] : visibleProducts.filter((p) => p.category === cat.id);
+    let base = cat.id === "all" ? [...visibleProducts] : visibleProducts.filter((p) => p.category === cat.id || p.subcategory === cat.id);
 
     if (bands.length) {
       const active = priceBands.filter((b) => bands.includes(b.id));

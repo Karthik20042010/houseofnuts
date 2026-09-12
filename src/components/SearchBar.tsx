@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Search, X, Clock, ArrowRight } from "lucide-react";
-import { products, categories } from "@/data/products";
+import { useCatalog } from "@/lib/customCatalog";
 import { Link, useNavigate } from "react-router-dom";
 import { getProductImageSrc } from "@/lib/productImages";
 
@@ -23,6 +23,7 @@ const SearchBar = () => {
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { products } = useCatalog();
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -32,10 +33,11 @@ const SearchBar = () => {
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.description.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q)
+          p.category.toLowerCase().includes(q) ||
+          (p.subcategory && p.subcategory.toLowerCase().includes(q))
       )
       .slice(0, 8);
-  }, [query]);
+  }, [query, products]);
 
   useEffect(() => setActive(0), [query]);
 

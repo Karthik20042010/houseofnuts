@@ -8,7 +8,7 @@ import { ProductCardSkeletonGrid } from "@/components/ProductCardSkeleton";
 import { useGridReady } from "@/hooks/useGridReady";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import WholesaleForm from "@/components/WholesaleForm";
-import { products, categories } from "@/data/products";
+import { useCatalog } from "@/lib/customCatalog";
 import { ChevronLeft, ChevronRight, ArrowRight, Phone, MessageCircle, Instagram } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { isCategoryComingSoon, isCategoryVisibleToUser, isPrivilegedUser } from "@/lib/accessControl";
@@ -49,6 +49,7 @@ const sortOptions: { value: SortOption; label: string }[] = [
 
 const Index = () => {
   const auth = useAuth();
+  const { products, categories } = useCatalog();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<SortOption>("default");
@@ -64,7 +65,7 @@ const Index = () => {
     const base =
       activeCategory === "all"
         ? [...visibleProducts]
-        : visibleProducts.filter((p) => p.category === activeCategory);
+        : visibleProducts.filter((p) => p.category === activeCategory || p.subcategory === activeCategory);
 
     const getMinPrice = (p: typeof products[0]) =>
       Math.min(...p.variants.map((v) => v.price));

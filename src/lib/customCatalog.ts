@@ -264,3 +264,27 @@ export function addVariantToProduct(productId: string, variant: ProductVariant):
   }
   return false;
 }
+
+import { useState, useEffect } from "react";
+import { products as defaultProducts } from "@/data/products";
+
+export function useCatalog() {
+  const [categoriesList, setCategoriesList] = useState(getCustomCategories);
+  const [allProductsList, setAllProductsList] = useState(() => getAllProducts(defaultProducts));
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setCategoriesList(getCustomCategories());
+      setAllProductsList(getAllProducts(defaultProducts));
+    };
+
+    window.addEventListener("hon-catalog-update", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("hon-catalog-update", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
+  }, []);
+
+  return { categories: categoriesList, products: allProductsList };
+}
