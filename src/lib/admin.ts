@@ -118,6 +118,7 @@ export async function adminUpdateInventory(
 export async function adminUploadImage(
   productId: string,
   file: File,
+  category?: string,
 ): Promise<string> {
   const password = requireAuth();
   const dataBase64 = await new Promise<string>((resolve, reject) => {
@@ -133,6 +134,7 @@ export async function adminUploadImage(
   const res = await apiPost<{ ok: boolean; url?: string; error?: string }>("uploadImage", {
     password,
     productId,
+    category: category || "",
     filename: file.name,
     mimeType: file.type || "image/jpeg",
     dataBase64,

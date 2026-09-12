@@ -24,11 +24,11 @@
 
 function setupDatabase() {
   var ss = SpreadsheetApp.getActive();
-  
+
   // 1. Rename legacy "Sheet1" to "Orders" if Orders sheet does not exist yet
   var sheet1 = ss.getSheetByName("Sheet1");
   var ordersSheet = ss.getSheetByName("Orders");
-  
+
   if (sheet1 && !ordersSheet) {
     sheet1.setName("Orders");
     ordersSheet = sheet1;
@@ -37,12 +37,32 @@ function setupDatabase() {
 
   // 2. Initialize all 7 dedicated sheet tabs
   getConfig();
-  var usersSh = ensureUsersSheet();
-  ensureProductsSheet();
-  ensurePricesSheet();
-  ensureInventorySheet();
-  ensureOrdersSheet();
-  ensureMessagesSheet();
+  // 4. Seed Products, Prices, and Inventory tabs if empty
+  var prodSh = ensureProductsSheet();
+  var priceSh = ensurePricesSheet();
+  var invSh = ensureInventorySheet();
+
+  if (prodSh.getDataRange().getValues().length < 2) {
+    var defaultCatalog = [
+      { id: "california-almonds", name: "California Almonds", category: "nuts", description: "Crunchy hand-sorted California almonds", image: "/images/catalog/almonds.jpg", badge: "Bestseller", variants: [{ id: "cal-almond-250", size: "250g", price: 349, mrp: 450 }, { id: "cal-almond-500", size: "500g", price: 649, mrp: 850 }, { id: "cal-almond-1kg", size: "1 Kg", price: 1199, mrp: 1550 }] },
+      { id: "mamra-almonds", name: "Mamra Almonds", category: "nuts", description: "Premium oil-rich almonds from high-altitude valleys", image: "/images/catalog/mamra-almonds.jpg", badge: "Premium", variants: [{ id: "mamra-250", size: "250g", price: 899, mrp: 1100 }, { id: "mamra-500", size: "500g", price: 1699, mrp: 2100 }] },
+      { id: "jumbo-cashews", name: "Jumbo Cashews W240", category: "nuts", description: "King-size whole white cashews", image: "/images/catalog/cashews.jpg", badge: "Customer Favorite", variants: [{ id: "cashew-250", size: "250g", price: 420, mrp: 520 }, { id: "cashew-500", size: "500g", price: 790, mrp: 980 }] },
+      { id: "pistachios-salted", name: "Roasted Salted Pistachios", category: "nuts", description: "Naturally opened Iranian pistachios roasted with sea salt", image: "/images/catalog/pistachios.jpg", badge: "Crispy", variants: [{ id: "pista-250", size: "250g", price: 480, mrp: 600 }, { id: "pista-500", size: "500g", price: 920, mrp: 1150 }] },
+      { id: "chilean-walnuts", name: "Chilean Walnut Kernels", category: "nuts", description: "Extra-light half kernels high in Omega-3", image: "/images/catalog/walnuts.jpg", badge: "Brain Food", variants: [{ id: "walnut-250", size: "250g", price: 450, mrp: 580 }, { id: "walnut-500", size: "500g", price: 860, mrp: 1100 }] },
+      { id: "royal-gifting-box", name: "Royal Nut & Dry Fruit Gift Box", category: "gifting", description: "Handcrafted wooden keepsake box with 4 premium jars", image: "/images/catalog/gift-box-royal.jpg", badge: "Festive Special", variants: [{ id: "gift-royal", size: "1 Box (800g)", price: 1899, mrp: 2400 }] },
+      { id: "medjool-dates", name: "Medjool Dates", category: "dry-fruits", description: "Large, soft and luscious dates from Jordan", image: "/images/catalog/dates.jpg", badge: "Natural Sweetener", variants: [{ id: "dates-250", size: "250g", price: 399, mrp: 500 }, { id: "dates-500", size: "500g", price: 749, mrp: 950 }] },
+      { id: "berry-trail-mix", name: "Antioxidant Berry Mix", category: "mixes", description: "Blend of cranberries, blueberries, seeds and nuts", image: "/images/catalog/berry-mix.jpg", badge: "Superfood", variants: [{ id: "berry-250", size: "250g", price: 360, mrp: 460 }] }
+    ];
+
+    defaultCatalog.forEach(function(p) {
+      prodSh.appendRow([p.id, p.name, p.category, p.description, p.image, p.badge]);
+      p.variants.forEach(function(v) {
+        priceSh.appendRow([v.id, p.id, v.size, v.price, v.mrp || Math.round(v.price * 1.25)]);
+        invSh.appendRow([v.id, p.id, v.size, 50, 5]);
+      });
+    });
+    Logger.log("✅ Seeded default catalog products, prices, and stock inventory.");
+  }
 
   // 3. Migrate user records from Orders tab into Users tab if Users tab is new
   var userValues = usersSh.getDataRange().getValues();
@@ -73,9 +93,9 @@ function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) || "";
   try {
     if (action === "getInventory") return json({ ok: true, stock: getInventoryMap() });
-    if (action === "getProducts")  return json({ ok: true, products: readProducts() });
-    if (action === "getPrices")    return json({ ok: true, prices: readPricesMap() });
-    if (action === "getUsers")     return json({ ok: true, users: readUsers() });
+    if (action === "getProducts") return json({ ok: true, products: readProducts() });
+    if (action === "getPrices") return json({ ok: true, prices: readPricesMap() });
+    if (action === "getUsers") return json({ ok: true, users: readUsers() });
     return json({ ok: false, error: "unknown action: " + action });
   } catch (err) {
     return json({ ok: false, error: String(err) });
@@ -105,25 +125,25 @@ function doPost(e) {
     }
 
     // Public actions
-    if (action === "placeOrder")         return json(placeOrder(body.order));
-    if (action === "adminLogin")         return json({ ok: checkPassword(body.password) });
-    if (action === "getProducts")        return json({ ok: true, products: readProducts() });
-    if (action === "getPrices")          return json({ ok: true, prices: readPricesMap() });
+    if (action === "placeOrder") return json(placeOrder(body.order));
+    if (action === "adminLogin") return json({ ok: checkPassword(body.password) });
+    if (action === "getProducts") return json({ ok: true, products: readProducts() });
+    if (action === "getPrices") return json({ ok: true, prices: readPricesMap() });
     if (action === "registerGoogleUser") return json(registerGoogleUser(body));
-    if (action === "submitMessage")      return json(addMessage(body));
-    if (action === "wholesaleEnquiry")   return json(addMessage({ type: "wholesale", name: body.name, phone: body.phone, email: body.email, subject: (body.business || "") + " · " + (body.city || ""), message: (body.interest || "") + " / " + (body.quantity || "") + " — " + (body.message || "") }));
+    if (action === "submitMessage") return json(addMessage(body));
+    if (action === "wholesaleEnquiry") return json(addMessage({ type: "wholesale", name: body.name, phone: body.phone, email: body.email, subject: (body.business || "") + " · " + (body.city || ""), message: (body.interest || "") + " / " + (body.quantity || "") + " — " + (body.message || "") }));
 
     // Protected actions requiring Admin / Staff / Developer Auth
-    if (action === "getOrders")          { requireAuth(body.password); return json({ ok: true, orders: readOrders() }); }
-    if (action === "updateOrder")        { requireAuth(body.password); return json(updateOrder(body)); }
-    if (action === "updateInventory")    { requireAuth(body.password); return json(setInventory(body.items || [])); }
-    if (action === "updatePrices")       { requireAuth(body.password); return json(updatePrices(body.items || [])); }
+    if (action === "getOrders") { requireAuth(body.password); return json({ ok: true, orders: readOrders() }); }
+    if (action === "updateOrder") { requireAuth(body.password); return json(updateOrder(body)); }
+    if (action === "updateInventory") { requireAuth(body.password); return json(setInventory(body.items || [])); }
+    if (action === "updatePrices") { requireAuth(body.password); return json(updatePrices(body.items || [])); }
     if (action === "updateProductPrice") { requireAuth(body.password); return json(setSinglePrice(body.variantId, body.price)); }
-    if (action === "getUsers")           { requireAuth(body.password); return json({ ok: true, users: readUsers() }); }
-    if (action === "updateUserRole")     { requireAuth(body.password); return json(updateUserRole(body.userId, body.role)); }
-    if (action === "uploadImage")        { requireAuth(body.password); return json(uploadImage(body)); }
-    if (action === "getMessages")        { requireAuth(body.password); return json({ ok: true, messages: readMessages() }); }
-    if (action === "updateMessage")      { requireAuth(body.password); return json(updateMessage(body)); }
+    if (action === "getUsers") { requireAuth(body.password); return json({ ok: true, users: readUsers() }); }
+    if (action === "updateUserRole") { requireAuth(body.password); return json(updateUserRole(body.userId, body.role)); }
+    if (action === "uploadImage") { requireAuth(body.password); return json(uploadImage(body)); }
+    if (action === "getMessages") { requireAuth(body.password); return json({ ok: true, messages: readMessages() }); }
+    if (action === "updateMessage") { requireAuth(body.password); return json(updateMessage(body)); }
 
 
     return json({ ok: false, error: "unknown action: " + action });
@@ -353,7 +373,7 @@ function updatePrices(items) {
   for (var i = 1; i < values.length; i++) {
     if (values[i][0]) rowMap[String(values[i][0])] = i + 1;
   }
-  items.forEach(function(it) {
+  items.forEach(function (it) {
     var vId = String(it.variantId || "").trim();
     if (!vId) return;
     var row = rowMap[vId];
@@ -484,7 +504,7 @@ function placeOrder(order) {
           "Order ID: " + order.id + "\nCustomer: " + order.name + " (" + order.phone + ")\nTotal: ₹" + order.total
         );
       }
-    } catch (e) {}
+    } catch (e) { }
 
     return { ok: true };
   } finally {
@@ -496,7 +516,7 @@ function orderExists(orderId) {
   var sh = ensureOrdersSheet();
   var lastRow = sh.getLastRow();
   if (lastRow < 2) return false;
-  return sh.getRange(2, 2, lastRow - 1, 1).getValues().some(function(row) {
+  return sh.getRange(2, 2, lastRow - 1, 1).getValues().some(function (row) {
     return String(row[0]) === String(orderId);
   });
 }
@@ -537,7 +557,7 @@ function updateOrder(body) {
   var values = sh.getDataRange().getValues();
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][1]) === String(body.orderId)) {
-      if (body.status)        sh.getRange(i + 1, 10).setValue(body.status);
+      if (body.status) sh.getRange(i + 1, 10).setValue(body.status);
       if (body.paymentStatus) sh.getRange(i + 1, 11).setValue(body.paymentStatus);
       return { ok: true };
     }
@@ -547,21 +567,45 @@ function updateOrder(body) {
 
 // -------- Drive Image Upload --------
 
+var TARGET_DRIVE_FOLDER_ID = "16BLOa7rZQ1O6Ob54l89ABTbVSfi1xui3";
+
 function uploadImage(body) {
   if (!body.productId || !body.dataBase64) return { ok: false, error: "missing data" };
   var bytes = Utilities.base64Decode(body.dataBase64);
   var blob = Utilities.newBlob(bytes, body.mimeType || "image/jpeg", body.filename || "image.jpg");
-  
-  var folderName = "HouseOfNuts_ProductImages";
-  var folders = DriveApp.getFoldersByName(folderName);
-  var folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
-  
-  var file = folder.createFile(blob);
+
+  var parentFolder;
+  try {
+    parentFolder = DriveApp.getFolderById(TARGET_DRIVE_FOLDER_ID);
+  } catch (e) {
+    var folders = DriveApp.getFoldersByName("HouseOfNuts_ProductImages");
+    parentFolder = folders.hasNext() ? folders.next() : DriveApp.createFolder("HouseOfNuts_ProductImages");
+  }
+
+  // Create or retrieve Category Subfolder for clean organization & readability
+  var catName = body.category ? String(body.category).trim() : "General";
+  var subfolders = parentFolder.getFoldersByName(catName);
+  var targetSubfolder = subfolders.hasNext() ? subfolders.next() : parentFolder.createFolder(catName);
+
+  var file = targetSubfolder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  
+
   var fileId = file.getId();
   var url = "https://lh3.googleusercontent.com/d/" + fileId;
-  return { ok: true, url: url, fileId: fileId };
+
+  // Auto-update Products sheet row with uploaded image URL
+  try {
+    var sh = ensureProductsSheet();
+    var values = sh.getDataRange().getValues();
+    for (var i = 1; i < values.length; i++) {
+      if (String(values[i][0]).toLowerCase() === String(body.productId).toLowerCase()) {
+        sh.getRange(i + 1, 5).setValue(url);
+        break;
+      }
+    }
+  } catch (err) {}
+
+  return { ok: true, url: url, fileId: fileId, category: catName };
 }
 
 // -------- Sheet 7: Messages Tab (customer messages & wholesale enquiries) --------
@@ -598,7 +642,7 @@ function addMessage(body) {
         "From: " + (body.name || "") + " (" + (body.phone || "") + " / " + (body.email || "") + ")\n\n" +
         (body.subject ? "Subject: " + body.subject + "\n\n" : "") + (body.message || ""));
     }
-  } catch (e) {}
+  } catch (e) { }
   return { ok: true, messageId: id };
 }
 

@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Cloud, Image as ImageIcon, Link2, Loader2, RotateCcw, Search, Upload, Layers, X, CheckCircle2, AlertCircle, FileSpreadsheet, Download } from "lucide-react";
+import { Cloud, Image as ImageIcon, Link2, Loader2, RotateCcw, Search, Upload, Layers, X, CheckCircle2, AlertCircle, FileSpreadsheet, Download, ExternalLink } from "lucide-react";
 import { products, categories } from "@/data/products";
 import {
   clearProductImage,
@@ -126,7 +126,7 @@ function BulkUploader({ onClose }: { onClose: () => void }) {
       setRows((r) => r.map((x, idx) => (idx === i ? { ...x, status: "uploading" } : x)));
       try {
         if (target === "drive") {
-          const url = await adminUploadImage(productId, row.file);
+          const url = await adminUploadImage(productId, row.file, row.match?.category);
           setProductImage(productId, url);
         } else {
           const dataUrl = await fileToDataUrl(row.file);
@@ -369,7 +369,7 @@ function ProductRow({ product }: { product: Product }) {
     setUploading(true);
     const t = toast.loading(`Uploading ${file.name} to Drive…`);
     try {
-      const publicUrl = await adminUploadImage(product.id, file);
+      const publicUrl = await adminUploadImage(product.id, file, product.category);
       setProductImage(product.id, publicUrl);
       toast.success(`Saved to Drive · ${product.name}`, { id: t });
     } catch (e) {
@@ -500,13 +500,23 @@ const AdminImages = () => {
           <ImageIcon className="text-accent" size={18} />
           <h2 className="font-display text-2xl">Product Images</h2>
         </div>
-        <button
-          onClick={() => setBulkOpen((v) => !v)}
-          className="flex items-center gap-2 px-4 py-2 text-[11px] uppercase tracking-[0.15em] font-body bg-primary text-primary-foreground hover:bg-accent transition-colors"
-        >
-          <Layers size={13} />
-          {bulkOpen ? "Close Bulk" : "Bulk Upload"}
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href={import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_URL || "https://drive.google.com/drive/folders/16BLOa7rZQ1O6Ob54l89ABTbVSfi1xui3?usp=sharing"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body border border-border hover:border-foreground/40 transition-colors"
+          >
+            <Cloud size={13} className="text-accent" /> Google Drive Folder <ExternalLink size={12} />
+          </a>
+          <button
+            onClick={() => setBulkOpen((v) => !v)}
+            className="flex items-center gap-2 px-4 py-2 text-[11px] uppercase tracking-[0.15em] font-body bg-primary text-primary-foreground hover:bg-accent transition-colors"
+          >
+            <Layers size={13} />
+            {bulkOpen ? "Close Bulk" : "Bulk Upload"}
+          </button>
+        </div>
       </div>
       <p className="text-sm text-muted-foreground font-body mb-6">
         <span className="font-medium text-foreground">Bulk</span> matches filenames to SKUs and uploads many at once.
