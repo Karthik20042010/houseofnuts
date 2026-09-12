@@ -8,7 +8,8 @@ import ProductCard from "@/components/ProductCard";
 import { ProductCardSkeletonGrid } from "@/components/ProductCardSkeleton";
 import { useGridReady } from "@/hooks/useGridReady";
 import PromoBanner from "@/components/PromoBanner";
-import { categories, products, Product } from "@/data/products";
+import { categories as defaultCategories, products as defaultProducts, Product } from "@/data/products";
+import { getAllProducts, getCustomCategories } from "@/lib/customCatalog";
 import { useInventory } from "@/contexts/InventoryContext";
 import { isOutOfStock } from "@/lib/inventory";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,7 +43,20 @@ const Category = () => {
   const location = useLocation();
   const auth = useAuth();
   const effectiveSlug = location.pathname === "/shop" ? "all" : slug;
-  const cat = categories.find((c) => c.id === effectiveSlug);
+
+  const [categoriesList, setCategoriesList] = useState(getCustomCategories());
+  const [allProductsList, setAllProductsList] = useState(() => getAllProducts(defaultProducts));
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setCategoriesList(getCustomCategories());
+      setAllProductsList(getAllProducts(defaultProducts));
+    };
+    window.addEventListener("hon-catalog-update", handleUpdate);
+    return () => window.removeEventListener("hon-catalog-update", handleUpdate);
+  }, []);
+
+  const cat = categoriesList.find((c) => c.id === effectiveSlug) || (effectiveSlug === "all" ? { id: "all", label: "All Products" } : undefined);
   const { stock } = useInventory();
 
   const [sortBy, setSortBy] = useState<SortOption>("default");
@@ -60,7 +74,7 @@ const Category = () => {
 
   const filtered = useMemo(() => {
     if (!cat) return [];
-    const visibleProducts = products.filter((p) => isCategoryVisibleToUser(p.category, auth));
+    const visibleProducts = allProductsList.filter((p) => isCategoryVisibleToUser(p.category, auth));
     let base = cat.id === "all" ? [...visibleProducts] : visibleProducts.filter((p) => p.category === cat.id);
 
     if (bands.length) {
