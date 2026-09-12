@@ -98,7 +98,7 @@ const ProductDetail = () => {
     },
     "offers": {
       "@type": "Offer",
-      "url": `https://houseofnuts.in/product/${product.id}`,
+      "url": `https://houseofnuts.store/product/${product.id}`,
       "priceCurrency": "INR",
       "price": variant ? variant.price : product.price,
       "availability": product.inStock !== false ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
@@ -116,7 +116,7 @@ const ProductDetail = () => {
         description={`Shop premium quality ${product.name} (${variant?.weight || '100% Natural'}) at House of Nuts Proddatur. Best prices, fresh harvest, fast delivery.`}
         keywords={`${product.name.toLowerCase()}, buy ${product.name.toLowerCase()} online, ${product.name.toLowerCase()} proddatur, house of nuts, dry fruits proddatur`}
         canonicalUrl={`/product/${product.id}`}
-        ogImage={product.image.startsWith("http") ? product.image : `https://houseofnuts.in${product.image}`}
+        ogImage={product.image.startsWith("http") ? product.image : `https://houseofnuts.store${product.image}`}
         ogType="product"
         jsonLd={productJsonLd}
       />

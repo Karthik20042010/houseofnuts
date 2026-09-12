@@ -79,12 +79,12 @@ import { SEOHead } from "@/components/SEOHead";
   title="Premium Mamra Almonds (Irani Badam)"
   description="Buy authentic Irani Mamra Almonds online from House of Nuts Proddatur. Rich in natural oils, 100% crisp and crunchy."
   keywords="mamra almonds, irani badam, house of nuts proddatur"
-  canonicalUrl="https://houseofnuts.in/product/mamra-almonds"
-  ogImage="https://houseofnuts.in/images/products/mamra-almonds.jpg"
+  canonicalUrl="https://houseofnuts.store/product/mamra-almonds"
+  ogImage="https://houseofnuts.store/images/products/mamra-almonds.jpg"
   schemaType="Product"
   productData={{
     name: "Premium Mamra Almonds",
-    image: "https://houseofnuts.in/images/products/mamra-almonds.jpg",
+    image: "https://houseofnuts.store/images/products/mamra-almonds.jpg",
     description: "Crisp and oil-rich Irani Mamra Badam",
     sku: "HON-MAMRA-01",
     price: "1850",
@@ -102,7 +102,7 @@ import { SEOHead } from "@/components/SEOHead";
   "@context": "https://schema.org",
   "@type": ["OnlineStore", "LocalBusiness"],
   "name": "House of Nuts",
-  "image": "https://houseofnuts.in/images/branding/house-of-nuts-logo-hd.png",
+  "image": "https://houseofnuts.store/images/branding/house-of-nuts-logo-hd.png",
   "telephone": "+91 96525 26920",
   "address": {
     "@type": "PostalAddress",
@@ -141,7 +141,7 @@ Maintains strict breadcrumb hierarchy for search engine crawlers.
 
 ## 6. Google Search Console & Indexing SOP Checklist
 
-- [x] **Domain Property Setup**: Verified domain property `houseofnuts.in` on Google Search Console.
+- [x] **Domain Property Setup**: Verified domain property `houseofnuts.store` on Google Search Console.
 - [x] **XML Sitemap Submission**: Published and submitted [`public/sitemap.xml`](file:///c:/Users/DELL/OneDrive/Desktop/houseofnuts/public/sitemap.xml) covering all product, category, and informational routes.
 - [x] **Robots.txt Rules**: Configured [`public/robots.txt`](file:///c:/Users/DELL/OneDrive/Desktop/houseofnuts/public/robots.txt) allowing search crawlers while blocking `/admin` paths.
 - [x] **Google Business Profile Integration**: Linked Google Maps URL (`https://maps.app.goo.gl/NhAo8EZtyc77CU119`) with NAP consistency.

@@ -167,7 +167,7 @@ const Category = () => {
         "@type": "ListItem",
         "position": 2,
         "name": "Shop",
-        "item": "https://houseofnuts.in/shop"
+        "item": "https://houseofnuts.store/shop"
       },
       ...(cat && cat.id !== "all"
         ? [
@@ -175,7 +175,7 @@ const Category = () => {
               "@type": "ListItem",
               "position": 3,
               "name": cat.label,
-              "item": `https://houseofnuts.in/category/${cat.id}`,
+              "item": `https://houseofnuts.store/category/${cat.id}`,
             },
           ]
         : [])

@@ -2,25 +2,25 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Core Main Pages -->
   <url>
-    <loc>https://houseofnuts.in/</loc>
+    <loc>https://houseofnuts.store/</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/shop</loc>
+    <loc>https://houseofnuts.store/shop</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/gifting</loc>
+    <loc>https://houseofnuts.store/gifting</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/journal</loc>
+    <loc>https://houseofnuts.store/journal</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -28,25 +28,25 @@
 
   <!-- Store & Contact Pages -->
   <url>
-    <loc>https://houseofnuts.in/contact</loc>
+    <loc>https://houseofnuts.store/contact</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/faq</loc>
+    <loc>https://houseofnuts.store/faq</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/shipping</loc>
+    <loc>https://houseofnuts.store/shipping</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/returns</loc>
+    <loc>https://houseofnuts.store/returns</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -54,49 +54,49 @@
 
   <!-- Category Pages -->
   <url>
-    <loc>https://houseofnuts.in/category/nuts</loc>
+    <loc>https://houseofnuts.store/category/nuts</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/category/dry-fruits</loc>
+    <loc>https://houseofnuts.store/category/dry-fruits</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/category/chocolates</loc>
+    <loc>https://houseofnuts.store/category/chocolates</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/category/mixes</loc>
+    <loc>https://houseofnuts.store/category/mixes</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/category/gifting</loc>
+    <loc>https://houseofnuts.store/category/gifting</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/category/spices</loc>
+    <loc>https://houseofnuts.store/category/spices</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/category/honey</loc>
+    <loc>https://houseofnuts.store/category/honey</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/category/seeds</loc>
+    <loc>https://houseofnuts.store/category/seeds</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -104,37 +104,37 @@
 
   <!-- Key Product Pages -->
   <url>
-    <loc>https://houseofnuts.in/product/mamra-almonds</loc>
+    <loc>https://houseofnuts.store/product/mamra-almonds</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/product/california-almonds</loc>
+    <loc>https://houseofnuts.store/product/california-almonds</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/product/cashews-w320</loc>
+    <loc>https://houseofnuts.store/product/cashews-w320</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/product/pistachios</loc>
+    <loc>https://houseofnuts.store/product/pistachios</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/product/wild-honey</loc>
+    <loc>https://houseofnuts.store/product/wild-honey</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.in/product/kashmiri-saffron</loc>
+    <loc>https://houseofnuts.store/product/kashmiri-saffron</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>

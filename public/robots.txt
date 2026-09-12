@@ -15,4 +15,4 @@ Disallow: /admin/
 Disallow: /checkout
 Disallow: /account
 
-Sitemap: https://houseofnuts.in/sitemap.xml
+Sitemap: https://houseofnuts.store/sitemap.xml

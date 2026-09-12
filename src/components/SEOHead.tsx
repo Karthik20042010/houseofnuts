@@ -18,7 +18,7 @@ const DEFAULT_KEYWORDS =
 const DEFAULT_OG_IMAGE =
   "https://images.unsplash.com/photo-1608797178974-15b35a64ede9?w=1200&h=630&fit=crop";
 const SITE_NAME = "House of Nuts";
-const BASE_URL = "https://houseofnuts.in";
+const BASE_URL = "https://houseofnuts.store";
 
 export const SEOHead: React.FC<SEOHeadProps> = ({
   title,
