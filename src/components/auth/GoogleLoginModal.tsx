@@ -21,7 +21,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 interface GoogleLoginModalProps {
   isOpen: boolean;
@@ -46,6 +46,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
     logout,
   } = useAuth();
 
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AuthTab>("google");
 
   // Google OAuth Choice Flow State
@@ -80,6 +81,22 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
 
   if (!isOpen) return null;
 
+  const performNavigation = (email: string) => {
+    const lower = email.toLowerCase();
+    if (
+      lower === "houseofnutsproddatur@gmail.com" ||
+      lower.startsWith("admin") ||
+      lower.includes("admin") ||
+      lower.includes("staff")
+    ) {
+      navigate("/admin");
+    } else if (lower.includes("developer")) {
+      navigate("/admin/developer");
+    } else {
+      navigate("/account");
+    }
+  };
+
   // --- Handlers ---
   const handleSelectGoogleAccount = (acct: {
     email: string;
@@ -105,6 +122,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
       );
       onSuccess?.();
       onClose();
+      performNavigation(selectedGoogleAccount.email);
     } catch {
       toast.error("Google Authentication failed. Please try again.");
     } finally {
@@ -132,6 +150,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
           toast.success(`Welcome back Admin (${emailInput})`);
           onSuccess?.();
           onClose();
+          navigate("/admin");
           return;
         }
       }
@@ -143,6 +162,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
       toast.success(`Welcome to House of Nuts, ${derivedName}!`);
       onSuccess?.();
       onClose();
+      performNavigation(emailInput);
     } catch {
       toast.error("Sign in failed. Please check your credentials.");
     } finally {
@@ -173,13 +193,15 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
     setLoading(true);
     try {
       const cleanNumber = phoneNumber.replace(/\D/g, "");
+      const userEmail = `member_${cleanNumber.slice(-4)}@houseofnuts.com`;
       await loginWithGoogle(
-        `member_${cleanNumber.slice(-4)}@houseofnuts.com`,
+        userEmail,
         `Customer (+91 ${cleanNumber})`
       );
       toast.success("Mobile number verified successfully!");
       onSuccess?.();
       onClose();
+      performNavigation(userEmail);
     } catch {
       toast.error("OTP verification failed.");
     } finally {
@@ -250,7 +272,17 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-2">
+              {(isLoggedIn || googleUser?.email?.toLowerCase().includes("admin") || googleUser?.email === "houseofnutsproddatur@gmail.com") && (
+                <Link
+                  to="/admin"
+                  onClick={onClose}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-accent text-accent-foreground text-xs font-body font-semibold rounded-xl transition-colors shadow-xs"
+                >
+                  <ShieldCheck size={16} /> Open Role Admin Portal
+                </Link>
+              )}
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
                 <Link
                   to="/orders"
                   onClick={onClose}
