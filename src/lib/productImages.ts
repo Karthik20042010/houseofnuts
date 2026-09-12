@@ -43,6 +43,47 @@ export function setProductImage(productId: string, src: string) {
   write(next);
 }
 
+const GALLERY_STORAGE_KEY = "hon-product-gallery-overrides-v1";
+
+export function getProductGallery(product: { id: string; image: string; images?: string[] }): string[] {
+  let customGallery: string[] | undefined;
+  try {
+    const raw = localStorage.getItem(GALLERY_STORAGE_KEY);
+    if (raw) {
+      const map = JSON.parse(raw);
+      if (Array.isArray(map[product.id]) && map[product.id].length > 0) {
+        customGallery = map[product.id];
+      }
+    }
+  } catch {
+    // Ignore
+  }
+
+  if (customGallery && customGallery.length > 0) {
+    return customGallery;
+  }
+
+  const primary = getProductImageSrc(product);
+  const extra = product.images || [];
+  const list = [primary, ...extra.filter((img) => img !== primary)];
+  return Array.from(new Set(list));
+}
+
+export function setProductGallery(productId: string, images: string[]) {
+  try {
+    const raw = localStorage.getItem(GALLERY_STORAGE_KEY);
+    const map = raw ? JSON.parse(raw) : {};
+    map[productId] = images;
+    localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(map));
+    if (images.length > 0) {
+      setProductImage(productId, images[0]);
+    }
+    listeners.forEach((l) => l());
+  } catch {
+    // Ignore
+  }
+}
+
 export function clearProductImage(productId: string) {
   const next = { ...read() };
   delete next[productId];

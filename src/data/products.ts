@@ -15,6 +15,7 @@ export interface Product {
   subcategory?: string;
   description: string;
   image: string;
+  images?: string[];
   variants: ProductVariant[];
   badge?: string;
 }

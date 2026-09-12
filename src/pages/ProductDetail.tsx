@@ -14,7 +14,7 @@ import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf, Heart, Share2, Zap, 
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import ReviewsSection from "@/components/ReviewsSection";
 import { getAverageRating } from "@/lib/reviews";
-import { getProductImageSrc } from "@/lib/productImages";
+import { getProductImageSrc, getProductGallery } from "@/lib/productImages";
 import ProductImage from "@/components/ProductImage";
 import { toast } from "sonner";
 
@@ -26,9 +26,9 @@ const ProductDetail = () => {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const auth = useAuth();
   const [selectedVariant, setSelectedVariant] = useState(0);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const { addViewed } = useRecentlyViewed();
-
 
   const product = products.find((p) => p.id === id);
 
@@ -55,6 +55,9 @@ const ProductDetail = () => {
   const relatedProducts = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
   const { avg: avgRating, count: reviewCount } = getAverageRating(product.id);
   const wishlisted = isInWishlist(product.id);
+
+  const gallery = getProductGallery(product);
+  const activeImageSrc = gallery[activeImageIndex] || getProductImageSrc(product);
 
   const handleAdd = () => {
     if (isComingSoon) return;
@@ -90,7 +93,7 @@ const ProductDetail = () => {
     "@type": "Product",
     "name": product.name,
     "description": product.description || `Buy 100% pure premium ${product.name} online from House of Nuts Proddatur. Fresh farm harvest.`,
-    "image": [product.image.startsWith("http") ? product.image : `https://houseofnuts.store${product.image}`],
+    "image": gallery.map((img) => (img.startsWith("http") ? img : `https://houseofnuts.store${img}`)),
     "sku": product.id,
     "brand": {
       "@type": "Brand",
@@ -126,7 +129,7 @@ const ProductDetail = () => {
         description={`Shop premium quality ${product.name} (${variant?.weight || '100% Natural'}) at House of Nuts Proddatur. Best prices, fresh harvest, fast delivery.`}
         keywords={`${product.name.toLowerCase()}, buy ${product.name.toLowerCase()} online, ${product.name.toLowerCase()} proddatur, house of nuts, dry fruits proddatur`}
         canonicalUrl={`/product/${product.id}`}
-        ogImage={product.image.startsWith("http") ? product.image : `https://houseofnuts.store${product.image}`}
+        ogImage={activeImageSrc.startsWith("http") ? activeImageSrc : `https://houseofnuts.store${activeImageSrc}`}
         ogType="product"
         jsonLd={productJsonLd}
       />
@@ -145,24 +148,46 @@ const ProductDetail = () => {
 
         {/* Product Section */}
         <div className="grid md:grid-cols-2 gap-8 md:gap-16 mb-20">
-          {/* Image */}
-          <div className="gradient-linen aspect-square relative overflow-hidden rounded-2xl shine">
-            <ProductImage
-              src={getProductImageSrc(product.id, product.image)}
-              alt={product.name}
-              eager
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="w-full h-full object-cover rounded-2xl"
-            />
-            {isComingSoon ? (
-              <div className="absolute top-4 left-4 bg-amber-600/90 text-amber-50 px-3.5 py-1.5 text-xs uppercase tracking-wider font-semibold z-20 shadow-soft font-body rounded-full flex items-center gap-1.5">
-                <Clock size={13} /> Coming Soon
+          {/* Image & Multi-Image Gallery */}
+          <div className="space-y-4">
+            <div className="gradient-linen aspect-square relative overflow-hidden rounded-2xl shine border border-border/60">
+              <ProductImage
+                src={activeImageSrc}
+                alt={product.name}
+                eager
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="w-full h-full object-cover rounded-2xl"
+              />
+              {isComingSoon ? (
+                <div className="absolute top-4 left-4 bg-amber-600/90 text-amber-50 px-3.5 py-1.5 text-xs uppercase tracking-wider font-semibold z-20 shadow-soft font-body rounded-full flex items-center gap-1.5">
+                  <Clock size={13} /> Coming Soon
+                </div>
+              ) : product.badge ? (
+                <div className="absolute top-4 left-4 gradient-warm text-accent-foreground px-3 py-1.5 text-xs font-semibold uppercase tracking-wider shadow-glow font-body rounded-full">
+                  {product.badge}
+                </div>
+              ) : null}
+            </div>
+
+            {/* Gallery Thumbnails Strip */}
+            {gallery.length > 1 && (
+              <div className="flex items-center gap-3 overflow-x-auto pb-2">
+                {gallery.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveImageIndex(idx)}
+                    className={`size-16 rounded-xl border overflow-hidden shrink-0 transition-all cursor-pointer ${
+                      activeImageIndex === idx
+                        ? "border-accent ring-2 ring-accent/30 scale-105"
+                        : "border-border opacity-70 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={img} alt={`${product.name} ${idx + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
               </div>
-            ) : product.badge ? (
-              <div className="absolute top-4 left-4 gradient-warm text-accent-foreground px-3 py-1.5 text-xs font-semibold uppercase tracking-wider shadow-glow font-body rounded-full">
-                {product.badge}
-              </div>
-            ) : null}
+            )}
           </div>
 
           {/* Info */}

@@ -19,6 +19,10 @@ import {
   Upload,
   Image as ImageIcon,
   CheckCircle2,
+  Trash2,
+  Images,
+  Star,
+  Edit3,
 } from "lucide-react";
 import { adminUpdateInventory, adminUploadImage } from "@/lib/admin";
 import { fetchInventory, StockMap } from "@/lib/inventory";
@@ -34,7 +38,12 @@ import {
   savePriceOverrides,
   PriceOverride,
 } from "@/lib/customCatalog";
-import { fileToDataUrl, getProductImageSrc } from "@/lib/productImages";
+import {
+  fileToDataUrl,
+  getProductImageSrc,
+  getProductGallery,
+  setProductGallery,
+} from "@/lib/productImages";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
@@ -77,6 +86,10 @@ export const AdminInventory = () => {
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [isAddSubcategoryOpen, setIsAddSubcategoryOpen] = useState(false);
 
+  // Existing Product Image Editing Modal State
+  const [editingImageProduct, setEditingImageProduct] = useState<Product | null>(null);
+  const [editingProductImages, setEditingProductImages] = useState<string[]>([]);
+
   // Image Uploading State
   const [imageUploading, setImageUploading] = useState(false);
 
@@ -93,7 +106,7 @@ export const AdminInventory = () => {
   const [newProdCategory, setNewProdCategory] = useState("nuts");
   const [newProdSubcategory, setNewProdSubcategory] = useState("almonds");
   const [newProdDescription, setNewProdDescription] = useState("");
-  const [newProdImage, setNewProdImage] = useState("/images/catalog/almonds.jpg");
+  const [newProdImages, setNewProdImages] = useState<string[]>(["/images/catalog/almonds.jpg"]);
   const [newProdBadge, setNewProdBadge] = useState("Fresh Harvest");
   const [newProdVariants, setNewProdVariants] = useState<
     Array<{ size: string; price: number; mrp: number; stock: number }>
@@ -156,15 +169,12 @@ export const AdminInventory = () => {
   const filteredProducts = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     return allProds.filter((p) => {
-      // 1. Check Parent Category filter
       if (selectedParentCategory !== "all" && p.category !== selectedParentCategory) {
         return false;
       }
-      // 2. Check Subcategory filter
       if (selectedSubcategory !== "all" && p.subcategory !== selectedSubcategory) {
         return false;
       }
-      // 3. Check Search Query filter
       if (q && !p.name.toLowerCase().includes(q) && !p.localName?.toLowerCase().includes(q)) {
         return false;
       }
@@ -222,11 +232,9 @@ export const AdminInventory = () => {
   const handleSaveAllChanges = async () => {
     setSaving(true);
     try {
-      // 1. Save Rate / Price Overrides locally and broadcast catalog updates
       savePriceOverrides(pricesMap);
       setInitialPrices({ ...pricesMap });
 
-      // 2. Save Inventory Stock to Apps Script / Google Sheets
       const items: Array<{ variantId: string; productId: string; size: string; stock: number }> = [];
       for (const p of allProds) {
         for (const v of p.variants) {
@@ -245,7 +253,7 @@ export const AdminInventory = () => {
       sessionStorage.removeItem("hon-inventory");
       setInitialStock({ ...stock });
 
-      toast.success(`Successfully saved ${totalDirtyCount} rate & stock updates!`);
+      toast.success(`Saved ${totalDirtyCount} rate & stock updates!`);
     } catch (e) {
       toast.error((e as Error).message || "Failed to save inventory updates");
     } finally {
@@ -253,57 +261,117 @@ export const AdminInventory = () => {
     }
   };
 
-  // Image File Selection & Direct Upload Handler
-  const handleImageFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Helper for Uploading an Image File to Drive / Data URL
+  const processImageFileUpload = async (file: File, category: string): Promise<string> => {
+    try {
+      const base64Raw = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const res = String(reader.result || "");
+          const commaIdx = res.indexOf(",");
+          resolve(commaIdx !== -1 ? res.substring(commaIdx + 1) : res);
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select a valid image file (JPG, PNG, WEBP).");
-      return;
+      const driveRes = await adminUploadImage({
+        productId: file.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        dataBase64: base64Raw,
+        filename: file.name,
+        mimeType: file.type,
+        category,
+      });
+
+      if (driveRes && driveRes.ok && driveRes.url) {
+        return driveRes.url;
+      }
+    } catch {
+      // Fallback
     }
+
+    return await fileToDataUrl(file);
+  };
+
+  // Multiple Image File Selection for New Product Creation
+  const handleNewProdImageFilesSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setImageUploading(true);
     try {
-      // 1. Try Google Drive cloud upload if backend is accessible
-      try {
-        const base64Raw = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const res = String(reader.result || "");
-            const commaIdx = res.indexOf(",");
-            resolve(commaIdx !== -1 ? res.substring(commaIdx + 1) : res);
-          };
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(file);
-        });
-
-        const driveRes = await adminUploadImage({
-          productId: newProdName ? newProdName.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "new-item",
-          dataBase64: base64Raw,
-          filename: file.name,
-          mimeType: file.type,
-          category: newProdCategory,
-        });
-
-        if (driveRes && driveRes.ok && driveRes.url) {
-          setNewProdImage(driveRes.url);
-          toast.success("Image uploaded to Google Drive CDN successfully!");
-          setImageUploading(false);
-          return;
+      const newUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        if (file.type.startsWith("image/")) {
+          const url = await processImageFileUpload(file, newProdCategory);
+          newUrls.push(url);
         }
-      } catch {
-        // Fallback to local Data URL
       }
-
-      const dataUrl = await fileToDataUrl(file);
-      setNewProdImage(dataUrl);
-      toast.success("Image file attached successfully!");
+      if (newUrls.length > 0) {
+        setNewProdImages((prev) => Array.from(new Set([...prev, ...newUrls])));
+        toast.success(`Attached ${newUrls.length} image(s) to product!`);
+      }
     } catch {
-      toast.error("Failed to read image file.");
+      toast.error("Failed to read image files.");
     } finally {
       setImageUploading(false);
     }
+  };
+
+  // Multiple Image File Upload for Existing Item Editing
+  const handleExistingProdImageFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editingImageProduct) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setImageUploading(true);
+    try {
+      const newUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        if (file.type.startsWith("image/")) {
+          const url = await processImageFileUpload(file, editingImageProduct.category);
+          newUrls.push(url);
+        }
+      }
+      if (newUrls.length > 0) {
+        const updated = Array.from(new Set([...editingProductImages, ...newUrls]));
+        setEditingProductImages(updated);
+        toast.success(`Added ${newUrls.length} new photo(s) to gallery!`);
+      }
+    } catch {
+      toast.error("Failed to upload image files.");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  // Open Image Editing Modal for an Existing Product
+  const openImageEditModal = (product: Product) => {
+    setEditingImageProduct(product);
+    const gallery = getProductGallery(product);
+    setEditingProductImages(gallery.length > 0 ? gallery : [product.image]);
+  };
+
+  // Save Image Gallery Changes for an Existing Product
+  const handleSaveProductGallery = () => {
+    if (!editingImageProduct) return;
+    if (editingProductImages.length === 0) {
+      toast.error("Product must have at least one primary cover image.");
+      return;
+    }
+
+    setProductGallery(editingImageProduct.id, editingProductImages);
+
+    // Update product object in custom catalog if custom product
+    addCustomProduct({
+      ...editingImageProduct,
+      image: editingProductImages[0],
+      images: editingProductImages,
+    });
+
+    toast.success(`Updated images for ${editingImageProduct.name}!`);
+    setEditingImageProduct(null);
+    loadData();
   };
 
   // Handle Add New Parent Category
@@ -329,7 +397,7 @@ export const AdminInventory = () => {
       return;
     }
     const created = addCustomSubcategory(newSubcatParent, newSubcatLabel);
-    toast.success(`Subcategory "${created.label}" added under category!`);
+    toast.success(`Subcategory "${created.label}" added!`);
     setSelectedParentCategory(newSubcatParent);
     setSelectedSubcategory(created.id);
     setNewSubcatLabel("");
@@ -356,8 +424,8 @@ export const AdminInventory = () => {
       toast.error("Please enter a product name.");
       return;
     }
-    if (!newProdImage.trim()) {
-      toast.error("Please select or upload a product image.");
+    if (newProdImages.length === 0) {
+      toast.error("Please attach at least one product image.");
       return;
     }
     if (newProdVariants.length === 0) {
@@ -365,13 +433,15 @@ export const AdminInventory = () => {
       return;
     }
 
+    const primaryImg = newProdImages[0];
     const createdProd = addCustomProduct({
       name: newProdName.trim(),
       localName: newProdLocalName.trim() || undefined,
       category: newProdCategory as any,
       subcategory: newProdSubcategory,
       description: newProdDescription.trim() || "Hand-selected premium dry fruits",
-      image: newProdImage.trim(),
+      image: primaryImg,
+      images: newProdImages,
       badge: newProdBadge.trim() || undefined,
       variants: newProdVariants.map((v) => ({
         id: "",
@@ -380,6 +450,8 @@ export const AdminInventory = () => {
         mrp: v.mrp,
       })),
     });
+
+    setProductGallery(createdProd.id, newProdImages);
 
     // Update stock map with initial stock for newly created variants
     const newStockMap = { ...stock };
@@ -391,13 +463,14 @@ export const AdminInventory = () => {
     });
     setStock(newStockMap);
 
-    toast.success(`Product "${createdProd.name}" created with attached image!`);
+    toast.success(`Product "${createdProd.name}" created with ${newProdImages.length} image(s)!`);
     setIsAddProductOpen(false);
 
     // Reset form
     setNewProdName("");
     setNewProdLocalName("");
     setNewProdDescription("");
+    setNewProdImages(["/images/catalog/almonds.jpg"]);
     loadData();
   };
 
@@ -441,23 +514,23 @@ export const AdminInventory = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 pb-28 font-body text-foreground">
-      {/* Header Banner & Primary Actions */}
-      <div className="bg-background border border-border rounded-xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* User Friendly Header Banner & Primary Action Buttons */}
+      <div className="bg-background border border-border rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-            <Layers className="h-6 w-6 text-accent" /> Category, Subcategory & Inventory Manager
+            <Layers className="h-6 w-6 text-accent" /> Easy Catalog, Multi-Image & Inventory Manager
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
-            Hierarchical workflow: Select Parent Category &rarr; Subcategory &rarr; Upload Image & Update Rates.
+            Intuitive workflow: Select Category &rarr; Subcategory &rarr; Manage Multiple Images & Variant Rates.
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => setIsAddCategoryOpen(true)}
-            className="px-3 py-2 border border-border hover:bg-secondary rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+            className="px-3.5 py-2 border border-border hover:bg-secondary rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
           >
-            <FolderPlus size={14} className="text-accent" /> + Category
+            <FolderPlus size={15} className="text-accent" /> + Category
           </button>
           <button
             type="button"
@@ -465,16 +538,16 @@ export const AdminInventory = () => {
               setNewSubcatParent(selectedParentCategory === "all" ? "nuts" : selectedParentCategory);
               setIsAddSubcategoryOpen(true);
             }}
-            className="px-3 py-2 border border-border hover:bg-secondary rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+            className="px-3.5 py-2 border border-border hover:bg-secondary rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
           >
-            <FolderPlus size={14} className="text-accent" /> + Subcategory
+            <FolderPlus size={15} className="text-accent" /> + Subcategory
           </button>
           <button
             type="button"
             onClick={openAddProductModal}
-            className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:bg-accent/90 cursor-pointer transition-colors shadow-xs"
+            className="px-4 py-2 bg-accent text-accent-foreground rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-accent/90 cursor-pointer transition-colors shadow-md"
           >
-            <PackagePlus size={15} /> + Add Product Item
+            <PackagePlus size={16} /> + Add Product Item
           </button>
         </div>
       </div>
@@ -488,7 +561,7 @@ export const AdminInventory = () => {
       </div>
 
       {/* STEP 1 & STEP 2 HIERARCHICAL CATEGORY SELECTOR */}
-      <div className="bg-card border border-border rounded-xl p-4 space-y-4 shadow-xs">
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-4 shadow-xs">
         {/* STEP 1: Select Parent Category */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -510,7 +583,7 @@ export const AdminInventory = () => {
             <button
               type="button"
               onClick={() => setSelectedParentCategory("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
                 selectedParentCategory === "all"
                   ? "bg-accent text-accent-foreground font-bold shadow-xs"
                   : "bg-muted/40 hover:bg-secondary text-muted-foreground"
@@ -527,7 +600,7 @@ export const AdminInventory = () => {
                     key={c.id}
                     type="button"
                     onClick={() => setSelectedParentCategory(c.id)}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
                       selectedParentCategory === c.id
                         ? "bg-accent text-accent-foreground font-bold shadow-xs"
                         : "bg-muted/40 hover:bg-secondary text-foreground"
@@ -564,7 +637,7 @@ export const AdminInventory = () => {
             <button
               type="button"
               onClick={() => setSelectedSubcategory("all")}
-              className={`px-3 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
                 selectedSubcategory === "all"
                   ? "bg-primary text-primary-foreground font-semibold"
                   : "border border-border/80 bg-background hover:bg-secondary text-muted-foreground"
@@ -583,7 +656,7 @@ export const AdminInventory = () => {
                   key={sub.id}
                   type="button"
                   onClick={() => setSelectedSubcategory(sub.id)}
-                  className={`px-3 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
                     selectedSubcategory === sub.id
                       ? "bg-primary text-primary-foreground font-semibold"
                       : "border border-border/80 bg-background hover:bg-secondary text-foreground"
@@ -596,7 +669,7 @@ export const AdminInventory = () => {
           </div>
         </div>
 
-        {/* STEP 3: Search & Stock Filters */}
+        {/* STEP 3: Search & Quick Batch Actions */}
         <div className="flex items-center gap-3 pt-2 border-t border-border/60">
           <div className="flex-1 relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -604,7 +677,7 @@ export const AdminInventory = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items by English name or regional Hindi name (e.g. Badam, Pista, Kaju)..."
-              className="w-full pl-9 pr-3 py-2 border border-border bg-background text-xs font-body focus:outline-none focus:border-accent rounded-lg"
+              className="w-full pl-9 pr-3 py-2 border border-border bg-background text-xs font-body focus:outline-none focus:border-accent rounded-xl"
             />
           </div>
 
@@ -612,7 +685,7 @@ export const AdminInventory = () => {
             <button
               type="button"
               onClick={() => setAllInViewStock(UNTRACKED)}
-              className="px-3 py-1.5 text-xs font-body border border-border rounded-lg hover:bg-secondary transition-colors"
+              className="px-3 py-1.5 text-xs font-body border border-border rounded-xl hover:bg-secondary transition-colors"
               title="Untrack stock for visible products"
             >
               Set Visible to Unlimited (∞)
@@ -620,7 +693,7 @@ export const AdminInventory = () => {
             <button
               type="button"
               onClick={() => setAllInViewStock(0)}
-              className="px-3 py-1.5 text-xs font-body border border-border rounded-lg hover:bg-secondary transition-colors text-destructive"
+              className="px-3 py-1.5 text-xs font-body border border-border rounded-xl hover:bg-secondary transition-colors text-destructive"
             >
               Set Visible to Out of Stock (0)
             </button>
@@ -629,7 +702,7 @@ export const AdminInventory = () => {
       </div>
 
       {/* Active Breadcrumb Summary */}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground font-body bg-muted/20 px-4 py-2 rounded-lg border border-border/60">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground font-body bg-muted/20 px-4 py-2 rounded-xl border border-border/60">
         <Filter size={13} className="text-accent" />
         <span>Showing:</span>
         <span className="font-semibold text-foreground">
@@ -649,7 +722,7 @@ export const AdminInventory = () => {
       {/* Catalog & Inventory Product Grid */}
       <div className="space-y-4">
         {filteredProducts.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl p-12 text-center space-y-3 font-body">
+          <div className="bg-card border border-border rounded-2xl p-12 text-center space-y-3 font-body">
             <div className="size-12 rounded-full bg-accent/10 text-accent grid place-items-center mx-auto">
               <PackagePlus size={24} />
             </div>
@@ -660,267 +733,293 @@ export const AdminInventory = () => {
             <button
               type="button"
               onClick={openAddProductModal}
-              className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-xs font-semibold hover:bg-accent/90 cursor-pointer inline-flex items-center gap-1.5"
+              className="px-4 py-2 bg-accent text-accent-foreground rounded-xl text-xs font-semibold hover:bg-accent/90 cursor-pointer inline-flex items-center gap-1.5"
             >
               <Plus size={14} /> Add Product to {selectedParentCategory === "all" ? "Inventory" : selectedParentCategory}
             </button>
           </div>
         ) : (
-          filteredProducts.map((p) => (
-            <div key={p.id} className="bg-card border border-border rounded-xl overflow-hidden shadow-xs">
-              {/* Product Header */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-b border-border bg-muted/20">
-                <div className="flex items-center gap-3">
-                  <img src={getProductImageSrc(p)} alt={p.name} className="size-12 object-cover rounded-lg border border-border" />
-                  <div>
-                    <div className="font-display font-bold text-base flex items-center gap-2">
-                      {p.name}
-                      {p.localName && (
-                        <span className="text-[10px] bg-accent/15 text-accent px-2 py-0.5 rounded font-mono font-medium">
-                          {p.localName}
+          filteredProducts.map((p) => {
+            const gallery = getProductGallery(p);
+            return (
+              <div key={p.id} className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
+                {/* Product Header & Image Gallery Preview */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border-b border-border bg-muted/20">
+                  <div className="flex items-start gap-4">
+                    {/* Primary Image & Multi-Image Gallery Strip */}
+                    <div className="relative group shrink-0">
+                      <img
+                        src={getProductImageSrc(p)}
+                        alt={p.name}
+                        className="size-16 object-cover rounded-xl border border-border shadow-xs"
+                      />
+                      {gallery.length > 1 && (
+                        <span className="absolute -bottom-1.5 -right-1.5 bg-accent text-accent-foreground text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
+                          <Images size={10} /> {gallery.length}
                         </span>
                       )}
-                      {p.badge && (
-                        <Badge variant="outline" className="text-[9px] uppercase font-mono">
-                          {p.badge}
-                        </Badge>
-                      )}
                     </div>
-                    <div className="text-xs text-muted-foreground font-body mt-0.5 flex items-center gap-2 flex-wrap">
-                      <span className="capitalize font-semibold text-foreground">
-                        {p.category.replace("-", " ")}
-                      </span>
-                      {p.subcategory && (
-                        <>
-                          <ChevronRight size={12} className="text-muted-foreground" />
-                          <span className="bg-primary/10 text-primary font-mono text-[10px] px-2 py-0.5 rounded font-medium capitalize">
-                            Sub: {p.subcategory.replace("-", " ")}
+
+                    <div>
+                      <div className="font-display font-bold text-base flex items-center gap-2 flex-wrap">
+                        {p.name}
+                        {p.localName && (
+                          <span className="text-[10px] bg-accent/15 text-accent px-2 py-0.5 rounded font-mono font-medium">
+                            {p.localName}
                           </span>
-                        </>
-                      )}
-                      <span>•</span>
-                      <span className="truncate max-w-md">{p.description}</span>
+                        )}
+                        {p.badge && (
+                          <Badge variant="outline" className="text-[9px] uppercase font-mono">
+                            {p.badge}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground font-body mt-0.5 flex items-center gap-2 flex-wrap">
+                        <span className="capitalize font-semibold text-foreground">
+                          {p.category.replace("-", " ")}
+                        </span>
+                        {p.subcategory && (
+                          <>
+                            <ChevronRight size={12} className="text-muted-foreground" />
+                            <span className="bg-primary/10 text-primary font-mono text-[10px] px-2 py-0.5 rounded font-medium capitalize">
+                              Sub: {p.subcategory.replace("-", " ")}
+                            </span>
+                          </>
+                        )}
+                        <span>•</span>
+                        <span className="truncate max-w-md">{p.description}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAddingVariantForProductId(addingVariantForProductId === p.id ? null : p.id);
-                  }}
-                  className="text-xs border border-border hover:bg-accent hover:text-accent-foreground px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors font-medium cursor-pointer"
-                >
-                  <PlusCircle size={13} /> + Add Weight Variant / Rate
-                </button>
-              </div>
-
-              {/* Inline Add Variant Form */}
-              {addingVariantForProductId === p.id && (
-                <div className="p-4 bg-accent/5 border-b border-border space-y-3 font-body text-xs">
-                  <div className="font-semibold text-foreground flex items-center gap-1.5">
-                    <Sparkles size={14} className="text-accent" /> Add New Weight Variant & Rate for {p.name}
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div>
-                      <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
-                        Weight Size
-                      </label>
-                      <input
-                        type="text"
-                        value={variantSize}
-                        onChange={(e) => setVariantSize(e.target.value)}
-                        placeholder="e.g. 100g, 500g, 1 Kg"
-                        className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
-                        Selling Rate (Price ₹)
-                      </label>
-                      <input
-                        type="number"
-                        value={variantPrice}
-                        onChange={(e) => setVariantPrice(Number(e.target.value))}
-                        placeholder="350"
-                        className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
-                        Original MRP ₹
-                      </label>
-                      <input
-                        type="number"
-                        value={variantMrp}
-                        onChange={(e) => setVariantMrp(Number(e.target.value))}
-                        placeholder="450"
-                        className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
-                        Initial Stock
-                      </label>
-                      <input
-                        type="number"
-                        value={variantStock}
-                        onChange={(e) => setVariantStock(Number(e.target.value))}
-                        placeholder="50"
-                        className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2 pt-1">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
-                      onClick={() => setAddingVariantForProductId(null)}
-                      className="px-3 py-1.5 border border-border rounded-lg hover:bg-secondary text-xs"
+                      onClick={() => openImageEditModal(p)}
+                      className="text-xs border border-border hover:bg-secondary px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors font-semibold cursor-pointer text-foreground"
+                      title="Upload or change photos for this product item"
                     >
-                      Cancel
+                      <Images size={14} className="text-accent" /> Edit Photos ({gallery.length})
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleAddVariantToProduct(p)}
-                      className="px-4 py-1.5 bg-accent text-accent-foreground rounded-lg text-xs font-semibold hover:bg-accent/90"
+                      onClick={() => {
+                        setAddingVariantForProductId(addingVariantForProductId === p.id ? null : p.id);
+                      }}
+                      className="text-xs border border-border hover:bg-accent hover:text-accent-foreground px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors font-semibold cursor-pointer"
                     >
-                      Save Variant Rate
+                      <PlusCircle size={14} /> + Add Weight Variant / Rate
                     </button>
                   </div>
                 </div>
-              )}
 
-              {/* Variants Matrix (Rates, MRP, Stock) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                {p.variants.map((v) => {
-                  const stockVal = stock[v.id];
-                  const untracked = stockVal === UNTRACKED || stockVal === undefined;
-                  const low = !untracked && stockVal > 0 && stockVal <= 5;
-                  const out = !untracked && stockVal <= 0;
-
-                  const currentPrice = pricesMap[v.id]?.price ?? v.price;
-                  const currentMrp = pricesMap[v.id]?.mrp ?? (v.mrp || Math.round(v.price * 1.25));
-
-                  const isPriceDirty =
-                    currentPrice !== (initialPrices[v.id]?.price ?? v.price) ||
-                    currentMrp !== (initialPrices[v.id]?.mrp ?? (v.mrp || Math.round(v.price * 1.25)));
-                  const isStockDirty = stockVal !== initialStock[v.id];
-
-                  return (
-                    <div
-                      key={v.id}
-                      className={`border rounded-xl p-3.5 transition-colors space-y-3 ${
-                        isPriceDirty || isStockDirty ? "border-accent bg-accent/5" : "border-border/80 bg-background"
-                      }`}
-                    >
-                      {/* Size & Status Badges */}
-                      <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                        <span className="font-semibold text-xs text-foreground font-mono">{v.size} Variant</span>
-                        <div className="flex gap-1 items-center">
-                          {out && (
-                            <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-status-cancelled/15 text-status-cancelled rounded">
-                              Out of Stock
-                            </span>
-                          )}
-                          {low && (
-                            <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-status-pending/15 text-status-pending rounded">
-                              Low Stock ({stockVal})
-                            </span>
-                          )}
-                          {(isPriceDirty || isStockDirty) && (
-                            <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-accent/20 text-accent rounded font-mono">
-                              Edited
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Rate & Pricing Controls */}
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <label className="block text-[9px] uppercase font-semibold text-muted-foreground mb-1">
-                            Selling Rate (₹)
-                          </label>
-                          <div className="relative">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">
-                              ₹
-                            </span>
-                            <input
-                              type="number"
-                              value={currentPrice}
-                              onChange={(e) => setRateVal(v.id, "price", Number(e.target.value))}
-                              className="w-full pl-6 pr-2 py-1 border border-border rounded bg-background text-xs font-bold tabular-nums text-foreground focus:outline-none focus:border-accent"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[9px] uppercase font-semibold text-muted-foreground mb-1">
-                            Original MRP (₹)
-                          </label>
-                          <div className="relative">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">
-                              ₹
-                            </span>
-                            <input
-                              type="number"
-                              value={currentMrp}
-                              onChange={(e) => setRateVal(v.id, "mrp", Number(e.target.value))}
-                              className="w-full pl-6 pr-2 py-1 border border-border rounded bg-background text-xs font-semibold tabular-nums text-muted-foreground focus:outline-none focus:border-accent"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Stock Counter Controls */}
+                {/* Inline Add Variant Form */}
+                {addingVariantForProductId === p.id && (
+                  <div className="p-4 bg-accent/5 border-b border-border space-y-3 font-body text-xs">
+                    <div className="font-semibold text-foreground flex items-center gap-1.5">
+                      <Sparkles size={14} className="text-accent" /> Add New Weight Variant & Rate for {p.name}
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div>
-                        <label className="block text-[9px] uppercase font-semibold text-muted-foreground mb-1">
-                          Stock Inventory Level
+                        <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
+                          Weight Size
                         </label>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setStockVal(v.id, Math.max(0, (untracked ? 0 : stockVal) - 1))}
-                            disabled={untracked}
-                            className="p-1.5 border border-border rounded-lg hover:bg-secondary disabled:opacity-40"
-                          >
-                            <Minus size={12} />
-                          </button>
-                          <input
-                            type="number"
-                            min={0}
-                            disabled={untracked}
-                            value={untracked ? "" : stockVal}
-                            onChange={(e) => setStockVal(v.id, e.target.value === "" ? 0 : Number(e.target.value))}
-                            className="flex-1 border border-border px-2 py-1 text-xs font-body tabular-nums text-center focus:outline-none focus:border-accent rounded-lg disabled:bg-muted/50 font-bold"
-                            placeholder={untracked ? "Unlimited (∞)" : "0"}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setStockVal(v.id, (untracked ? 0 : stockVal) + 1)}
-                            disabled={untracked}
-                            className="p-1.5 border border-border rounded-lg hover:bg-secondary disabled:opacity-40"
-                          >
-                            <Plus size={12} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setStockVal(v.id, untracked ? 0 : UNTRACKED)}
-                            title={untracked ? "Enable tracked stock counter" : "Set to unlimited stock (∞)"}
-                            className={`p-1.5 border rounded-lg transition-colors ${
-                              untracked ? "border-accent text-accent font-bold bg-accent/10" : "border-border hover:bg-secondary"
-                            }`}
-                          >
-                            <InfIcon size={13} />
-                          </button>
-                        </div>
+                        <input
+                          type="text"
+                          value={variantSize}
+                          onChange={(e) => setVariantSize(e.target.value)}
+                          placeholder="e.g. 100g, 500g, 1 Kg"
+                          className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
+                          Selling Rate (Price ₹)
+                        </label>
+                        <input
+                          type="number"
+                          value={variantPrice}
+                          onChange={(e) => setVariantPrice(Number(e.target.value))}
+                          placeholder="350"
+                          className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
+                          Original MRP ₹
+                        </label>
+                        <input
+                          type="number"
+                          value={variantMrp}
+                          onChange={(e) => setVariantMrp(Number(e.target.value))}
+                          placeholder="450"
+                          className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-muted-foreground uppercase font-semibold mb-1">
+                          Initial Stock
+                        </label>
+                        <input
+                          type="number"
+                          value={variantStock}
+                          onChange={(e) => setVariantStock(Number(e.target.value))}
+                          placeholder="50"
+                          className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-background text-xs"
+                        />
                       </div>
                     </div>
-                  );
-                })}
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setAddingVariantForProductId(null)}
+                        className="px-3 py-1.5 border border-border rounded-lg hover:bg-secondary text-xs"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddVariantToProduct(p)}
+                        className="px-4 py-1.5 bg-accent text-accent-foreground rounded-lg text-xs font-semibold hover:bg-accent/90"
+                      >
+                        Save Variant Rate
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Variants Matrix (Rates, MRP, Stock) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                  {p.variants.map((v) => {
+                    const stockVal = stock[v.id];
+                    const untracked = stockVal === UNTRACKED || stockVal === undefined;
+                    const low = !untracked && stockVal > 0 && stockVal <= 5;
+                    const out = !untracked && stockVal <= 0;
+
+                    const currentPrice = pricesMap[v.id]?.price ?? v.price;
+                    const currentMrp = pricesMap[v.id]?.mrp ?? (v.mrp || Math.round(v.price * 1.25));
+
+                    const isPriceDirty =
+                      currentPrice !== (initialPrices[v.id]?.price ?? v.price) ||
+                      currentMrp !== (initialPrices[v.id]?.mrp ?? (v.mrp || Math.round(v.price * 1.25)));
+                    const isStockDirty = stockVal !== initialStock[v.id];
+
+                    return (
+                      <div
+                        key={v.id}
+                        className={`border rounded-xl p-3.5 transition-colors space-y-3 ${
+                          isPriceDirty || isStockDirty ? "border-accent bg-accent/5" : "border-border/80 bg-background"
+                        }`}
+                      >
+                        {/* Size & Status Badges */}
+                        <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                          <span className="font-semibold text-xs text-foreground font-mono">{v.size} Variant</span>
+                          <div className="flex gap-1 items-center">
+                            {out && (
+                              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-status-cancelled/15 text-status-cancelled rounded">
+                                Out of Stock
+                              </span>
+                            )}
+                            {low && (
+                              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-status-pending/15 text-status-pending rounded">
+                                Low Stock ({stockVal})
+                              </span>
+                            )}
+                            {(isPriceDirty || isStockDirty) && (
+                              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-accent/20 text-accent rounded font-mono">
+                                Edited
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Rate & Pricing Controls */}
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <label className="block text-[9px] uppercase font-semibold text-muted-foreground mb-1">
+                              Selling Rate (₹)
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">
+                                ₹
+                              </span>
+                              <input
+                                type="number"
+                                value={currentPrice}
+                                onChange={(e) => setRateVal(v.id, "price", Number(e.target.value))}
+                                className="w-full pl-6 pr-2 py-1 border border-border rounded bg-background text-xs font-bold tabular-nums text-foreground focus:outline-none focus:border-accent"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[9px] uppercase font-semibold text-muted-foreground mb-1">
+                              Original MRP (₹)
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">
+                                ₹
+                              </span>
+                              <input
+                                type="number"
+                                value={currentMrp}
+                                onChange={(e) => setRateVal(v.id, "mrp", Number(e.target.value))}
+                                className="w-full pl-6 pr-2 py-1 border border-border rounded bg-background text-xs font-semibold tabular-nums text-muted-foreground focus:outline-none focus:border-accent"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Stock Counter Controls */}
+                        <div>
+                          <label className="block text-[9px] uppercase font-semibold text-muted-foreground mb-1">
+                            Stock Inventory Level
+                          </label>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setStockVal(v.id, Math.max(0, (untracked ? 0 : stockVal) - 1))}
+                              disabled={untracked}
+                              className="p-1.5 border border-border rounded-lg hover:bg-secondary disabled:opacity-40"
+                            >
+                              <Minus size={12} />
+                            </button>
+                            <input
+                              type="number"
+                              min={0}
+                              disabled={untracked}
+                              value={untracked ? "" : stockVal}
+                              onChange={(e) => setStockVal(v.id, e.target.value === "" ? 0 : Number(e.target.value))}
+                              className="flex-1 border border-border px-2 py-1 text-xs font-body tabular-nums text-center focus:outline-none focus:border-accent rounded-lg disabled:bg-muted/50 font-bold"
+                              placeholder={untracked ? "Unlimited (∞)" : "0"}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setStockVal(v.id, (untracked ? 0 : stockVal) + 1)}
+                              disabled={untracked}
+                              className="p-1.5 border border-border rounded-lg hover:bg-secondary disabled:opacity-40"
+                            >
+                              <Plus size={12} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setStockVal(v.id, untracked ? 0 : UNTRACKED)}
+                              title={untracked ? "Enable tracked stock counter" : "Set to unlimited stock (∞)"}
+                              className={`p-1.5 border rounded-lg transition-colors ${
+                                untracked ? "border-accent text-accent font-bold bg-accent/10" : "border-border hover:bg-secondary"
+                              }`}
+                            >
+                              <InfIcon size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
@@ -953,6 +1052,144 @@ export const AdminInventory = () => {
               >
                 {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                 Save All Changes ({totalDirtyCount})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Edit Multiple Images for Existing Product */}
+      {editingImageProduct && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-background border border-border rounded-2xl p-6 w-full max-w-xl shadow-2xl space-y-5 font-body my-auto max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div>
+                <h3 className="font-display font-bold text-lg flex items-center gap-2">
+                  <Images size={18} className="text-accent" /> Edit Multi-Image Gallery for {editingImageProduct.name}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Upload multiple photos for this item (Packaging, Harvest, Close-up). First photo is the Primary Cover.
+                </p>
+              </div>
+              <button onClick={() => setEditingImageProduct(null)} className="text-muted-foreground hover:text-foreground">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Current Multi-Image Gallery Grid */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-foreground">
+                Current Gallery Photos ({editingProductImages.length})
+              </label>
+
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                {editingProductImages.map((img, idx) => (
+                  <div key={idx} className="relative group border border-border rounded-xl overflow-hidden bg-muted/20 aspect-square shadow-xs">
+                    <img src={img} alt={`Product photo ${idx + 1}`} className="w-full h-full object-cover" />
+                    
+                    {/* Primary Cover Badge */}
+                    {idx === 0 ? (
+                      <span className="absolute top-1 left-1 bg-accent text-accent-foreground text-[8px] uppercase font-bold font-mono px-1.5 py-0.5 rounded shadow-xs flex items-center gap-0.5">
+                        <Star size={9} /> Primary Cover
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Set as Primary Cover by moving to index 0
+                          const updated = [img, ...editingProductImages.filter((_, i) => i !== idx)];
+                          setEditingProductImages(updated);
+                          toast.success("Set as Primary Cover photo!");
+                        }}
+                        className="absolute top-1 left-1 bg-black/70 hover:bg-accent text-white text-[8px] font-semibold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        Make Primary
+                      </button>
+                    )}
+
+                    {/* Delete Photo Button */}
+                    {editingProductImages.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = editingProductImages.filter((_, i) => i !== idx);
+                          setEditingProductImages(updated);
+                          toast.info("Photo removed from gallery.");
+                        }}
+                        className="absolute bottom-1 right-1 bg-destructive text-destructive-foreground p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        title="Delete photo"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Add New Photos File Upload */}
+            <div className="space-y-3 border-t border-border pt-4 text-xs">
+              <label className="block font-semibold text-foreground">
+                + Add More Photo Files or Preset Images
+              </label>
+
+              <label className="w-full border border-dashed border-accent/60 hover:border-accent bg-accent/5 hover:bg-accent/10 transition-colors rounded-xl p-3 cursor-pointer flex items-center justify-center gap-2 font-semibold text-accent shadow-xs">
+                {imageUploading ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" /> Uploading Photo Files...
+                  </>
+                ) : (
+                  <>
+                    <Upload size={15} /> Upload Photo Files from Computer (JPG, PNG, WEBP)
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleExistingProdImageFilesUpload}
+                />
+              </label>
+
+              {/* Presets Gallery Quick Selector */}
+              <div className="space-y-1 pt-1">
+                <span className="text-[10px] text-muted-foreground font-semibold">Or attach preset store photos:</span>
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                  {presetCatalogImages.map((img) => (
+                    <button
+                      key={img.url}
+                      type="button"
+                      onClick={() => {
+                        if (!editingProductImages.includes(img.url)) {
+                          setEditingProductImages([...editingProductImages, img.url]);
+                          toast.success(`Attached preset ${img.label} photo!`);
+                        }
+                      }}
+                      className="size-9 rounded-lg border border-border overflow-hidden shrink-0 opacity-70 hover:opacity-100 hover:border-accent transition-all cursor-pointer"
+                      title={`Add ${img.label}`}
+                    >
+                      <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setEditingImageProduct(null)}
+                className="px-4 py-2 border border-border rounded-xl hover:bg-secondary text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveProductGallery}
+                className="px-6 py-2 bg-accent text-accent-foreground font-semibold rounded-xl text-xs shadow-md"
+              >
+                Save Product Gallery
               </button>
             </div>
           </div>
@@ -1071,7 +1308,7 @@ export const AdminInventory = () => {
         </div>
       )}
 
-      {/* MODAL 3: Add New Product / Item Dialog */}
+      {/* MODAL 3: Add New Product / Item Dialog (with Multi-Image Upload) */}
       {isAddProductOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-background border border-border rounded-2xl p-6 w-full max-w-2xl shadow-2xl space-y-5 font-body my-auto max-h-[90vh] overflow-y-auto">
@@ -1081,7 +1318,7 @@ export const AdminInventory = () => {
                   <PackagePlus size={18} className="text-accent" /> Add New Item / Product to Store
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Create a new product with image upload, category, subcategory, rates, and stock.
+                  Create a new product with multiple image gallery upload, category, subcategory, rates, and stock.
                 </p>
               </div>
               <button onClick={() => setIsAddProductOpen(false)} className="text-muted-foreground hover:text-foreground">
@@ -1090,85 +1327,80 @@ export const AdminInventory = () => {
             </div>
 
             <form onSubmit={handleAddProductSubmit} className="space-y-4 text-xs">
-              {/* Product Image Picker & Direct File Upload */}
-              <div className="space-y-2 border border-border rounded-xl p-3.5 bg-muted/10 font-body text-xs">
+              {/* Product Multi-Image Picker & Direct File Upload */}
+              <div className="space-y-3 border border-border rounded-xl p-3.5 bg-muted/10 font-body text-xs">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-semibold text-foreground flex items-center gap-1.5">
-                    <ImageIcon size={15} className="text-accent" /> Product Image File Upload / Selector <span className="text-destructive">*</span>
+                    <Images size={16} className="text-accent" /> Product Image Gallery ({newProdImages.length} Attached) <span className="text-destructive">*</span>
                   </label>
-                  {newProdImage && (
-                    <button
-                      type="button"
-                      onClick={() => setNewProdImage("")}
-                      className="text-[10px] text-destructive hover:underline"
-                    >
-                      Clear Image
-                    </button>
+                  {newProdImages.length > 0 && (
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      First photo is Primary Cover
+                    </span>
                   )}
                 </div>
 
-                <div className="flex items-start gap-4">
-                  {/* Live Image Preview Thumbnail */}
-                  <div className="size-20 rounded-xl border border-border bg-background flex flex-col items-center justify-center overflow-hidden shrink-0 shadow-xs relative">
-                    {newProdImage ? (
-                      <img src={newProdImage} alt="Product preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="text-center p-2 text-muted-foreground text-[10px]">
-                        <Upload size={16} className="mx-auto mb-1 opacity-50 text-accent" />
-                        No Image
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-1 space-y-2.5 min-w-0">
-                    {/* Direct File Upload Trigger */}
-                    <div>
-                      <label className="w-full border border-dashed border-accent/50 hover:border-accent bg-accent/5 hover:bg-accent/10 transition-colors rounded-xl p-2.5 cursor-pointer flex items-center justify-center gap-2 text-xs font-semibold text-accent shadow-xs">
-                        {imageUploading ? (
-                          <>
-                            <Loader2 size={14} className="animate-spin" /> Uploading & Processing Image...
-                          </>
-                        ) : (
-                          <>
-                            <Upload size={14} /> Choose Image File from Computer / Device
-                          </>
+                {/* Multi-Image Thumbnail Gallery Grid */}
+                {newProdImages.length > 0 && (
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                    {newProdImages.map((img, idx) => (
+                      <div key={idx} className="relative group border border-border rounded-lg overflow-hidden bg-background aspect-square shadow-xs">
+                        <img src={img} alt={`Attached ${idx + 1}`} className="w-full h-full object-cover" />
+                        {idx === 0 && (
+                          <span className="absolute top-0.5 left-0.5 bg-accent text-accent-foreground text-[7px] uppercase font-bold px-1 rounded font-mono">
+                            Cover
+                          </span>
                         )}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageFileSelect}
-                        />
-                      </label>
-                    </div>
-
-                    {/* Quick Preset Selector */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5">
-                      <span className="text-[10px] text-muted-foreground font-semibold shrink-0">Presets:</span>
-                      {presetCatalogImages.map((img) => (
                         <button
-                          key={img.url}
                           type="button"
-                          onClick={() => setNewProdImage(img.url)}
-                          className={`size-7 rounded-lg border shrink-0 overflow-hidden transition-transform cursor-pointer ${
-                            newProdImage === img.url ? "border-accent ring-2 ring-accent/30 scale-105" : "border-border opacity-70 hover:opacity-100"
-                          }`}
-                          title={img.label}
+                          onClick={() => setNewProdImages(newProdImages.filter((_, i) => i !== idx))}
+                          className="absolute bottom-0.5 right-0.5 bg-destructive text-destructive-foreground p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                          <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                          <X size={10} />
                         </button>
-                      ))}
-                    </div>
-
-                    {/* Image URL Input */}
-                    <input
-                      type="text"
-                      value={newProdImage}
-                      onChange={(e) => setNewProdImage(e.target.value)}
-                      placeholder="Or paste external image URL / path (e.g. /images/catalog/almonds.jpg)"
-                      className="w-full px-3 py-1.5 border border-border rounded-lg bg-background text-[11px] font-mono focus:outline-none focus:border-accent"
-                    />
+                      </div>
+                    ))}
                   </div>
+                )}
+
+                {/* Direct Multi-File Upload Trigger */}
+                <label className="w-full border border-dashed border-accent/50 hover:border-accent bg-accent/5 hover:bg-accent/10 transition-colors rounded-xl p-3 cursor-pointer flex items-center justify-center gap-2 text-xs font-semibold text-accent shadow-xs">
+                  {imageUploading ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Uploading & Attaching Photo Files...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={14} /> Upload Multiple Image Files (JPG, PNG, WEBP)
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleNewProdImageFilesSelect}
+                  />
+                </label>
+
+                {/* Quick Preset Selector */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                  <span className="text-[10px] text-muted-foreground font-semibold shrink-0">Presets:</span>
+                  {presetCatalogImages.map((img) => (
+                    <button
+                      key={img.url}
+                      type="button"
+                      onClick={() => {
+                        if (!newProdImages.includes(img.url)) {
+                          setNewProdImages([...newProdImages, img.url]);
+                        }
+                      }}
+                      className="size-7 rounded-lg border border-border overflow-hidden shrink-0 opacity-70 hover:opacity-100 transition-transform hover:scale-105 cursor-pointer"
+                      title={`Attach ${img.label}`}
+                    >
+                      <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -1260,7 +1492,7 @@ export const AdminInventory = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-foreground mb-1">
-                    Product Description
+                    Product Overview & Health Benefits
                   </label>
                   <input
                     type="text"
