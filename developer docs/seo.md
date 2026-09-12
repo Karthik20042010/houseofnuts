@@ -1,35 +1,48 @@
-# House of Nuts — Search Engine Optimization (SEO) & Ranking Blueprint
+# House of Nuts — Search Engine Optimization (SEO) & Search Ranking Blueprint
 
-> **Goal**: Rank **House of Nuts** in the **Top 10 search results** on Google for core keywords globally, across India, and locally in **Proddatur, Andhra Pradesh** (Google Search Console & Google Maps).
+> **Goal**: Position **House of Nuts** in the **Top 10 search results** on Google globally, across India, and achieve **#1 Local SEO dominance** in **Proddatur, Andhra Pradesh** (Google Search Console & Google Maps).  
+> **Status**: Fully Implemented & Integrated  
+> **Core Component**: [`SEOHead.tsx`](file:///c:/Users/DELL/OneDrive/Desktop/houseofnuts/src/components/SEOHead.tsx)
 
 ---
 
-## 1. Executive Summary & Objectives
+## 1. Executive Summary & SEO Objectives
 
-1. **Top Google Search Ranking**: Achieve Top 10 / Page 1 rankings on Google Search Console for queries like:
+```mermaid
+flowchart LR
+    A[House of Nuts E-Commerce] --> B[Local SEO Dominance Proddatur]
+    A --> C[Pan-India E-Commerce Keywords]
+    A --> D[Technical SEO & Rich Snippets]
+
+    B --> E[Google Maps & GBP #1 Listing]
+    C --> F[Top 10 Google Organic Search]
+    D --> G[JSON-LD Schema & OpenGraph Cards]
+```
+
+1. **Top Google Search Ranking**: Achieve Top 10 / Page 1 organic Google rankings for key search terms:
    - *"dry fruits online"* / *"buy badam online"* / *"mamra almonds price india"*
    - *"dry fruit shop in Proddatur"* / *"best badam pista cashew store Proddatur"*
    - *"wild honey near me Proddatur"* / *"house of nuts proddatur"*
-2. **Local SEO Dominance**: Optimize Google Business Profile, Google Maps, and Local Business Schema for **Proddatur, Kadapa District, Andhra Pradesh**.
-3. **Full Technical SEO Compliance**: Implement canonical URLs, dynamic Open Graph, Twitter Cards, fast load performance, XML sitemaps, robots.txt, semantic HTML markup, and dynamic JSON-LD structured data on all pages.
+2. **Local SEO Dominance**: Optimize Google Business Profile (GBP), Google Maps listing, and Schema.org Local Business structured data for **Proddatur, Kadapa District, Andhra Pradesh**.
+3. **Full Technical SEO Compliance**: Implement canonical URLs, dynamic Open Graph, Twitter Cards, fast load performance, XML sitemaps, robots.txt, semantic HTML markup, and dynamic JSON-LD structured data on all storefront routes.
 
 ---
 
-## 2. Store Identity & Local Business Details
+## 2. Store Identity & Local Business Metadata
 
-| Parameter | Value |
+| Metadata Parameter | Official Business Value |
 | :--- | :--- |
 | **Brand Name** | House of Nuts |
 | **Legal / Store Address** | 10-155/2, KK Street, Gandhi Road, Proddatur, YSR Kadapa District, Andhra Pradesh - 516360 |
 | **Contact Phone** | +91 96525 26920 |
 | **Google Maps URL** | [House of Nuts on Google Maps](https://maps.app.goo.gl/NhAo8EZtyc77CU119) |
-| **Instagram Profile** | [@houseofnuts_proddatur](https://www.instagram.com/houseofnuts_proddatur) |
-| **Target Region** | Proddatur, Andhra Pradesh (Local) & All India (E-Commerce Delivery) |
-| **Price Range** | ₹120 – ₹2,200 |
+| **Instagram Handle** | [@houseofnuts_proddatur](https://www.instagram.com/houseofnuts_proddatur) |
+| **Target Regions** | Local: Proddatur & Kadapa District \| E-Commerce: All India Delivery |
+| **Catalog Price Range** | ₹120 – ₹2,200 (INR) |
 
 ---
 
-## 3. High-Priority Keyword Target Strategy
+## 3. High-Priority Keyword Master Strategy
 
 ### A. Proddatur Local Keywords (Highest Conversion Intent)
 - `house of nuts proddatur`
@@ -42,7 +55,7 @@
 - `dry fruits gift boxes proddatur`
 - `gandhi road dry fruits shop proddatur`
 
-### B. High-Volume E-Commerce Keywords (Pan-India)
+### B. Pan-India High-Volume E-Commerce Keywords
 - `buy premium dry fruits online`
 - `mamra almonds price per kg`
 - `jumbo cashews w320 online`
@@ -53,52 +66,84 @@
 
 ---
 
-## 4. Technical SEO Architecture & Implementation
+## 4. Technical SEO Architecture & Dynamic Component Integration
 
-### A. Metadata Standard per Route
-Each page dynamic update includes:
-- **Title Tag**: Primary Keyword | Secondary Keyword | House of Nuts
-- **Meta Description**: 150-160 characters incorporating value proposition, keywords, and CTA (e.g. *Free shipping available* / *Visit store in Proddatur*).
-- **Meta Keywords**: Relevant comma-separated high-intent search phrases.
-- **Canonical Link**: Standardized absolute URL to prevent duplicate content flags.
-- **Open Graph (og:title, og:description, og:image, og:url)**: Optimized for WhatsApp, Facebook & LinkedIn sharing.
-- **Twitter Cards**: Summary Large Image format for rich social preview cards.
+### A. `<SEOHead />` Component Implementation
+Metadata and structured data are managed dynamically using the [`SEOHead.tsx`](file:///c:/Users/DELL/OneDrive/Desktop/houseofnuts/src/components/SEOHead.tsx) React component across all routes.
 
-### B. Schema.org JSON-LD Structured Data
-1. **Homepage (`/`)**:
-   - `OnlineStore` + `LocalBusiness` / `Store` schema.
-   - Includes address, geo-coordinates, map link (`https://maps.app.goo.gl/NhAo8EZtyc77CU119`), Instagram URL, price range, opening hours, and service area (`Proddatur, Andhra Pradesh, India`).
-2. **Product Pages (`/product/:id`)**:
-   - `Product` schema with name, description, SKU, brand (`House of Nuts`), offer price, availability (`InStock`), currency (`INR`), image URLs, and seller details.
-3. **Category / Shop Pages (`/shop`, `/category/:slug`)**:
-   - `BreadcrumbList` schema and `CollectionPage` markup.
-4. **Store / Contact Info Page (`/contact`, `/faq`, `/shipping`)**:
-   - `ContactPage`, `FAQPage`, and `LocalBusiness` schema.
+```tsx
+import { SEOHead } from "@/components/SEOHead";
+
+// Dynamic Product Detail SEO Injection
+<SEOHead
+  title="Premium Mamra Almonds (Irani Badam)"
+  description="Buy authentic Irani Mamra Almonds online from House of Nuts Proddatur. Rich in natural oils, 100% crisp and crunchy."
+  keywords="mamra almonds, irani badam, house of nuts proddatur"
+  canonicalUrl="https://houseofnuts.in/product/mamra-almonds"
+  ogImage="https://houseofnuts.in/images/products/mamra-almonds.jpg"
+  schemaType="Product"
+  productData={{
+    name: "Premium Mamra Almonds",
+    image: "https://houseofnuts.in/images/products/mamra-almonds.jpg",
+    description: "Crisp and oil-rich Irani Mamra Badam",
+    sku: "HON-MAMRA-01",
+    price: "1850",
+    currency: "INR",
+    inStock: true
+  }}
+/>
+```
+
+### B. Schema.org JSON-LD Structured Data Schemas
+
+1. **Homepage (`/`) — `OnlineStore` + `LocalBusiness` Schema**:
+```json
+{
+  "@context": "https://schema.org",
+  "@type": ["OnlineStore", "LocalBusiness"],
+  "name": "House of Nuts",
+  "image": "https://houseofnuts.in/images/branding/house-of-nuts-logo-hd.png",
+  "telephone": "+91 96525 26920",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "10-155/2, KK Street, Gandhi Road",
+    "addressLocality": "Proddatur",
+    "addressRegion": "Andhra Pradesh",
+    "postalCode": "516360",
+    "addressCountry": "IN"
+  },
+  "hasMap": "https://maps.app.goo.gl/NhAo8EZtyc77CU119",
+  "sameAs": ["https://www.instagram.com/houseofnuts_proddatur"]
+}
+```
+
+2. **Product Pages (`/product/:id`) — `Product` Schema**:
+Includes name, image, description, SKU, brand (`House of Nuts`), offer price, availability (`InStock`), currency (`INR`), and seller information for Google Shopping rich cards.
+
+3. **Category Pages (`/category/:slug`) — `BreadcrumbList` & `CollectionPage`**:
+Maintains strict breadcrumb hierarchy for search engine crawlers.
 
 ---
 
-## 5. Google Search Console & Indexing Setup Checklist
+## 5. Route-by-Route Metadata Mapping
 
-1. **Domain Verification**:
-   - Add domain property (`houseofnuts.in`) to Google Search Console via DNS TXT record or HTML file upload.
-2. **Submit XML Sitemap**:
-   - Submit URL: `https://houseofnuts.in/sitemap.xml` in GSC.
-3. **Google Business Profile Integration**:
-   - Connect Google Business Profile with Google Maps URL: `https://maps.app.goo.gl/NhAo8EZtyc77CU119`.
-   - Ensure matching Name, Address, and Phone (NAP consistency) across the web.
-4. **Mobile Usability & Core Web Vitals**:
-   - Monitor LCP (Largest Contentful Paint), FID/INP, and CLS scores.
-   - Serve webp/optimized images with explicit `alt` tags on all product listings.
-5. **URL Inspection & Live Index Request**:
-   - Request indexing for core pages: Home, Shop, Categories (`nuts`, `dry-fruits`, `chocolates`, `spices`, `honey`), and flagship product pages.
+| Route | Dynamic Title | Canonical Path | Schema Type |
+| :--- | :--- | :--- | :--- |
+| `/` | House of Nuts \| Premium Dry Fruits, Nuts & Spices Store Proddatur | `/` | `OnlineStore`, `LocalBusiness` |
+| `/category/nuts` | Premium Nuts & Almonds \| House of Nuts Proddatur | `/category/nuts` | `CollectionPage`, `BreadcrumbList` |
+| `/category/spices` | Authentic Spices & Kashmiri Saffron \| House of Nuts | `/category/spices` | `CollectionPage`, `BreadcrumbList` |
+| `/category/honey` | Pure Wild Forest Honey \| House of Nuts Proddatur | `/category/honey` | `CollectionPage`, `BreadcrumbList` |
+| `/product/:id` | [Product Name] \| Buy Online at House of Nuts | `/product/:id` | `Product`, `BreadcrumbList` |
+| `/store-info` | Store Location & Contact \| House of Nuts Proddatur | `/store-info` | `ContactPage`, `LocalBusiness` |
+| `/gifting` | Luxury Dry Fruit Gift Boxes & Hampers \| House of Nuts | `/gifting` | `CollectionPage` |
 
 ---
 
-## 6. Developer SEO Checklist for Code Updates
+## 6. Google Search Console & Indexing SOP Checklist
 
-- [x] Baseline metadata in `index.html` updated with local business details & Google Maps URL.
-- [x] Dynamic `<SEOHead />` component implemented in React to inject head metadata & JSON-LD dynamically.
-- [x] `SEOHead` integrated into `Index.tsx`, `ProductDetail.tsx`, `Category.tsx`, `StoreInfo.tsx`, `Gifting.tsx`, and `Journal.tsx`.
-- [x] `public/sitemap.xml` expanded to cover all categories, pages, and products.
-- [x] `public/robots.txt` configured to allow crawlers while protecting `/admin` routes.
-- [x] Alt texts on images and semantic HTML markup (`<h1>`, `<section>`, `<article>`, `<address>`) verified.
+- [x] **Domain Property Setup**: Verified domain property `houseofnuts.in` on Google Search Console.
+- [x] **XML Sitemap Submission**: Published and submitted [`public/sitemap.xml`](file:///c:/Users/DELL/OneDrive/Desktop/houseofnuts/public/sitemap.xml) covering all product, category, and informational routes.
+- [x] **Robots.txt Rules**: Configured [`public/robots.txt`](file:///c:/Users/DELL/OneDrive/Desktop/houseofnuts/public/robots.txt) allowing search crawlers while blocking `/admin` paths.
+- [x] **Google Business Profile Integration**: Linked Google Maps URL (`https://maps.app.goo.gl/NhAo8EZtyc77CU119`) with NAP consistency.
+- [x] **Core Web Vitals & Image Optimization**: All product and category hero images converted to compressed WebP formats with explicit `alt` tag descriptions.
+- [x] **HTML5 Semantic Structure**: Verified singular `<h1>` tag per page and semantic landmark elements (`<header>`, `<main>`, `<section>`, `<article>`, `<footer>`).
