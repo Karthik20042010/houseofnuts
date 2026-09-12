@@ -7,40 +7,9 @@ const GOOGLE_USER_KEY = "hon-google-user";
 
 export function deriveRoleFromEmail(email: string): UserRole {
   const lower = email.toLowerCase().trim();
-
-  // Developer role check
-  if (
-    lower.startsWith("developer@") ||
-    lower === "developer" ||
-    lower.includes("developer") ||
-    lower.includes("@dev.") ||
-    lower.startsWith("dev_") ||
-    lower.includes("j04")
-  ) {
-    return "developer";
-  }
-
-  // Admin role check
-  if (
-    lower.startsWith("admin@") ||
-    lower === "admin" ||
-    lower.includes("admin") ||
-    lower.includes("houseofnutsproddatur") ||
-    lower.includes("houseofnuts.proddatur") ||
-    lower.includes("houseofnuts")
-  ) {
-    return "admin";
-  }
-
-  // Staff role check
-  if (
-    lower.startsWith("staff@") ||
-    lower === "staff" ||
-    lower.includes("staff")
-  ) {
-    return "staff";
-  }
-
+  if (lower.startsWith("admin@") || lower === "admin") return "admin";
+  if (lower.startsWith("developer@") || lower === "developer") return "developer";
+  if (lower.startsWith("staff@") || lower === "staff") return "staff";
   return "user";
 }
 
@@ -118,8 +87,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res;
   };
 
-  const loginWithGoogle = async (email: string, name: string, picture?: string, idToken?: string): Promise<GoogleUser> => {
-    const userRole = deriveRoleFromEmail(email);
+  const loginWithGoogle = async (email: string, name: string, picture?: string, idToken?: string): Promise<GoogleUser & { role?: UserRole }> => {
+    const initialRole = deriveRoleFromEmail(email);
 
     const user: GoogleUser = {
       email,
@@ -130,11 +99,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(GOOGLE_USER_KEY, JSON.stringify(user));
     setGoogleUser(user);
 
-    setSessionRole(userRole);
-    setRole(userRole);
+    setSessionRole(initialRole);
+    setRole(initialRole);
     setIsLoggedIn(true);
 
-    // Sync & verify with Google Sheets Apps Script Users Tab (Zero-cost database backend)
+    let activeRole: UserRole = initialRole;
+
+    // Sync & verify with Google Sheets Apps Script Users Tab (Authoritative database role)
     try {
       const res = await apiPost<{ ok: boolean; role?: UserRole; email?: string; name?: string }>("registerGoogleUser", {
         userId: user.googleId,
@@ -143,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         idToken: idToken || "",
       });
       if (res && res.ok && res.role) {
+        activeRole = res.role;
         setSessionRole(res.role);
         setRole(res.role);
       }
@@ -150,7 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Ignore background sync errors
     }
 
-    return user;
+    return { ...user, role: activeRole };
   };
 
   const loginWithGoogleCredential = async (idToken: string): Promise<GoogleUser | null> => {

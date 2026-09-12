@@ -93,11 +93,11 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
     return () => clearInterval(timer);
   }, [otpStep, resendTimer]);
 
-  const performNavigation = (email: string) => {
-    const userRole = deriveRoleFromEmail(email);
-    if (userRole === "developer") {
+  const performNavigation = (targetRole?: string) => {
+    const activeRole = targetRole || role;
+    if (activeRole === "developer") {
       navigate("/admin/developer", { replace: true });
-    } else if (userRole === "admin" || userRole === "staff") {
+    } else if (activeRole === "admin" || activeRole === "staff") {
       navigate("/admin", { replace: true });
     } else {
       navigate("/account", { replace: true });
@@ -147,7 +147,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
                 toast.success(`Welcome back, ${user.name}!`);
                 onSuccess?.();
                 onClose();
-                performNavigation(user.email);
+                performNavigation(user.role);
               } else {
                 toast.error("Google authentication failed. Please try again.");
               }
@@ -231,11 +231,11 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
     try {
       const cleanNumber = phoneNumber.replace(/\D/g, "");
       const userEmail = `member_${cleanNumber.slice(-4)}@houseofnuts.com`;
-      await loginWithGoogle(userEmail, `Customer (+91 ${cleanNumber})`);
+      const resUser = await loginWithGoogle(userEmail, `Customer (+91 ${cleanNumber})`);
       toast.success("Mobile number verified successfully!");
       onSuccess?.();
       onClose();
-      performNavigation(userEmail);
+      performNavigation(resUser.role);
     } catch {
       toast.error("OTP verification failed.");
     } finally {

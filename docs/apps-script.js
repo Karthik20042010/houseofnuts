@@ -291,32 +291,26 @@ function registerGoogleUser(body) {
     }
   }
 
-  // Server-Derived Role Assignment — Automatically grant admin/developer role to store owner emails
-  var deriveServerRole = function (emailStr) {
-    var lower = String(emailStr || "").toLowerCase().trim();
-    var cfg = getConfig();
-    if (cfg.ownerEmail && lower === String(cfg.ownerEmail).toLowerCase().trim()) return "admin";
-    if (lower.indexOf("developer") !== -1 || lower.indexOf("j04") !== -1) return "developer";
-    if (lower.indexOf("admin") !== -1 || lower.indexOf("houseofnutsproddatur") !== -1 || lower.indexOf("houseofnuts.proddatur") !== -1 || lower.indexOf("houseofnuts") !== -1) return "admin";
-    if (lower.indexOf("staff") !== -1) return "staff";
-    return "user";
-  };
-
-  var derivedRole = deriveServerRole(verifiedEmail);
+  var cfg = getConfig();
+  var isOwner = cfg.ownerEmail && verifiedEmail.toLowerCase() === String(cfg.ownerEmail).toLowerCase().trim();
 
   if (existingRow > 0) {
     if (verifiedName) sh.getRange(existingRow, 3).setValue(verifiedName);
-    var currentStoredRole = String(values[existingRow - 1][4] || "user");
-    // Auto-promote store owner / admin emails in database sheet tab
-    var finalRole = (derivedRole === "admin" || derivedRole === "developer") ? derivedRole : currentStoredRole;
-    if (finalRole !== currentStoredRole) {
-      sh.getRange(existingRow, 5).setValue(finalRole);
+    var storedRole = String(values[existingRow - 1][4] || "").trim().toLowerCase();
+    var validRoles = ["admin", "developer", "staff", "user"];
+    var finalRole = (storedRole && validRoles.indexOf(storedRole) !== -1) ? storedRole : (isOwner ? "admin" : "user");
+
+    // Ensure owner email is always assigned admin role if sheet role was blank
+    if (!storedRole && isOwner) {
+      sh.getRange(existingRow, 5).setValue("admin");
     }
+
     return { ok: true, userId: values[existingRow - 1][0], email: verifiedEmail, name: verifiedName, role: finalRole, updated: true };
   } else {
     var uId = body.userId || ("usr_" + Math.random().toString(36).substring(2, 9));
-    sh.appendRow([uId, verifiedEmail, verifiedName, body.phone || "", derivedRole, "google_oauth_verified", new Date().toISOString()]);
-    return { ok: true, userId: uId, email: verifiedEmail, name: verifiedName, role: derivedRole, created: true };
+    var initialRole = isOwner ? "admin" : "user";
+    sh.appendRow([uId, verifiedEmail, verifiedName, body.phone || "", initialRole, "google_oauth_verified", new Date().toISOString()]);
+    return { ok: true, userId: uId, email: verifiedEmail, name: verifiedName, role: initialRole, created: true };
   }
 }
 

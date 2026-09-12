@@ -46,11 +46,7 @@ const AdminLogin = () => {
   if (isLoggedIn || isAdminLoggedIn() || googleUser) {
     if (role === "developer") {
       navigate("/admin/developer", { replace: true });
-    } else if (
-      role === "admin" ||
-      role === "staff" ||
-      googleUser?.email?.toLowerCase().includes("admin")
-    ) {
+    } else if (role === "admin" || role === "staff") {
       navigate("/admin", { replace: true });
     } else {
       navigate("/account", { replace: true });
@@ -58,11 +54,11 @@ const AdminLogin = () => {
     return null;
   }
 
-  const performRedirect = (email: string) => {
-    const userRole = deriveRoleFromEmail(email);
-    if (userRole === "developer") {
+  const performRedirect = (targetRole?: string) => {
+    const activeRole = targetRole || role;
+    if (activeRole === "developer") {
       navigate("/admin/developer", { replace: true });
-    } else if (userRole === "admin" || userRole === "staff") {
+    } else if (activeRole === "admin" || activeRole === "staff") {
       navigate("/admin", { replace: true });
     } else {
       navigate("/account", { replace: true });
@@ -94,9 +90,9 @@ const AdminLogin = () => {
       }
 
       const derivedName = nameInput.trim() || emailInput.split("@")[0].replace(/[._]/g, " ");
-      await loginWithGoogle(emailInput, derivedName);
+      const resUser = await loginWithGoogle(emailInput, derivedName);
       toast.success(`Welcome to House of Nuts, ${derivedName}!`);
-      performRedirect(emailInput);
+      performRedirect(resUser.role);
     } catch {
       toast.error("Sign in failed. Please check your credentials.");
     } finally {
