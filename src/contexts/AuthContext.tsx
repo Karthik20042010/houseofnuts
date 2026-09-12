@@ -5,6 +5,24 @@ import { apiPost } from "@/lib/api";
 
 const GOOGLE_USER_KEY = "hon-google-user";
 
+export function deriveRoleFromEmail(email: string): UserRole {
+  const lower = email.toLowerCase().trim();
+  if (lower.startsWith("admin@") || lower === "admin" || lower.includes("admin.houseofnuts")) {
+    return "admin";
+  }
+  if (lower.startsWith("developer@") || lower === "developer" || lower.includes("developer.houseofnuts")) {
+    return "developer";
+  }
+  if (lower.startsWith("staff@") || lower === "staff" || lower.includes("staff.houseofnuts")) {
+    return "staff";
+  }
+  // Standard strict match fallback
+  if (lower.includes("@admin.") || lower.startsWith("admin_")) return "admin";
+  if (lower.includes("@staff.") || lower.startsWith("staff_")) return "staff";
+  if (lower.includes("@dev.") || lower.startsWith("dev_")) return "developer";
+  return "user";
+}
+
 interface AuthContextType {
   role: UserRole;
   permissions: Permission;
@@ -23,8 +41,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [role, setRole] = useState<UserRole>(() => getActiveRole());
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => isAdminLoggedIn());
   const [googleUser, setGoogleUser] = useState<GoogleUser | null>(() => {
     const raw = localStorage.getItem(GOOGLE_USER_KEY);
     if (!raw) return null;
@@ -35,10 +51,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   });
 
+  const [role, setRole] = useState<UserRole>(() => {
+    const active = getActiveRole();
+    if (active && active !== "user") return active;
+    const raw = localStorage.getItem(GOOGLE_USER_KEY);
+    if (raw) {
+      try {
+        const u = JSON.parse(raw) as GoogleUser;
+        return deriveRoleFromEmail(u.email);
+      } catch {
+        // fallback
+      }
+    }
+    return "user";
+  });
+
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    return isAdminLoggedIn() || !!localStorage.getItem(GOOGLE_USER_KEY);
+  });
+
   useEffect(() => {
     const handleAuthChange = (e: Event) => {
       const customEvent = e as CustomEvent<{ role?: UserRole }>;
-      setIsLoggedIn(isAdminLoggedIn());
+      const hasGoogle = !!localStorage.getItem(GOOGLE_USER_KEY);
+      setIsLoggedIn(isAdminLoggedIn() || hasGoogle);
       if (customEvent.detail?.role) {
         setRole(customEvent.detail.role);
       } else {
@@ -60,18 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithGoogle = async (email: string, name: string, picture?: string): Promise<GoogleUser> => {
-    const lowerEmail = email.toLowerCase().trim();
-    let userRole: UserRole = "user";
-    if (
-      lowerEmail.startsWith("admin") ||
-      lowerEmail.includes("admin")
-    ) {
-      userRole = "admin";
-    } else if (lowerEmail.includes("developer")) {
-      userRole = "developer";
-    } else if (lowerEmail.includes("staff")) {
-      userRole = "staff";
-    }
+    const userRole = deriveRoleFromEmail(email);
 
     const user: GoogleUser = {
       email,

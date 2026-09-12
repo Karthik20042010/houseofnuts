@@ -52,6 +52,12 @@ export const AccountProfile: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<"profile" | "addresses">("profile");
 
+  // User-scoped storage keys
+  const userEmail = googleUser?.email || "customer@houseofnuts.com";
+  const userKeySanitized = userEmail.toLowerCase().replace(/[^a-z0-9]/g, "_");
+  const userAddressKey = `${LOCAL_ADDRESSES_KEY}_${userKeySanitized}`;
+  const userProfileKey = `${LOCAL_PROFILE_KEY}_${userKeySanitized}`;
+
   // Redirect to /login immediately if not authenticated or upon logout
   useEffect(() => {
     if (!isLoggedIn && !isGoogleAuthenticated) {
@@ -61,7 +67,7 @@ export const AccountProfile: React.FC = () => {
 
   // Profile Edit State
   const [profileData, setProfileData] = useState<UserProfileData>(() => {
-    const raw = localStorage.getItem(LOCAL_PROFILE_KEY);
+    const raw = localStorage.getItem(userProfileKey) || localStorage.getItem(LOCAL_PROFILE_KEY);
     if (raw) {
       try {
         return JSON.parse(raw);
@@ -82,7 +88,7 @@ export const AccountProfile: React.FC = () => {
 
   // Address Management State
   const [addresses, setAddresses] = useState<Address[]>(() => {
-    const raw = localStorage.getItem(LOCAL_ADDRESSES_KEY);
+    const raw = localStorage.getItem(userAddressKey) || localStorage.getItem(LOCAL_ADDRESSES_KEY);
     if (raw) {
       try {
         return JSON.parse(raw);
@@ -105,6 +111,29 @@ export const AccountProfile: React.FC = () => {
     ];
   });
 
+  // Re-sync profile and address when user session changes
+  useEffect(() => {
+    const rawProfile = localStorage.getItem(userProfileKey);
+    if (rawProfile) {
+      try {
+        setProfileData(JSON.parse(rawProfile));
+      } catch {}
+    } else if (googleUser) {
+      setProfileData((prev) => ({
+        ...prev,
+        name: googleUser.name,
+        email: googleUser.email,
+      }));
+    }
+
+    const rawAddr = localStorage.getItem(userAddressKey);
+    if (rawAddr) {
+      try {
+        setAddresses(JSON.parse(rawAddr));
+      } catch {}
+    }
+  }, [userProfileKey, userAddressKey, googleUser]);
+
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [addrName, setAddrName] = useState("");
@@ -125,7 +154,7 @@ export const AccountProfile: React.FC = () => {
       phone: editPhone.trim(),
     };
     setProfileData(updated);
-    localStorage.setItem(LOCAL_PROFILE_KEY, JSON.stringify(updated));
+    localStorage.setItem(userProfileKey, JSON.stringify(updated));
     setIsEditingProfile(false);
     toast.success("Profile information updated successfully!");
   };
@@ -206,7 +235,7 @@ export const AccountProfile: React.FC = () => {
     }
 
     setAddresses(updatedAddresses);
-    localStorage.setItem(LOCAL_ADDRESSES_KEY, JSON.stringify(updatedAddresses));
+    localStorage.setItem(userAddressKey, JSON.stringify(updatedAddresses));
     setIsAddressModalOpen(false);
   };
 
@@ -217,7 +246,7 @@ export const AccountProfile: React.FC = () => {
       updated[0].isDefault = true;
     }
     setAddresses(updated);
-    localStorage.setItem(LOCAL_ADDRESSES_KEY, JSON.stringify(updated));
+    localStorage.setItem(userAddressKey, JSON.stringify(updated));
     toast.success("Delivery address deleted.");
   };
 
@@ -225,7 +254,7 @@ export const AccountProfile: React.FC = () => {
   const handleSetDefaultAddress = (id: string) => {
     const updated = addresses.map((a) => ({ ...a, isDefault: a.id === id }));
     setAddresses(updated);
-    localStorage.setItem(LOCAL_ADDRESSES_KEY, JSON.stringify(updated));
+    localStorage.setItem(userAddressKey, JSON.stringify(updated));
     toast.success("Set as default delivery address!");
   };
 
