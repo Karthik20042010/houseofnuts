@@ -499,7 +499,7 @@ export const products: Product[] = [
     localName: "Kesar",
     category: "spices",
     description: "Deep-red Mongra threads, high crocin, hand-picked",
-    image: "https://images.unsplash.com/photo-1599474924187-334a4ae5bd3c?w=800&h=800&fit=crop",
+    image: "/images/spices/spices-hero.png",
     badge: "Rare",
     variants: [
       { id: "saffron-1g", size: "1g", price: 499, mrp: 649 },
@@ -528,7 +528,7 @@ export const products: Product[] = [
     localName: "Shahad",
     category: "honey",
     description: "Raw, unheated multi-floral honey from forest hives",
-    image: "https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=800&h=800&fit=crop",
+    image: "/images/honey/wild-honey-hero.png",
     badge: "Organic",
     variants: [
       { id: "honey-250", size: "250ml", price: 349, mrp: 450 },

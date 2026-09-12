@@ -31,7 +31,7 @@ const Gifting = () => (
             <a href="#bulk-enquiry" className="border border-primary-foreground/30 px-6 py-3 text-xs font-medium uppercase tracking-[0.15em] text-primary-foreground font-body">Bulk enquiry</a>
           </div>
         </div>
-        <img src="/images/reference-site/gifting/gifting.jpg" alt="A premium dry fruit gifting assortment" className="h-full min-h-[360px] w-full object-cover" />
+        <img src="/images/gifting/gift-hamper-luxury.jpg" alt="A premium dry fruit gifting assortment" className="h-full min-h-[360px] w-full object-cover" />
       </section>
 
       <section className="px-6 py-16 md:px-12 md:py-20">

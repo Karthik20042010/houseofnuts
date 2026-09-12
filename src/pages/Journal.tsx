@@ -3,12 +3,12 @@ import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 
 const articles = [
-  ["Almond benefits & everyday ways to enjoy them", "Nutritious snacking", "/images/reference-site/journal/badam-almond-benefits.jpg"],
-  ["How to store dry fruits and nuts for longer freshness", "Storage guide", "/images/reference-site/journal/how-to-store-dry-fruits-fresh.jpg"],
-  ["A practical guide to choosing dry fruits online", "Buying guide", "/images/reference-site/journal/best-dry-fruits-to-buy-online-india.jpg"],
-  ["High-protein dry fruits for your daily snack bowl", "Nutrition", "/images/reference-site/journal/high-protein-dry-fruits.jpg"],
-  ["Kaju katli: a simple festive recipe", "Recipe", "/images/reference-site/journal/kaju-katli-recipe.jpg"],
-  ["Gurbandi, Mamra or California almonds?", "Buying guide", "/images/reference-site/journal/types-of-almonds-gurbandi-mamra-california.jpg"],
+  ["Almond benefits & everyday ways to enjoy them", "Nutritious snacking", "/images/nuts/almonds.jpg"],
+  ["How to store dry fruits and nuts for longer freshness", "Storage guide", "/images/dry-fruits/anjeer.jpg"],
+  ["A practical guide to choosing dry fruits online", "Buying guide", "/images/dry-fruits/dates.jpg"],
+  ["High-protein dry fruits for your daily snack bowl", "Nutrition", "/images/nuts/walnuts.jpg"],
+  ["Kaju katli: a simple festive recipe", "Recipe", "/images/nuts/cashew-whole.jpeg"],
+  ["Gurbandi, Mamra or California almonds?", "Buying guide", "/images/nuts/mamra-almonds.jpg"],
 ] as const;
 
 const Journal = () => (

@@ -10,6 +10,8 @@ import PromoBanner from "@/components/PromoBanner";
 import { categories, products, Product } from "@/data/products";
 import { useInventory } from "@/contexts/InventoryContext";
 import { isOutOfStock } from "@/lib/inventory";
+import { useAuth } from "@/contexts/AuthContext";
+import { isCategoryVisibleToUser } from "@/lib/accessControl";
 
 import CategoryStrip from "@/components/CategoryStrip";
 
@@ -37,6 +39,7 @@ const minPriceOf = (p: Product) => Math.min(...p.variants.map((v) => v.price));
 const Category = () => {
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
+  const auth = useAuth();
   const effectiveSlug = location.pathname === "/shop" ? "all" : slug;
   const cat = categories.find((c) => c.id === effectiveSlug);
   const { stock } = useInventory();
@@ -56,7 +59,8 @@ const Category = () => {
 
   const filtered = useMemo(() => {
     if (!cat) return [];
-    let base = cat.id === "all" ? [...products] : products.filter((p) => p.category === cat.id);
+    const visibleProducts = products.filter((p) => isCategoryVisibleToUser(p.category, auth));
+    let base = cat.id === "all" ? [...visibleProducts] : visibleProducts.filter((p) => p.category === cat.id);
 
     if (bands.length) {
       const active = priceBands.filter((b) => bands.includes(b.id));
@@ -77,7 +81,7 @@ const Category = () => {
       case "name-desc": return base.sort((a, b) => b.name.localeCompare(a.name));
       default: return base;
     }
-  }, [cat, sortBy, bands, inStockOnly, stock]);
+  }, [cat, sortBy, bands, inStockOnly, stock, auth]);
 
   if (!cat) return <Navigate to="/" replace />;
 
@@ -174,22 +178,7 @@ const Category = () => {
         </p>
       </section>
 
-      {/* Category chips */}
-      <div className="px-6 md:px-12 max-w-[1600px] mx-auto w-full mb-8 flex gap-3 overflow-x-auto md:flex-wrap pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {categories.map((c) => (
-          <Link
-            key={c.id}
-            to={c.id === "all" ? "/shop" : `/category/${c.id}`}
-            className={`text-[11px] uppercase tracking-[0.15em] px-4 min-h-[40px] flex items-center whitespace-nowrap border transition-colors duration-200 font-body font-medium ${
-              c.id === cat.id
-                ? "bg-primary text-primary-foreground border-primary"
-                : "border-border hover:border-foreground/30"
-            }`}
-          >
-            {c.label}
-          </Link>
-        ))}
-      </div>
+
 
       <section className="bg-clay-light/50 px-6 md:px-12 py-10 md:py-14 border-t border-border">
         <div className="max-w-[1600px] mx-auto">

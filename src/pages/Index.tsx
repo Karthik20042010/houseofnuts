@@ -9,6 +9,10 @@ import RecentlyViewed from "@/components/RecentlyViewed";
 import WholesaleForm from "@/components/WholesaleForm";
 import { products, categories } from "@/data/products";
 import { ChevronLeft, ChevronRight, ArrowRight, Phone, MessageCircle, Instagram } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { isCategoryComingSoon, isCategoryVisibleToUser, isPrivilegedUser } from "@/lib/accessControl";
+import { Clock, ShieldCheck } from "lucide-react";
+
 const heroImage = "/images/branding/cinematic-store-banner.jpg";
 const festiveImage = "https://images.unsplash.com/photo-1548907040-4baa42d10919?w=1440&h=800&fit=crop";
 const grandOpeningImage = "/images/branding/grand-opening-banner.jpg";
@@ -18,7 +22,8 @@ const categoryImages: Record<string, string> = {
   chocolates: "/images/chocolates/lindt-lindor-red-main.jpeg",
   mixes: "/images/mixes/berry-mix.jpg",
   gifting: "/images/gifting/gift-box-classic.jpg",
-  spices: "/images/products/product-gallery-04.jpg",
+  spices: "/images/spices/spices-hero.png",
+  honey: "/images/honey/wild-honey-hero.png",
   seeds: "/images/seeds/pumpkin-seeds.jpg",
   "solar-dried": "/images/dry-fruits/dried-kiwi.jpg",
 };
@@ -42,6 +47,7 @@ const sortOptions: { value: SortOption; label: string }[] = [
 ];
 
 const Index = () => {
+  const auth = useAuth();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<SortOption>("default");
@@ -49,11 +55,15 @@ const Index = () => {
   const { viewedIds } = useRecentlyViewed();
   const gridReady = useGridReady(`${activeCategory}-${currentPage}-${sortBy}`);
 
+  const isPrivileged = isPrivilegedUser(auth);
+  const isHoneyComingSoon = isCategoryComingSoon("honey", auth);
+
   const filtered = useMemo(() => {
+    const visibleProducts = products.filter((p) => isCategoryVisibleToUser(p.category, auth));
     const base =
       activeCategory === "all"
-        ? [...products]
-        : products.filter((p) => p.category === activeCategory);
+        ? [...visibleProducts]
+        : visibleProducts.filter((p) => p.category === activeCategory);
 
     const getMinPrice = (p: typeof products[0]) =>
       Math.min(...p.variants.map((v) => v.price));
@@ -70,7 +80,7 @@ const Index = () => {
       default:
         return base;
     }
-  }, [activeCategory, sortBy]);
+  }, [activeCategory, sortBy, auth]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice(
@@ -107,7 +117,7 @@ const Index = () => {
               width={1440}
               height={900}
               loading="eager"
-              fetchPriority="high"
+              fetchpriority="high"
               decoding="async"
               sizes="(max-width: 1024px) 100vw, 66vw"
             />
@@ -176,18 +186,31 @@ const Index = () => {
 
             <Link
               to="/category/honey"
-              className="relative overflow-hidden rounded-3xl bg-primary text-gold p-7 flex flex-col justify-between min-h-[220px] shadow-soft group"
+              className="relative overflow-hidden rounded-3xl text-gold p-7 flex flex-col justify-between min-h-[220px] shadow-soft group"
             >
-              <div>
-                <span className="text-[10px] uppercase tracking-[0.2em] font-body border border-gold/30 px-2 py-1 rounded-full">
-                  Small batch
-                </span>
-                <h2 className="font-display text-3xl mt-5 leading-tight">
+              <img
+                src="/images/honey/wild-honey-hero.png"
+                alt="Wild Forest Honey and Artisanal Spices"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-earth/95 via-earth/70 to-earth/30" />
+              <div className="relative z-10">
+                {isHoneyComingSoon ? (
+                  <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-body bg-amber-500/20 text-amber-300 border border-amber-400/40 px-2.5 py-1 rounded-full backdrop-blur-xs font-semibold">
+                    <Clock size={11} /> Coming Soon
+                  </span>
+                ) : (
+                  <span className="text-[10px] uppercase tracking-[0.2em] font-body border border-gold/30 px-2 py-1 rounded-full text-gold">
+                    Small batch
+                  </span>
+                )}
+                <h2 className="font-display text-3xl mt-5 leading-tight text-primary-foreground">
                   Wild Forest Honey<br />& Artisanal Spices
                 </h2>
               </div>
-              <span className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] font-body font-medium">
-                Shop now
+              <span className="relative z-10 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] font-body font-medium text-gold">
+                {isHoneyComingSoon ? "Preview Collection" : "Shop now"}
                 <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
               </span>
             </Link>
@@ -303,15 +326,15 @@ const Index = () => {
               </div>
 
               {/* Category filters */}
-              <div className="flex gap-2 overflow-x-auto sm:flex-wrap -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex gap-2 overflow-x-auto sm:flex-wrap -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 no-scrollbar [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {categories.map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => handleCategoryChange(cat.id)}
-                    className={`shrink-0 whitespace-nowrap text-[11px] uppercase tracking-[0.15em] px-4 min-h-[40px] rounded-full border transition-all duration-300 font-body font-medium ${
+                    className={`shrink-0 whitespace-nowrap text-[11px] uppercase tracking-[0.14em] px-3.5 py-1.5 rounded-full border transition-all duration-200 font-body ${
                       activeCategory === cat.id
-                        ? "gradient-earth text-primary-foreground border-transparent shadow-soft"
-                        : "border-border bg-background hover:border-accent/60 hover:text-accent"
+                        ? "bg-accent/10 text-foreground border-accent/60 font-medium shadow-xs"
+                        : "border-border/70 bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground"
                     }`}
                   >
                     {cat.label}
@@ -394,9 +417,9 @@ const Index = () => {
         <div className="mx-auto grid max-w-[1600px] gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16">
           <div className="overflow-hidden rounded-sm">
             <img
-              src="/images/reference-site/promise-a.jpg"
+              src="/images/gifting/dry-fruits-thali.jpg"
               alt="A freshly roasted assortment of premium nuts and dry fruits"
-              className="h-[300px] w-full object-cover md:h-[440px]"
+              className="h-[300px] w-full object-cover md:h-[440px] rounded-2xl shadow-card"
               loading="lazy"
             />
           </div>
@@ -566,9 +589,10 @@ const Index = () => {
           </div>
           <div>
             <h4 className="text-[11px] uppercase tracking-[0.2em] text-accent font-body font-medium mb-3">Contact</h4>
-            <p className="text-xs font-body leading-relaxed">
-              <a href="tel:+919652526920" className="hover:text-accent transition-colors">+91 96525 26920</a><br />
-              <a href="https://wa.me/919652526920" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors">WhatsApp Support</a>
+            <p className="text-xs font-body leading-relaxed space-y-1">
+              <a href="tel:+919652526920" className="block hover:text-accent transition-colors">+91 96525 26920</a>
+              <a href="mailto:houseofnutsproddatur@gmail.com" className="block text-accent hover:underline font-medium">houseofnutsproddatur@gmail.com</a>
+              <a href="https://wa.me/919652526920" target="_blank" rel="noopener noreferrer" className="block hover:text-accent transition-colors">WhatsApp Support</a>
             </p>
           </div>
           <div>

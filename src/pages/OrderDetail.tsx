@@ -64,10 +64,12 @@ const OrderDetailPage = () => {
               Placed on {new Date(order.timestamp).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
             </p>
           </div>
-          <div className={`text-[11px] uppercase tracking-wider px-3 py-1.5 font-body font-medium ${
-            order.status === "cancelled" ? "bg-red-100 text-red-800" :
-            order.status === "delivered" ? "bg-green-100 text-green-800" :
-            "bg-accent/10 text-accent"
+          <div className={`text-[11px] uppercase tracking-wider px-3.5 py-1.5 rounded-full font-body font-medium ${
+            order.status === "cancelled" ? "bg-status-cancelled/15 text-status-cancelled-foreground border border-status-cancelled/30" :
+            order.status === "delivered" ? "bg-status-delivered/15 text-status-delivered-foreground border border-status-delivered/30" :
+            order.status === "shipped" ? "bg-status-shipped/15 text-status-shipped-foreground border border-status-shipped/30" :
+            order.status === "confirmed" ? "bg-status-confirmed/15 text-status-confirmed-foreground border border-status-confirmed/30" :
+            "bg-status-pending/15 text-status-pending-foreground border border-status-pending/30"
           }`}>
             {order.status}
           </div>

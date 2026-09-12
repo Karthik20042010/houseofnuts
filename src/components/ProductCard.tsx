@@ -4,8 +4,10 @@ import { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useInventory } from "@/contexts/InventoryContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { isCategoryComingSoon } from "@/lib/accessControl";
 import { isLowStock, isOutOfStock, stockOf } from "@/lib/inventory";
-import { ShoppingBag, Star, Check, Heart, Zap, Eye } from "lucide-react";
+import { ShoppingBag, Star, Check, Heart, Zap, Eye, Clock } from "lucide-react";
 import { getAverageRating } from "@/lib/reviews";
 import { useProductImage } from "@/lib/productImages";
 import ProductImage from "@/components/ProductImage";
@@ -23,8 +25,10 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { stock } = useInventory();
+  const auth = useAuth();
   const navigate = useNavigate();
 
+  const isComingSoon = isCategoryComingSoon(product.category, auth);
   const variant = product.variants[selectedVariant];
   const { avg, count } = getAverageRating(product.id);
   const imageSrc = useProductImage(product);
@@ -41,12 +45,14 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
   }, [product.variants, stock, variant.id]);
 
   const handleAdd = () => {
+    if (isComingSoon) return;
     addToCart(product, variant);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1400);
   };
 
   const handleBuyNow = () => {
+    if (isComingSoon) return;
     addToCart(product, variant);
     navigate("/checkout");
   };
@@ -75,16 +81,19 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
 
 
         {/* Badge */}
-        {product.badge && !allOos && (
+        {isComingSoon ? (
+          <div className="absolute top-2 left-2 bg-amber-600/90 text-amber-50 px-2.5 py-1 text-[10px] uppercase tracking-wider font-semibold z-20 shadow-soft font-body rounded-full flex items-center gap-1">
+            <Clock size={10} /> Coming Soon
+          </div>
+        ) : product.badge && !allOos ? (
           <div className="absolute top-2 left-2 gradient-warm text-accent-foreground px-2.5 py-1 text-[10px] uppercase tracking-wider font-semibold z-20 shadow-glow font-body rounded-full">
             {product.badge}
           </div>
-        )}
-        {allOos && (
+        ) : allOos ? (
           <div className="absolute top-2 left-2 bg-foreground/85 text-background px-2.5 py-1 text-[10px] uppercase tracking-wider font-medium z-20 shadow-soft font-body rounded-full">
             Sold Out
           </div>
-        )}
+        ) : null}
 
 
         {/* Wishlist Heart Toggle */}
@@ -140,13 +149,13 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
             type="button"
             onClick={() => setSelectedVariant(i)}
             aria-pressed={i === selectedVariant}
-            disabled={vOos}
+            disabled={vOos || isComingSoon}
               className={`text-[10px] px-2.5 sm:px-3 py-2 sm:py-1.5 min-h-[32px] border transition-all duration-200 font-body tracking-wide rounded-full ${
                 i === selectedVariant
                   ? "gradient-earth text-primary-foreground border-transparent shadow-soft"
                   : "border-border hover:border-accent/50 hover:text-accent"
-              } ${vOos ? "line-through opacity-50 cursor-not-allowed" : ""}`}
-              title={vOos ? "Out of stock" : undefined}
+              } ${vOos || isComingSoon ? "line-through opacity-50 cursor-not-allowed" : ""}`}
+              title={isComingSoon ? "Coming Soon" : vOos ? "Out of stock" : undefined}
             >
               {v.size}
             </button>
@@ -155,7 +164,7 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
 
       </div>
 
-      {low && !oos && remaining !== null && (
+      {low && !oos && remaining !== null && !isComingSoon && (
         <p className="text-[11px] font-body text-accent mb-2">Only {remaining} left</p>
       )}
 
@@ -177,30 +186,38 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
         </div>
 
 
-
-        <div className="grid grid-cols-2 gap-2">
+        {isComingSoon ? (
           <button
-            onClick={handleAdd}
-            disabled={oos}
-            className={`flex items-center justify-center gap-1.5 min-h-[40px] px-2 text-[10px] uppercase tracking-wider font-semibold transition-all duration-300 font-body rounded-full disabled:opacity-50 ${
-              justAdded
-                ? "bg-status-delivered text-status-delivered-foreground"
-                : "bg-secondary text-foreground hover:bg-accent/15 hover:text-accent border border-border"
-            }`}
+            disabled
+            className="w-full min-h-[40px] px-3 bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/30 rounded-full font-body text-[10px] font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-not-allowed opacity-90"
           >
-            {justAdded ? <Check size={12} /> : <ShoppingBag size={12} />}
-            {oos ? "Sold Out" : justAdded ? "Added" : "Add"}
+            <Clock size={12} /> Coming Soon for Retail
           </button>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={handleAdd}
+              disabled={oos}
+              className={`flex items-center justify-center gap-1.5 min-h-[40px] px-2 text-[10px] uppercase tracking-wider font-semibold transition-all duration-300 font-body rounded-full disabled:opacity-50 ${
+                justAdded
+                  ? "bg-status-delivered text-status-delivered-foreground"
+                  : "bg-secondary text-foreground hover:bg-accent/15 hover:text-accent border border-border"
+              }`}
+            >
+              {justAdded ? <Check size={12} /> : <ShoppingBag size={12} />}
+              {oos ? "Sold Out" : justAdded ? "Added" : "Add"}
+            </button>
 
-          <button
-            onClick={handleBuyNow}
-            disabled={oos}
-            className="btn-warm flex items-center justify-center gap-1.5 !px-2 !min-h-[40px] !text-[10px] disabled:opacity-50"
-          >
-            <Zap size={12} className="fill-accent-foreground" />
-            Buy Now
-          </button>
-        </div>
+            <button
+              onClick={handleBuyNow}
+              disabled={oos}
+              className="btn-warm flex items-center justify-center gap-1.5 !px-2 !min-h-[40px] !text-[10px] disabled:opacity-50"
+            >
+              <Zap size={12} className="fill-accent-foreground" />
+              Buy Now
+            </button>
+          </div>
+        )}
 
       </div>
       <QuickView

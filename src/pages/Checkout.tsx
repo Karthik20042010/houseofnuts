@@ -355,7 +355,19 @@ const CheckoutPage = () => {
 
             <div className="text-center space-y-1">
               <p className="text-xs text-muted-foreground font-body uppercase tracking-wider">UPI ID</p>
-              <p className="font-mono text-sm font-medium">{UPI_ID}</p>
+              <div className="flex items-center justify-center gap-2">
+                <p className="font-mono text-sm font-medium">{UPI_ID}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(UPI_ID);
+                    toast.success("UPI ID copied to clipboard!");
+                  }}
+                  className="text-xs text-accent font-body hover:underline font-medium uppercase tracking-wider"
+                >
+                  Copy
+                </button>
+              </div>
             </div>
           </div>
 

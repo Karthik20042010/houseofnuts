@@ -12,11 +12,11 @@ import { useAuth } from "@/contexts/AuthContext";
 
 
 const statusColors: Record<Order["status"], string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-blue-100 text-blue-800",
-  shipped: "bg-purple-100 text-purple-800",
-  delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
+  pending: "bg-status-pending/15 text-status-pending-foreground border border-status-pending/30",
+  confirmed: "bg-status-confirmed/15 text-status-confirmed-foreground border border-status-confirmed/30",
+  shipped: "bg-status-shipped/15 text-status-shipped-foreground border border-status-shipped/30",
+  delivered: "bg-status-delivered/15 text-status-delivered-foreground border border-status-delivered/30",
+  cancelled: "bg-status-cancelled/15 text-status-cancelled-foreground border border-status-cancelled/30",
 };
 
 const OrdersPage = () => {

@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Product, ProductVariant } from "@/data/products";
 import { DiscountCode, validateDiscount, calcDiscount } from "@/lib/discounts";
+import { useAuth } from "@/contexts/AuthContext";
+import { isCategoryComingSoon } from "@/lib/accessControl";
+import { toast } from "sonner";
 
 export interface CartItem {
   product: Product;
@@ -28,6 +31,7 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const auth = useAuth();
   const [items, setItems] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem("hon-cart");
     return saved ? JSON.parse(saved) : [];
@@ -40,6 +44,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [items]);
 
   const addToCart = useCallback((product: Product, variant: ProductVariant) => {
+    if (isCategoryComingSoon(product.category, auth)) {
+      toast.error(`${product.name} is coming soon for retail customers! Early access is reserved for Admin/Staff.`);
+      return;
+    }
+
     setItems((prev) => {
       const existing = prev.find((i) => i.variant.id === variant.id);
       if (existing) {
@@ -50,7 +59,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return [...prev, { product, variant, quantity: 1 }];
     });
     setIsCartOpen(true);
-  }, []);
+  }, [auth]);
 
   const removeFromCart = useCallback((variantId: string) => {
     setItems((prev) => prev.filter((i) => i.variant.id !== variantId));

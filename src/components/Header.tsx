@@ -1,6 +1,7 @@
 import { ShoppingBag, Menu, X, Package, ChevronDown, User, ShieldCheck, Heart, LogOut, UserCheck } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { isCategoryVisibleToUser } from "@/lib/accessControl";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
@@ -12,7 +13,8 @@ import { GoogleLoginModal } from "@/components/auth/GoogleLoginModal";
 
 const Header = () => {
   const { totalItems, setIsCartOpen } = useCart();
-  const { isLoggedIn, role, googleUser, isGoogleAuthenticated, logout } = useAuth();
+  const auth = useAuth();
+  const { isLoggedIn, role, googleUser, isGoogleAuthenticated, logout } = auth;
   const { wishlistCount } = useWishlist();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -46,7 +48,7 @@ const Header = () => {
           </button>
           <div className="absolute left-0 top-full pt-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
             <div className="bg-background border border-border shadow-lg min-w-[200px] py-2">
-              {categories.filter((c) => c.id !== "all").map((c) => (
+              {categories.filter((c) => c.id !== "all" && isCategoryVisibleToUser(c.id, auth)).map((c) => (
                 <Link
                   key={c.id}
                   to={`/category/${c.id}`}
@@ -148,8 +150,9 @@ const Header = () => {
           </div>
         ) : (
           <button
+            type="button"
             onClick={() => setIsLoginModalOpen(true)}
-            className="bg-primary text-primary-foreground hover:bg-accent transition-colors px-4 py-2 text-xs font-medium uppercase tracking-wider font-body rounded-sm shadow-xs flex items-center gap-1.5"
+            className="bg-primary text-primary-foreground hover:bg-accent transition-colors px-4 py-2 text-xs font-medium uppercase tracking-wider font-body rounded-sm shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
             <User size={14} /> Login
           </button>
@@ -157,8 +160,9 @@ const Header = () => {
 
         {/* Basket Button */}
         <button
+          type="button"
           onClick={() => setIsCartOpen(true)}
-          className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] font-medium font-body hover:text-accent transition-colors duration-300"
+          className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] font-medium font-body hover:text-accent transition-colors duration-300 cursor-pointer"
         >
           <ShoppingBag size={20} />
           <span className="hidden md:inline">Basket</span>
@@ -172,13 +176,42 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-background border-b border-border p-6 flex flex-col gap-4 md:hidden max-h-[80vh] overflow-auto">
+        <div className="absolute top-full left-0 right-0 bg-background border-b border-border p-6 flex flex-col gap-4 md:hidden max-h-[80vh] overflow-auto shadow-xl z-50">
+          {!isAuthenticated ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setIsLoginModalOpen(true);
+              }}
+              className="w-full bg-primary text-primary-foreground py-2.5 text-xs font-semibold uppercase tracking-wider font-body rounded flex items-center justify-center gap-2"
+            >
+              <User size={16} /> Sign In / Register
+            </button>
+          ) : (
+            <div className="p-3 bg-clay-light rounded-lg flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-xs text-foreground">{displayName}</p>
+                {displayEmail && <p className="text-[10px] text-muted-foreground">{displayEmail}</p>}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  setMobileMenuOpen(false);
+                }}
+                className="text-xs text-destructive hover:underline"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
           <Link to="/shop" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Shop All</Link>
           <Link to="/gifting" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Gifting</Link>
           <Link to="/journal" onClick={() => setMobileMenuOpen(false)} className="text-sm uppercase tracking-[0.15em] font-medium text-left py-2">Journal</Link>
           <div className="border-l-2 border-accent pl-3 flex flex-col gap-2">
             <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-body">Categories</span>
-            {categories.filter((c) => c.id !== "all").map((c) => (
+            {categories.filter((c) => c.id !== "all" && isCategoryVisibleToUser(c.id, auth)).map((c) => (
               <Link
                 key={c.id}
                 to={`/category/${c.id}`}

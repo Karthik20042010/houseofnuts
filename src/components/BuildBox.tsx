@@ -110,13 +110,18 @@ export const BuildBox: React.FC = () => {
 
           {/* Box Summary Sidebar */}
           <div className="bg-background border border-border rounded-sm p-6 space-y-6 shadow-xs font-body">
-            <div className="flex items-center justify-between border-b border-border pb-4">
-              <div className="flex items-center gap-2 font-display text-lg font-bold">
-                <Package size={20} className="text-accent" /> Your Custom Box
+            {/* Visual Box Capacity Gauge */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-body">
+                <span className="text-muted-foreground">Box Fill Level</span>
+                <span className="font-semibold text-accent">{Math.round((selectedProducts.length / BOX_SIZE) * 100)}%</span>
               </div>
-              <span className="text-xs font-mono bg-accent/10 text-accent px-2.5 py-1 rounded-full font-semibold">
-                {selectedProducts.length} / {BOX_SIZE} Selected
-              </span>
+              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full gradient-warm transition-all duration-500 rounded-full"
+                  style={{ width: `${(selectedProducts.length / BOX_SIZE) * 100}%` }}
+                />
+              </div>
             </div>
 
             {/* Selected Slots */}
