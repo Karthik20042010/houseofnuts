@@ -180,24 +180,70 @@ export function touchSession(
   }
 }
 
-// Default location detector using timezone map for immediate zero-latency fallback
+// Multi-provider IP location fetcher for resilient background location detection
+async function fetchRealIpLocation(): Promise<{ country: string; city: string; location: string } | null> {
+  const providers = [
+    async () => {
+      const res = await fetch("https://ipwho.is/", { signal: AbortSignal.timeout(3500) });
+      const data = await res.json();
+      if (data && data.success) {
+        const city = data.city || data.region || "India";
+        const country = data.country || "India";
+        return { country, city, location: `${city}, ${country}` };
+      }
+      return null;
+    },
+    async () => {
+      const res = await fetch("https://freeipapi.com/api/json", { signal: AbortSignal.timeout(3500) });
+      const data = await res.json();
+      if (data && data.cityName) {
+        const city = data.cityName || "India";
+        const country = data.countryName || "India";
+        return { country, city, location: `${city}, ${country}` };
+      }
+      return null;
+    },
+    async () => {
+      const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3500) });
+      const data = await res.json();
+      if (data && data.country_name) {
+        const city = data.city || "India";
+        const country = data.country_name || "India";
+        return { country, city, location: `${city}, ${country}` };
+      }
+      return null;
+    }
+  ];
+
+  for (const provider of providers) {
+    try {
+      const result = await provider();
+      if (result) return result;
+    } catch {
+      // try next provider
+    }
+  }
+  return null;
+}
+
+// Location detector using local cache, background IP lookup, and timezone fallback
 function detectLocationFromTimezone(): { country: string; city: string; location: string } {
   const cached = localStorage.getItem(STORAGE_KEY_LOC);
   if (cached) {
     try {
       return JSON.parse(cached);
     } catch {
-      // ignore
+      // ignore invalid cache
     }
   }
 
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
   let country = "India";
-  let city = "Mumbai";
+  let city = "India";
 
-  if (tz.includes("Kolkata") || tz.includes("Asia/Calcutta") || tz.includes("Asia/Colombo")) {
+  if (tz.includes("Kolkata") || tz.includes("Asia/Calcutta")) {
     country = "India";
-    city = tz.includes("Calcutta") ? "Kolkata" : "Bengaluru";
+    city = "India"; // Generic fallback while background IP lookup finishes
   } else if (tz.includes("Dubai") || tz.includes("Muscat")) {
     country = "United Arab Emirates";
     city = "Dubai";
@@ -212,29 +258,54 @@ function detectLocationFromTimezone(): { country: string; city: string; location
     city = "Singapore";
   }
 
-  const loc = { country, city, location: `${city}, ${country}` };
+  const loc = { country, city, location: city === country ? country : `${city}, ${country}` };
   localStorage.setItem(STORAGE_KEY_LOC, JSON.stringify(loc));
 
-  // Asynchronously query ipapi for pinpoint accuracy in background
-  try {
-    fetch("https://ipapi.co/json/")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.country_name) {
-          const fresh = {
-            country: data.country_name || country,
-            city: data.city || city,
-            location: `${data.city || city}, ${data.country_name || country}`,
-          };
-          localStorage.setItem(STORAGE_KEY_LOC, JSON.stringify(fresh));
-        }
-      })
-      .catch(() => {});
-  } catch {
-    // ignore fetch errors
-  }
+  // Asynchronously query multiple IP services for real city & region accuracy
+  fetchRealIpLocation().then((freshLoc) => {
+    if (freshLoc) {
+      localStorage.setItem(STORAGE_KEY_LOC, JSON.stringify(freshLoc));
+    }
+  });
 
   return loc;
+}
+
+/** Requests high-accuracy HTML5 browser GPS location and performs reverse geocoding */
+export async function requestExactGPSLocation(): Promise<{ country: string; city: string; location: string; exactAddress?: string } | null> {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          if (data && data.address) {
+            const addr = data.address;
+            const suburb = addr.suburb || addr.neighbourhood || addr.residential || addr.subdistrict;
+            const city = addr.city || addr.town || addr.village || addr.county || "India";
+            const country = addr.country || "India";
+            const cityName = suburb ? `${suburb}, ${city}` : city;
+            const loc = {
+              country,
+              city: cityName,
+              location: `${cityName}, ${country}`,
+              exactAddress: data.display_name
+            };
+            localStorage.setItem(STORAGE_KEY_LOC, JSON.stringify(loc));
+            resolve(loc);
+            return;
+          }
+        } catch {
+          // ignore reverse geocoding errors
+        }
+        resolve(null);
+      },
+      () => resolve(null),
+      { timeout: 8000, enableHighAccuracy: true }
+    );
+  });
 }
 
 function detectDevice(): "Desktop" | "Mobile" | "Tablet" {

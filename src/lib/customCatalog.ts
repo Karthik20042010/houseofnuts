@@ -58,6 +58,11 @@ export const DEFAULT_SUBCATEGORIES: CustomSubcategory[] = [
 
   // Solar Dried
   { id: "solar-fruits", label: "Solar Dried Natural Fruits", parentCategory: "solar-dried" },
+
+  // Admin & Developer QA Test Subcategories
+  { id: "stock-levels-qa", label: "Stock Levels & Thresholds QA", parentCategory: "stock-inventory-test" },
+  { id: "order-workflow-qa", label: "Order & Payment Workflow QA", parentCategory: "orders-qa-test" },
+  { id: "developer-logs-qa", label: "System Telemetry & Metrics QA", parentCategory: "dev-sandbox" },
 ];
 
 const CUSTOM_PRODUCTS_KEY = "hon_custom_products_v1";

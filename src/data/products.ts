@@ -31,6 +31,9 @@ export const categories = [
   { id: "spices", label: "Spices" },
   { id: "honey", label: "Honey" },
   { id: "gifting", label: "Gift Boxes" },
+  { id: "stock-inventory-test", label: "Stock Inventory Audit (Admin/Dev)" },
+  { id: "orders-qa-test", label: "Order & QA Testing (Admin/Dev)" },
+  { id: "dev-sandbox", label: "Developer Sandbox (Admin/Dev)" },
 ] as const;
 
 const IMG = "/images/catalog";
@@ -558,6 +561,51 @@ export const products: Product[] = [
     variants: [
       { id: "gift-royal-small", size: "4 x 200g", price: 1499, mrp: 1899 },
       { id: "gift-royal-large", size: "4 x 400g", price: 2799, mrp: 3599 },
+    ],
+  },
+
+  /* ------------------- ADMIN & DEVELOPER TEST PRODUCTS ------------------ */
+  {
+    id: "admin-stock-qa-item-1",
+    name: "[TEST] Stock Inventory Audit Item (500 units)",
+    localName: "Stock Audit",
+    category: "stock-inventory-test",
+    subcategory: "stock-levels-qa",
+    description: "Internal testing item for stock inventory synchronization, restock counters & low stock threshold alert testing",
+    image: "/images/catalog/almonds.jpg",
+    badge: "Admin/Dev Only",
+    variants: [
+      { id: "admin-stock-qa-250", size: "250g", price: 100, mrp: 150 },
+      { id: "admin-stock-qa-500", size: "500g", price: 190, mrp: 300 },
+      { id: "admin-stock-qa-1000", size: "1 Kg", price: 360, mrp: 500 },
+    ],
+  },
+  {
+    id: "admin-order-qa-item-2",
+    name: "[TEST] Order & Checkout Workflow QA Item",
+    localName: "QA Order",
+    category: "orders-qa-test",
+    subcategory: "order-workflow-qa",
+    description: "Internal testing item for verifying live checkout, payment status webhooks & invoice generation",
+    image: "/images/catalog/cashews.jpg",
+    badge: "Admin/Dev Only",
+    variants: [
+      { id: "admin-order-qa-250", size: "250g", price: 50, mrp: 100 },
+      { id: "admin-order-qa-500", size: "500g", price: 90, mrp: 180 },
+    ],
+  },
+  {
+    id: "dev-sandbox-item-3",
+    name: "[TEST] Developer Telemetry & Metric Probe",
+    localName: "Dev Probe",
+    category: "dev-sandbox",
+    subcategory: "developer-logs-qa",
+    description: "Internal testing probe item for verifying developer console real-time logs, telemetry engine & DB payload sync",
+    image: "/images/catalog/mamra-pistachios.jpg",
+    badge: "Admin/Dev Only",
+    variants: [
+      { id: "dev-probe-250", size: "250g", price: 10, mrp: 20 },
+      { id: "dev-probe-500", size: "500g", price: 20, mrp: 40 },
     ],
   },
 ];

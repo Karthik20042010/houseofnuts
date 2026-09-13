@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useCatalog } from "@/lib/customCatalog";
 import { useAuth } from "@/contexts/AuthContext";
 import { isCategoryVisibleToUser, isPrivilegedUser, RESTRICTED_COMING_SOON_CATEGORIES } from "@/lib/accessControl";
-import { Nut, Cookie, Sparkles, Flame, Droplets, Sun, Sprout, LayoutGrid, Gift, Zap, LucideIcon, ShieldCheck } from "lucide-react";
+import { Nut, Cookie, Sparkles, Flame, Droplets, Sun, Sprout, LayoutGrid, Gift, Zap, LucideIcon, ShieldCheck, PackageCheck, ShoppingBag, Terminal } from "lucide-react";
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   all: LayoutGrid,
@@ -16,6 +16,9 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   honey: Droplets,
   seeds: Sprout,
   "solar-dried": Sun,
+  "stock-inventory-test": PackageCheck,
+  "orders-qa-test": ShoppingBag,
+  "dev-sandbox": Terminal,
 };
 
 export const CategoryStrip: React.FC = () => {
