@@ -40,6 +40,7 @@ export interface CreateCashfreeOrderParams {
   customerName: string;
   customerPhone: string;
   customerEmail: string;
+  notifyUrl?: string;
 }
 
 export interface CreateCashfreeOrderResponse {
@@ -59,6 +60,9 @@ export async function createCashfreeOrderSession(
       customerName: params.customerName,
       customerPhone: params.customerPhone,
       customerEmail: params.customerEmail,
+      notifyUrl:
+        params.notifyUrl ||
+        "https://script.google.com/macros/s/AKfycbzOt0eUwPlTbge4ZdzfvkJd3sxmDwG-2J9vqt3JAjV79agTJV9ZGgX4YRzFVpSa2P0/exec",
     });
     return response;
   } catch (err) {
