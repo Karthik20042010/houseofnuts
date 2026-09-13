@@ -2344,7 +2344,76 @@ function updateMessage(body) {
   return { ok: false, error: "Message not found" };
 }
 
-// -------- Sheet 8: Notifications Audit Trail Tab --------
+// -------- Sheet 8 & Google Drive Audit Trail (365-Day Retention Window) --------
+
+function ensureLogsDriveFolder() {
+  try {
+    var folders = DriveApp.getFoldersByName("HouseOfNuts_SystemLogs");
+    return folders.hasNext() ? folders.next() : DriveApp.createFolder("HouseOfNuts_SystemLogs");
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeLogToDriveFile(entryObj) {
+  try {
+    var folder = ensureLogsDriveFolder();
+    if (!folder) return;
+
+    var dateStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    var fileName = "system_log_" + dateStr + ".json";
+    var files = folder.getFilesByName(fileName);
+
+    var logLine = JSON.stringify(entryObj) + "\n";
+    if (files && files.hasNext()) {
+      var file = files.next();
+      var existingContent = file.getAs(MimeType.PLAIN_TEXT).getDataAsString();
+      file.setContent(existingContent + logLine);
+    } else {
+      folder.createFile(fileName, logLine, MimeType.PLAIN_TEXT);
+    }
+  } catch (e) {
+    Logger.log("Drive Log Write Notice: " + String(e));
+  }
+}
+
+function rotateAndCleanup365DaysLogs() {
+  var retentionMs = 365 * 24 * 60 * 60 * 1000; // 365 Days
+  var cutoffDate = new Date(Date.now() - retentionMs);
+
+  // 1. Cleanup old Drive Log files older than 365 days
+  try {
+    var folder = ensureLogsDriveFolder();
+    if (folder) {
+      var files = folder.getFiles();
+      while (files.hasNext()) {
+        var f = files.next();
+        if (f.getLastUpdated().getTime() < cutoffDate.getTime()) {
+          f.setTrashed(true);
+          Logger.log("Trashed expired log file older than 365 days: " + f.getName());
+        }
+      }
+    }
+  } catch (e) {
+    Logger.log("Drive Log Rotation Error: " + String(e));
+  }
+
+  // 2. Cleanup Notifications Sheet rows older than 365 days
+  try {
+    var sh = ensureNotificationsSheet();
+    var values = sh.getDataRange().getValues();
+    for (var i = values.length - 1; i >= 1; i--) {
+      var rowDate = new Date(values[i][7]);
+      if (!isNaN(rowDate.getTime()) && rowDate.getTime() < cutoffDate.getTime()) {
+        sh.deleteRow(i + 1);
+      }
+    }
+  } catch (e) {
+    Logger.log("Sheet Log Rotation Error: " + String(e));
+  }
+
+  return { ok: true, cutoffDate: cutoffDate.toISOString() };
+}
 
 function ensureNotificationsSheet() {
   var sh = SpreadsheetApp.getActive().getSheetByName("Notifications");
@@ -2356,22 +2425,38 @@ function ensureNotificationsSheet() {
 }
 
 function logNotification(relatedId, type, recipient, subject, status, errorDetail) {
+  var timestampStr = new Date().toISOString();
+  var notifId = "NOTIF-" + new Date().getTime() + "-" + Math.floor(Math.random() * 1000);
+
+  var logObj = {
+    notifId: notifId,
+    relatedId: String(relatedId || ""),
+    type: String(type || "general"),
+    recipient: String(recipient || ""),
+    subject: String(subject || "").substring(0, 150),
+    status: String(status || "unknown"),
+    errorDetail: String(errorDetail || "").substring(0, 250),
+    sentAt: timestampStr
+  };
+
   try {
     var sh = ensureNotificationsSheet();
-    var notifId = "NOTIF-" + new Date().getTime() + "-" + Math.floor(Math.random() * 1000);
     sh.appendRow([
-      notifId,
-      String(relatedId || ""),
-      String(type || "general"),
-      String(recipient || ""),
-      String(subject || "").substring(0, 150),
-      String(status || "unknown"),
-      String(errorDetail || "").substring(0, 250),
-      new Date().toISOString()
+      logObj.notifId,
+      logObj.relatedId,
+      logObj.type,
+      logObj.recipient,
+      logObj.subject,
+      logObj.status,
+      logObj.errorDetail,
+      logObj.sentAt
     ]);
   } catch (e) {
     Logger.log("Failed to write to Notifications sheet: " + String(e));
   }
+
+  // Persist directly to Google Drive daily log files
+  writeLogToDriveFile(logObj);
 }
 
 // -------- Email System Diagnostic & Health Check --------
