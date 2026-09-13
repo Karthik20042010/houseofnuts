@@ -19,12 +19,8 @@ declare global {
   }
 }
 
-export const CASHFREE_APP_ID =
-  (import.meta.env.VITE_CASHFREE_APP_ID as string) || "141222992671a6448dce6df4eec9222141";
-
-export const CASHFREE_SECRET_KEY =
-  (import.meta.env.VITE_CASHFREE_SECRET_KEY as string) || "cfsk_ma_prod_63f90d086bebf60c0fddf21af52c864c_66193dae";
-
+export const CASHFREE_APP_ID = (import.meta.env.VITE_CASHFREE_APP_ID as string) || "";
+export const CASHFREE_SECRET_KEY = (import.meta.env.VITE_CASHFREE_SECRET_KEY as string) || "";
 export const CASHFREE_MODE: "sandbox" | "production" =
   (import.meta.env.VITE_CASHFREE_MODE as "sandbox" | "production") || "production";
 
@@ -59,7 +55,7 @@ export interface CreateCashfreeOrderResponse {
 export async function createCashfreeOrderSession(
   params: CreateCashfreeOrderParams
 ): Promise<CreateCashfreeOrderResponse> {
-  // 1. Try Backend Order Session endpoint
+  // 1. Try Backend Order Session endpoint first
   try {
     const backendRes = await apiPost<CreateCashfreeOrderResponse>("createCashfreeOrder", {
       orderId: params.orderId,
@@ -76,10 +72,18 @@ export async function createCashfreeOrderSession(
       return backendRes;
     }
   } catch (e) {
-    console.warn("Backend createCashfreeOrder notice, falling back to direct API session:", e);
+    console.warn("Backend createCashfreeOrder notice, checking frontend environment keys:", e);
   }
 
-  // 2. Direct Cashfree PG Order API Session fallback
+  // 2. Strict check: verify environment credentials exist before calling Cashfree PG API
+  if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+    return {
+      ok: false,
+      error: "Cashfree API credentials missing. Please set VITE_CASHFREE_APP_ID and VITE_CASHFREE_SECRET_KEY in your .env file.",
+    };
+  }
+
+  // 3. Direct Cashfree PG Order API Session call with environment variables
   try {
     const cleanPhone = (params.customerPhone || "9652526920").replace(/\D/g, "").slice(-10) || "9652526920";
     const endpoint =
@@ -129,7 +133,7 @@ export async function createCashfreeOrderSession(
       };
     }
   } catch (err) {
-    console.error("Failed to create direct Cashfree order session:", err);
+    console.error("Failed to create Cashfree order session:", err);
     return { ok: false, error: "Network error initiating Cashfree payment session." };
   }
 }
