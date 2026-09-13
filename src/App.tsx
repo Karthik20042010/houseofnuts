@@ -83,9 +83,18 @@ const App = () => (
                       <Route path="/journal" element={<Journal />} />
                       <Route path="/faq" element={<StoreInfo />} />
                       <Route path="/shipping" element={<StoreInfo />} />
+                      <Route path="/shipping_policy" element={<StoreInfo />} />
+                      <Route path="/shipping-policy" element={<StoreInfo />} />
                       <Route path="/returns" element={<StoreInfo />} />
+                      <Route path="/return_policy" element={<StoreInfo />} />
+                      <Route path="/return-policy" element={<StoreInfo />} />
                       <Route path="/privacy" element={<StoreInfo />} />
+                      <Route path="/privacy_policy" element={<StoreInfo />} />
                       <Route path="/terms" element={<StoreInfo />} />
+                      <Route path="/T&C" element={<StoreInfo />} />
+                      <Route path="/terms_and_conditions" element={<StoreInfo />} />
+                      <Route path="/refund_policy" element={<StoreInfo />} />
+                      <Route path="/refund-policy" element={<StoreInfo />} />
                       <Route path="/contact" element={<StoreInfo />} />
 
                       {/* Authentication Login Routes */}

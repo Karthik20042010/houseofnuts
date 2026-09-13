@@ -631,7 +631,18 @@ const Index = () => {
             </p>
           </div>
         </div>
-        <p className="text-[11px] font-body tracking-wide text-center mt-10 pt-6 border-t border-primary-foreground/10">
+        <div className="mt-8 pt-6 border-t border-primary-foreground/10 flex flex-wrap justify-center items-center gap-3 text-[11px] font-body tracking-wide text-primary-foreground/60">
+          <Link to="/T&C" className="hover:text-accent transition-colors">Terms & Conditions</Link>
+          <span>·</span>
+          <Link to="/privacy_policy" className="hover:text-accent transition-colors">Privacy Policy</Link>
+          <span>·</span>
+          <Link to="/refund_policy" className="hover:text-accent transition-colors">Refund Policy</Link>
+          <span>·</span>
+          <Link to="/return_policy" className="hover:text-accent transition-colors">Return Policy</Link>
+          <span>·</span>
+          <Link to="/shipping_policy" className="hover:text-accent transition-colors">Shipping Policy</Link>
+        </div>
+        <p className="text-[11px] font-body tracking-wide text-center mt-4">
           © {new Date().getFullYear()} House of Nuts. All rights reserved.
         </p>
       </footer>
