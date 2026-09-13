@@ -25,11 +25,6 @@ export const CASHFREE_APP_ID =
   (import.meta.env.CASHFREE_APP_ID as string) ||
   "";
 
-export const CASHFREE_SECRET_KEY =
-  (import.meta.env.VITE_CASHFREE_SECRET_KEY as string) ||
-  (import.meta.env.CASHFREE_SECRET_KEY as string) ||
-  "";
-
 export const CASHFREE_MODE: "sandbox" | "production" =
   ((import.meta.env.VITE_CASHFREE_MODE || import.meta.env.CASHFREE_MODE) as "sandbox" | "production") ||
   "production";
