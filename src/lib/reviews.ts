@@ -13,11 +13,11 @@ export interface Review {
 
 const STORAGE_KEY = "product-reviews";
 
-// Seed reviews so products don't look empty
+// Seed reviews commented out as requested
 const seedReviews: Review[] = [
-  { id: "s1", productId: "_global", name: "Priya S.", rating: 5, text: "Absolutely fresh and premium quality! The taste is amazing.", date: "2 weeks ago" },
-  { id: "s2", productId: "_global", name: "Rahul M.", rating: 4, text: "Good packaging and fast delivery. Will order again.", date: "1 month ago" },
-  { id: "s3", productId: "_global", name: "Anita K.", rating: 5, text: "Best quality I've found online. My family loved it!", date: "3 weeks ago" },
+  // { id: "s1", productId: "_global", name: "Priya S.", rating: 5, text: "Absolutely fresh and premium quality! The taste is amazing.", date: "2 weeks ago" },
+  // { id: "s2", productId: "_global", name: "Rahul M.", rating: 4, text: "Good packaging and fast delivery. Will order again.", date: "1 month ago" },
+  // { id: "s3", productId: "_global", name: "Anita K.", rating: 5, text: "Best quality I've found online. My family loved it!", date: "3 weeks ago" },
 ];
 
 /**
