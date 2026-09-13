@@ -10,11 +10,12 @@ import SEOHead from "@/components/SEOHead";
 import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
 import DeliveryEstimate from "@/components/DeliveryEstimate";
-import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf, Heart, Share2, Zap, Check, Clock, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf, Heart, Share2, Zap, Check, Clock, Sparkles, ChevronLeft, ChevronRight, ShieldCheck, MapPin, Award, CheckCircle2 } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import ReviewsSection from "@/components/ReviewsSection";
 import { getAverageRating } from "@/lib/reviews";
 import { getProductImageSrc, getProductGallery } from "@/lib/productImages";
+import { getProductSpecification } from "@/lib/productDetails";
 import ProductImage from "@/components/ProductImage";
 import { toast } from "sonner";
 
@@ -59,6 +60,7 @@ const ProductDetail = () => {
   const relatedProducts = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
   const { avg: avgRating, count: reviewCount } = getAverageRating(product.id);
   const wishlisted = isInWishlist(product.id);
+  const specs = getProductSpecification(product.id, product.category, product.name);
 
   const gallery = getProductGallery(product);
   const activeImageSrc = gallery[activeImageIndex] || getProductImageSrc(product);
@@ -429,43 +431,109 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Nutritional Information & Specifications */}
-        <section className="mb-16 bg-card border border-border/80 rounded-2xl p-6 md:p-8 shadow-soft">
-          <h3 className="font-display text-2xl md:text-3xl mb-4">Nutritional Highlights & Storage</h3>
-          <p className="text-sm text-muted-foreground font-body leading-relaxed mb-6 font-light">
-            Approximate nutritional value per <strong className="text-foreground font-medium">100 grams</strong> of {product.name}.
-          </p>
+        {/* Rich Product Specifications, Origin, Nutrition & Health Benefits */}
+        <section className="mb-16 bg-card border border-border/80 rounded-2xl p-6 md:p-8 shadow-soft space-y-8">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Award className="text-accent" size={20} />
+              <h3 className="font-display text-2xl md:text-3xl">Product Specifications & Provenance</h3>
+            </div>
+            <p className="text-sm text-muted-foreground font-body leading-relaxed font-light">
+              Authentic single-origin harvest details, quality grading, and certified nutritional values per <strong className="text-foreground font-medium">100 grams</strong> of {product.name}.
+            </p>
+          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            <div className="p-4 rounded-xl bg-clay-light/50 border border-border/60 text-center">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-body">Energy</p>
-              <p className="font-display text-2xl text-accent mt-1">
-                {product.category === "dry-fruits" ? "285 kcal" : product.category === "honey" ? "304 kcal" : "575 kcal"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-clay-light/50 border border-border/60 text-center">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-body">Protein</p>
-              <p className="font-display text-2xl text-foreground mt-1">
-                {product.category === "dry-fruits" ? "3.5g" : product.category === "seeds" ? "24g" : product.category === "honey" ? "0.3g" : "21g"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-clay-light/50 border border-border/60 text-center">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-body">Dietary Fiber</p>
-              <p className="font-display text-2xl text-foreground mt-1">
-                {product.category === "dry-fruits" ? "7.5g" : product.category === "seeds" ? "18g" : product.category === "honey" ? "0g" : "12.5g"}
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-clay-light/50 border border-border/60 text-center">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-body">Healthy Fats</p>
-              <p className="font-display text-2xl text-foreground mt-1">
-                {product.category === "dry-fruits" ? "0.5g" : product.category === "honey" ? "0g" : "49g"}
-              </p>
+          {/* Provenance & Grade Badges */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {specs.grade && (
+              <div className="p-4 rounded-xl bg-clay-light/40 border border-border/60">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-body font-semibold flex items-center gap-1">
+                  <Award size={12} className="text-accent" /> Grade / Variety
+                </p>
+                <p className="font-body text-xs font-bold text-foreground mt-1">{specs.grade}</p>
+              </div>
+            )}
+
+            {specs.origin && (
+              <div className="p-4 rounded-xl bg-clay-light/40 border border-border/60">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-body font-semibold flex items-center gap-1">
+                  <MapPin size={12} className="text-accent" /> Origin
+                </p>
+                <p className="font-body text-xs font-bold text-foreground mt-1">{specs.origin}</p>
+              </div>
+            )}
+
+            {specs.processing && (
+              <div className="p-4 rounded-xl bg-clay-light/40 border border-border/60">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-body font-semibold flex items-center gap-1">
+                  <ShieldCheck size={12} className="text-accent" /> Processing
+                </p>
+                <p className="font-body text-xs font-bold text-foreground mt-1">{specs.processing}</p>
+              </div>
+            )}
+
+            {specs.shelfLife && (
+              <div className="p-4 rounded-xl bg-clay-light/40 border border-border/60">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-body font-semibold flex items-center gap-1">
+                  <Clock size={12} className="text-accent" /> Shelf Life
+                </p>
+                <p className="font-body text-xs font-bold text-foreground mt-1">{specs.shelfLife}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Nutritional Values Grid */}
+          <div>
+            <h4 className="font-display text-lg mb-3 text-foreground">Nutritional Values (per 100g)</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="p-3.5 rounded-xl bg-accent/5 border border-accent/20 text-center">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-body font-semibold">Energy</p>
+                <p className="font-display text-xl text-accent mt-0.5">{specs.nutritionalPer100g.energy}</p>
+              </div>
+              <div className="p-3.5 rounded-xl bg-clay-light/50 border border-border/60 text-center">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-body font-semibold">Protein</p>
+                <p className="font-display text-xl text-foreground mt-0.5">{specs.nutritionalPer100g.protein}</p>
+              </div>
+              <div className="p-3.5 rounded-xl bg-clay-light/50 border border-border/60 text-center">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-body font-semibold">Healthy Fats</p>
+                <p className="font-display text-xl text-foreground mt-0.5">{specs.nutritionalPer100g.healthyFats}</p>
+              </div>
+              <div className="p-3.5 rounded-xl bg-clay-light/50 border border-border/60 text-center">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-body font-semibold">Dietary Fiber</p>
+                <p className="font-display text-xl text-foreground mt-0.5">{specs.nutritionalPer100g.fiber}</p>
+              </div>
+              <div className="p-3.5 rounded-xl bg-clay-light/50 border border-border/60 text-center">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-body font-semibold">Carbohydrates</p>
+                <p className="font-display text-xl text-foreground mt-0.5">{specs.nutritionalPer100g.carbs}</p>
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-border pt-5 text-xs text-muted-foreground font-body space-y-1">
-            <p><strong>Storage Instructions:</strong> Store in a cool, dry place. Once opened, transfer to an airtight glass container to preserve peak crunch & flavor.</p>
-            <p><strong>Shelf Life:</strong> Best within 6 months of packing.</p>
+          {/* Key Health Benefits */}
+          {specs.healthBenefits && specs.healthBenefits.length > 0 && (
+            <div className="border-t border-border pt-5">
+              <h4 className="font-display text-lg mb-3 text-foreground flex items-center gap-1.5">
+                <Sparkles size={16} className="text-accent" /> Key Health & Wellness Benefits
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                {specs.healthBenefits.map((benefit, idx) => (
+                  <div key={idx} className="flex items-start gap-2 text-xs font-body text-foreground/90 bg-clay-light/30 p-2.5 rounded-lg border border-border/40">
+                    <CheckCircle2 size={15} className="text-accent shrink-0 mt-0.5" />
+                    <span>{benefit}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Storage & Flavor Profile */}
+          <div className="border-t border-border pt-5 text-xs text-muted-foreground font-body space-y-2">
+            {specs.flavorProfile && (
+              <p><strong className="text-foreground">Flavor Profile:</strong> {specs.flavorProfile}</p>
+            )}
+            {specs.storage && (
+              <p><strong className="text-foreground">Storage Instructions:</strong> {specs.storage}</p>
+            )}
           </div>
         </section>
 
