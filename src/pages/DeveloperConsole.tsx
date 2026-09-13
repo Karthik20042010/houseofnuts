@@ -258,6 +258,11 @@ export const DeveloperConsole: React.FC = () => {
         </div>
       )}
 
+      {activeTab === "otp" && <OtpTelemetryConsolePanel />}
+    </div>
+  );
+};
+
 function OtpTelemetryConsolePanel() {
   const [provider, setProvider] = useState<OtpProvider>(getActiveOtpProvider());
   const [logs, setLogs] = useState<OtpTelemetryLog[]>(getOtpTelemetryLogs());
