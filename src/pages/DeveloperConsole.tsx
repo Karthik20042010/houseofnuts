@@ -94,17 +94,12 @@ export const DeveloperConsole: React.FC = () => {
 
         <div className="bg-card border border-border p-4 rounded-sm flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider font-mono">OneDrive Excel DB</p>
-            <a
-              href={oneDriveExcelUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-accent hover:underline flex items-center gap-1 mt-1 font-medium font-body"
-            >
-              <FileSpreadsheet className="h-3.5 w-3.5" /> Open Excel <ExternalLink className="h-3 w-3" />
-            </a>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-mono">Database Layer</p>
+            <p className="text-lg font-semibold flex items-center gap-1.5 mt-1 font-body">
+              <FileSpreadsheet className="h-4 w-4 text-accent" /> Google Sheets
+            </p>
           </div>
-          <Badge variant="secondary" className="text-[10px]">OneDrive</Badge>
+          <Badge variant="secondary" className="text-[10px]">Secure DB</Badge>
         </div>
 
         <div className="bg-card border border-border p-4 rounded-sm flex items-center justify-between">
