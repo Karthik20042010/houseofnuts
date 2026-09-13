@@ -1,4 +1,4 @@
-import { apiPost, API_URL } from "./api";
+import { apiPost } from "./api";
 
 export interface OrderItem {
   name: string;
@@ -22,6 +22,8 @@ export interface Order {
   total: number;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   paymentStatus: "pending" | "paid" | "refunded";
+  paymentMethod?: "upi" | "card" | "cod" | "bank_transfer";
+  utrReference?: string;
 }
 
 const STORAGE_KEY = "hon-orders";
@@ -85,8 +87,6 @@ export async function placeOrderApi(order: Order): Promise<PlaceOrderResult> {
     return await apiPost<PlaceOrderResult>("placeOrder", { order });
   } catch (e) {
     console.error("placeOrder failed:", e);
-    // A no-cors retry cannot confirm whether the backend accepted an order.
-    // Never report success until the store has returned an authoritative result.
     return { ok: false, error: "network_error" };
   }
 }
@@ -97,6 +97,5 @@ export async function submitToGoogleSheet(order: Order): Promise<void> {
 }
 
 export async function sendOwnerEmailNotification(order: Order): Promise<void> {
-  // Email is now sent from Apps Script on placeOrder. Nothing to do here.
-  void order;
+  // Email is sent from Apps Script on placeOrder.
 }
