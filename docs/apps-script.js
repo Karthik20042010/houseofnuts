@@ -40,15 +40,1413 @@ function setupDatabase() {
   // 3. Seed Products, Prices, and Inventory tabs if empty
   if (prodSh.getDataRange().getValues().length < 2) {
     var defaultCatalog = [
-      { id: "california-almonds", name: "California Almonds", category: "nuts", description: "Crunchy hand-sorted California almonds", image: "/images/catalog/almonds.jpg", badge: "Bestseller", variants: [{ id: "cal-almond-250", size: "250g", price: 349, mrp: 450 }, { id: "cal-almond-500", size: "500g", price: 649, mrp: 850 }, { id: "cal-almond-1kg", size: "1 Kg", price: 1199, mrp: 1550 }] },
-      { id: "mamra-almonds", name: "Mamra Almonds", category: "nuts", description: "Premium oil-rich almonds from high-altitude valleys", image: "/images/catalog/mamra-almonds.jpg", badge: "Premium", variants: [{ id: "mamra-250", size: "250g", price: 899, mrp: 1100 }, { id: "mamra-500", size: "500g", price: 1699, mrp: 2100 }] },
-      { id: "jumbo-cashews", name: "Jumbo Cashews W240", category: "nuts", description: "King-size whole white cashews", image: "/images/catalog/cashews.jpg", badge: "Customer Favorite", variants: [{ id: "cashew-250", size: "250g", price: 420, mrp: 520 }, { id: "cashew-500", size: "500g", price: 790, mrp: 980 }] },
-      { id: "pistachios-salted", name: "Roasted Salted Pistachios", category: "nuts", description: "Naturally opened Iranian pistachios roasted with sea salt", image: "/images/catalog/pistachios.jpg", badge: "Crispy", variants: [{ id: "pista-250", size: "250g", price: 480, mrp: 600 }, { id: "pista-500", size: "500g", price: 920, mrp: 1150 }] },
-      { id: "chilean-walnuts", name: "Chilean Walnut Kernels", category: "nuts", description: "Extra-light half kernels high in Omega-3", image: "/images/catalog/walnuts.jpg", badge: "Brain Food", variants: [{ id: "walnut-250", size: "250g", price: 450, mrp: 580 }, { id: "walnut-500", size: "500g", price: 860, mrp: 1100 }] },
-      { id: "royal-gifting-box", name: "Royal Nut & Dry Fruit Gift Box", category: "gifting", description: "Handcrafted wooden keepsake box with 4 premium jars", image: "/images/catalog/gift-box-royal.jpg", badge: "Festive Special", variants: [{ id: "gift-royal", size: "1 Box (800g)", price: 1899, mrp: 2400 }] },
-      { id: "medjool-dates", name: "Medjool Dates", category: "dry-fruits", description: "Large, soft and luscious dates from Jordan", image: "/images/catalog/dates.jpg", badge: "Natural Sweetener", variants: [{ id: "dates-250", size: "250g", price: 399, mrp: 500 }, { id: "dates-500", size: "500g", price: 749, mrp: 950 }] },
-      { id: "berry-trail-mix", name: "Antioxidant Berry Mix", category: "mixes", description: "Blend of cranberries, blueberries, seeds and nuts", image: "/images/catalog/berry-mix.jpg", badge: "Superfood", variants: [{ id: "berry-250", size: "250g", price: 360, mrp: 460 }] }
-    ];
+  {
+    "id": "california-almonds",
+    "name": "California Almonds",
+    "localName": "Badam",
+    "category": "nuts",
+    "description": "Crunchy, hand-sorted California almonds — everyday health staple",
+    "image": "\"/images/catalog\"/almonds.jpg",
+    "badge": "Bestseller",
+    "variants": [
+      {
+        "id": "cal-almond-250",
+        "size": "250g",
+        "price": 299,
+        "mrp": 390
+      },
+      {
+        "id": "cal-almond-500",
+        "size": "500g",
+        "price": 579,
+        "mrp": 750
+      },
+      {
+        "id": "cal-almond-1kg",
+        "size": "1 Kg",
+        "price": 1100,
+        "mrp": 1450
+      }
+    ]
+  },
+  {
+    "id": "mamra-almonds",
+    "name": "Mamra Almonds",
+    "localName": "Mamra Badam",
+    "category": "nuts",
+    "description": "Premium oil-rich Mamra almonds from high-altitude valleys",
+    "image": "\"/images/catalog\"/mamra-almonds.jpg",
+    "badge": "Premium",
+    "variants": [
+      {
+        "id": "mamra-250",
+        "size": "250g",
+        "price": 349,
+        "mrp": 460
+      },
+      {
+        "id": "mamra-500",
+        "size": "500g",
+        "price": 679,
+        "mrp": 890
+      },
+      {
+        "id": "mamra-1kg",
+        "size": "1 Kg",
+        "price": 1300,
+        "mrp": 1699
+      }
+    ]
+  },
+  {
+    "id": "cashews-w320",
+    "name": "Whole Cashews W320",
+    "localName": "Kaju",
+    "category": "nuts",
+    "description": "Whole premium grade W320 cashews, rich, creamy and buttery",
+    "image": "\"/images/catalog\"/cashews.jpg",
+    "badge": "Bestseller",
+    "variants": [
+      {
+        "id": "cashew-250",
+        "size": "250g",
+        "price": 259,
+        "mrp": 340
+      },
+      {
+        "id": "cashew-500",
+        "size": "500g",
+        "price": 499,
+        "mrp": 650
+      },
+      {
+        "id": "cashew-1kg",
+        "size": "1 Kg",
+        "price": 950,
+        "mrp": 1250
+      }
+    ]
+  },
+  {
+    "id": "jumbo-cashews",
+    "name": "Jumbo Premium Cashews",
+    "localName": "Jumbo Kaju",
+    "category": "nuts",
+    "description": "Hand-picked jumbo cashews with exceptionally rich crunch",
+    "image": "\"/images/catalog\"/cashews.jpg",
+    "badge": "Premium",
+    "variants": [
+      {
+        "id": "jumbo-cashew-250",
+        "size": "250g",
+        "price": 279,
+        "mrp": 360
+      },
+      {
+        "id": "jumbo-cashew-500",
+        "size": "500g",
+        "price": 529,
+        "mrp": 690
+      },
+      {
+        "id": "jumbo-cashew-1kg",
+        "size": "1 Kg",
+        "price": 1000,
+        "mrp": 1299
+      }
+    ]
+  },
+  {
+    "id": "walnuts",
+    "name": "Walnut Kernels",
+    "localName": "Akhrot",
+    "category": "nuts",
+    "description": "Light Chilean & Kashmiri walnut halves, rich in omega-3",
+    "image": "\"/images/catalog\"/walnuts.jpg",
+    "badge": "Bestseller",
+    "variants": [
+      {
+        "id": "walnut-250",
+        "size": "250g",
+        "price": 449,
+        "mrp": 580
+      },
+      {
+        "id": "walnut-500",
+        "size": "500g",
+        "price": 879,
+        "mrp": 1150
+      },
+      {
+        "id": "walnut-1kg",
+        "size": "1 Kg",
+        "price": 1700,
+        "mrp": 2199
+      }
+    ]
+  },
+  {
+    "id": "pistachios",
+    "name": "Roasted & Salted Pistachios",
+    "localName": "Pista",
+    "category": "nuts",
+    "subcategory": "pistachios",
+    "description": "Naturally opened pistachios, dry-roasted and lightly salted",
+    "image": "\"/images/catalog\"/pistachios.jpg",
+    "badge": "Bestseller",
+    "variants": [
+      {
+        "id": "pista-250",
+        "size": "250g",
+        "price": 479,
+        "mrp": 620
+      },
+      {
+        "id": "pista-500",
+        "size": "500g",
+        "price": 929,
+        "mrp": 1200
+      },
+      {
+        "id": "pista-1kg",
+        "size": "1 Kg",
+        "price": 1800,
+        "mrp": 2350
+      }
+    ]
+  },
+  {
+    "id": "super-jumbo-cashews-w180",
+    "name": "Super Jumbo King Cashews W180",
+    "localName": "King Kaju W180",
+    "category": "nuts",
+    "subcategory": "cashews",
+    "description": "King-size W180 super jumbo cashews — largest whole white kernels, rich, sweet & buttery",
+    "image": "\"/images/catalog\"/cashews.jpg",
+    "badge": "Royal Special",
+    "variants": [
+      {
+        "id": "cashew-w180-250",
+        "size": "250g",
+        "price": 349,
+        "mrp": 450
+      },
+      {
+        "id": "cashew-w180-500",
+        "size": "500g",
+        "price": 679,
+        "mrp": 880
+      },
+      {
+        "id": "cashew-w180-1kg",
+        "size": "1 Kg",
+        "price": 1300,
+        "mrp": 1699
+      }
+    ]
+  },
+  {
+    "id": "split-cashews-tukda",
+    "name": "Hand-Split Cashews (Tukda)",
+    "localName": "Kaju Tukda",
+    "category": "nuts",
+    "subcategory": "cashews",
+    "description": "Clean split white cashew halves — crisp and perfect for daily cooking, sweets & gravies",
+    "image": "\"/images/catalog\"/cashews.jpg",
+    "badge": "Value Pack",
+    "variants": [
+      {
+        "id": "cashew-tukda-250",
+        "size": "250g",
+        "price": 199,
+        "mrp": 260
+      },
+      {
+        "id": "cashew-tukda-500",
+        "size": "500g",
+        "price": 379,
+        "mrp": 490
+      },
+      {
+        "id": "cashew-tukda-1kg",
+        "size": "1 Kg",
+        "price": 720,
+        "mrp": 950
+      }
+    ]
+  },
+  {
+    "id": "gurbandi-almonds",
+    "name": "Afghan Gurbandi Almonds",
+    "localName": "Gurbandi Badam",
+    "category": "nuts",
+    "subcategory": "almonds",
+    "description": "High oil-content Afghan Gurbandi almonds — small, nutrient-dense Ayurvedic health essential",
+    "image": "\"/images/catalog\"/almonds.jpg",
+    "badge": "High Oil Content",
+    "variants": [
+      {
+        "id": "gurbandi-250",
+        "size": "250g",
+        "price": 289,
+        "mrp": 380
+      },
+      {
+        "id": "gurbandi-500",
+        "size": "500g",
+        "price": 549,
+        "mrp": 720
+      },
+      {
+        "id": "gurbandi-1kg",
+        "size": "1 Kg",
+        "price": 1050,
+        "mrp": 1390
+      }
+    ]
+  },
+  {
+    "id": "raw-pista-giri",
+    "name": "Raw Green Pistachio Kernels",
+    "localName": "Pista Giri",
+    "category": "nuts",
+    "subcategory": "pistachios",
+    "description": "100% natural raw green pistachio kernels without shell — premium garnish for desserts & sweets",
+    "image": "\"/images/catalog\"/pistachios.jpg",
+    "badge": "Shelled Kernels",
+    "variants": [
+      {
+        "id": "pista-giri-250",
+        "size": "250g",
+        "price": 549,
+        "mrp": 690
+      },
+      {
+        "id": "pista-giri-500",
+        "size": "500g",
+        "price": 1049,
+        "mrp": 1350
+      },
+      {
+        "id": "pista-giri-1kg",
+        "size": "1 Kg",
+        "price": 1999,
+        "mrp": 2500
+      }
+    ]
+  },
+  {
+    "id": "brazil-nuts",
+    "name": "Brazil Nuts",
+    "localName": "Brazil Nuts",
+    "category": "nuts",
+    "description": "Selenium-rich Amazonian kernels, raw, whole, and crisp",
+    "image": "\"/images/catalog\"/brazil-nuts.jpg",
+    "badge": "Exotic",
+    "variants": [
+      {
+        "id": "brazil-250",
+        "size": "250g",
+        "price": 899,
+        "mrp": 1150
+      },
+      {
+        "id": "brazil-500",
+        "size": "500g",
+        "price": 1749,
+        "mrp": 2250
+      },
+      {
+        "id": "brazil-1kg",
+        "size": "1 Kg",
+        "price": 3400,
+        "mrp": 4200
+      }
+    ]
+  },
+  {
+    "id": "pecan-nuts",
+    "name": "Pecan Nuts",
+    "localName": "Pecan",
+    "category": "nuts",
+    "description": "Buttery raw pecan halves, rich in antioxidants and healthy fats",
+    "image": "\"/images/catalog\"/pecan-nuts.png",
+    "badge": "Gourmet",
+    "variants": [
+      {
+        "id": "pecan-250",
+        "size": "250g",
+        "price": 399,
+        "mrp": 520
+      },
+      {
+        "id": "pecan-500",
+        "size": "500g",
+        "price": 779,
+        "mrp": 999
+      },
+      {
+        "id": "pecan-1kg",
+        "size": "1 Kg",
+        "price": 1500,
+        "mrp": 1899
+      }
+    ]
+  },
+  {
+    "id": "blueberries",
+    "name": "Dried Blueberries",
+    "localName": "Blueberry",
+    "category": "dry-fruits",
+    "description": "Plump wild blueberries dried to sweet perfection — packed with antioxidants",
+    "image": "\"/images/catalog\"/blueberry.png",
+    "badge": "Superfood",
+    "variants": [
+      {
+        "id": "blueberry-250",
+        "size": "250g",
+        "price": 419,
+        "mrp": 520
+      },
+      {
+        "id": "blueberry-500",
+        "size": "500g",
+        "price": 799,
+        "mrp": 999
+      },
+      {
+        "id": "blueberry-1kg",
+        "size": "1 Kg",
+        "price": 1500,
+        "mrp": 1899
+      }
+    ]
+  },
+  {
+    "id": "blackberries",
+    "name": "Dried Blackberries",
+    "localName": "Blackberry",
+    "category": "dry-fruits",
+    "description": "Juicy sun-dried blackberries with rich berry flavor",
+    "image": "\"/images/catalog\"/blackberry.png",
+    "badge": "Exotic",
+    "variants": [
+      {
+        "id": "blackberry-250",
+        "size": "250g",
+        "price": 299,
+        "mrp": 390
+      },
+      {
+        "id": "blackberry-500",
+        "size": "500g",
+        "price": 579,
+        "mrp": 750
+      },
+      {
+        "id": "blackberry-1kg",
+        "size": "1 Kg",
+        "price": 1100,
+        "mrp": 1450
+      }
+    ]
+  },
+  {
+    "id": "plum-standard",
+    "name": "Sun-Dried Plum",
+    "localName": "Plum",
+    "category": "dry-fruits",
+    "description": "Naturally sweet and chewy sun-dried plums (prunes), high in dietary fiber",
+    "image": "\"/images/catalog\"/plum.png",
+    "variants": [
+      {
+        "id": "plum-std-250",
+        "size": "250g",
+        "price": 139,
+        "mrp": 180
+      },
+      {
+        "id": "plum-std-500",
+        "size": "500g",
+        "price": 269,
+        "mrp": 350
+      },
+      {
+        "id": "plum-std-1kg",
+        "size": "1 Kg",
+        "price": 500,
+        "mrp": 650
+      }
+    ]
+  },
+  {
+    "id": "plum-premium",
+    "name": "Jumbo Premium Dried Plum",
+    "localName": "Jumbo Plum",
+    "category": "dry-fruits",
+    "description": "Hand-selected large moist dried plums, rich and succulent",
+    "image": "\"/images/catalog\"/plum.png",
+    "badge": "Premium",
+    "variants": [
+      {
+        "id": "plum-prem-250",
+        "size": "250g",
+        "price": 219,
+        "mrp": 290
+      },
+      {
+        "id": "plum-prem-500",
+        "size": "500g",
+        "price": 419,
+        "mrp": 550
+      },
+      {
+        "id": "plum-prem-1kg",
+        "size": "1 Kg",
+        "price": 800,
+        "mrp": 1050
+      }
+    ]
+  },
+  {
+    "id": "figs",
+    "name": "Premium Dried Figs",
+    "localName": "Anjeer",
+    "category": "dry-fruits",
+    "description": "Plump, seed-rich Afghan figs — high fiber and natural sweetness",
+    "image": "\"/images/catalog\"/anjeer.jpg",
+    "badge": "Bestseller",
+    "variants": [
+      {
+        "id": "figs-250",
+        "size": "250g",
+        "price": 279,
+        "mrp": 360
+      },
+      {
+        "id": "figs-500",
+        "size": "500g",
+        "price": 529,
+        "mrp": 690
+      },
+      {
+        "id": "figs-1kg",
+        "size": "1 Kg",
+        "price": 1000,
+        "mrp": 1299
+      }
+    ]
+  },
+  {
+    "id": "raisins",
+    "name": "Green Seedless Raisins",
+    "localName": "Kishmish",
+    "category": "dry-fruits",
+    "description": "Long golden green seedless raisins, sweet and juicy",
+    "image": "\"/images/catalog\"/raisins.jpg",
+    "variants": [
+      {
+        "id": "raisins-250",
+        "size": "250g",
+        "price": 169,
+        "mrp": 220
+      },
+      {
+        "id": "raisins-500",
+        "size": "500g",
+        "price": 319,
+        "mrp": 420
+      },
+      {
+        "id": "raisins-1kg",
+        "size": "1 Kg",
+        "price": 600,
+        "mrp": 800
+      }
+    ]
+  },
+  {
+    "id": "solar-mango",
+    "name": "Solar Dried Mango",
+    "localName": "Aam",
+    "category": "solar-dried",
+    "description": "Sun-kissed dried mango slices, 100% natural fruit energy",
+    "image": "\"/images/catalog\"/dried-mango.png",
+    "badge": "Solar Dried",
+    "variants": [
+      {
+        "id": "smango-250",
+        "size": "250g",
+        "price": 179,
+        "mrp": 230
+      },
+      {
+        "id": "smango-500",
+        "size": "500g",
+        "price": 349,
+        "mrp": 450
+      },
+      {
+        "id": "smango-1kg",
+        "size": "1 Kg",
+        "price": 660,
+        "mrp": 850
+      }
+    ]
+  },
+  {
+    "id": "solar-pineapple",
+    "name": "Solar Dried Pineapple",
+    "localName": "Ananas",
+    "category": "solar-dried",
+    "description": "Chewy tropical pineapple rings dried under open sun",
+    "image": "\"/images/catalog\"/dried-pineapple.png",
+    "badge": "Solar Dried",
+    "variants": [
+      {
+        "id": "spine-250",
+        "size": "250g",
+        "price": 169,
+        "mrp": 220
+      },
+      {
+        "id": "spine-500",
+        "size": "500g",
+        "price": 319,
+        "mrp": 420
+      },
+      {
+        "id": "spine-1kg",
+        "size": "1 Kg",
+        "price": 600,
+        "mrp": 800
+      }
+    ]
+  },
+  {
+    "id": "dried-kiwi-slices",
+    "name": "Dried Kiwi",
+    "localName": "Kiwi",
+    "category": "solar-dried",
+    "description": "Tangy dried kiwi wheels preserving natural green goodness",
+    "image": "\"/images/catalog\"/dried-kiwi.jpg",
+    "variants": [
+      {
+        "id": "kiwi-250",
+        "size": "250g",
+        "price": 169,
+        "mrp": 220
+      },
+      {
+        "id": "kiwi-500",
+        "size": "500g",
+        "price": 319,
+        "mrp": 420
+      },
+      {
+        "id": "kiwi-1kg",
+        "size": "1 Kg",
+        "price": 600,
+        "mrp": 800
+      }
+    ]
+  },
+  {
+    "id": "sweet-dried-kiwi",
+    "name": "Sweet Dried Kiwi",
+    "localName": "Sweet Kiwi",
+    "category": "solar-dried",
+    "description": "Sweetened kiwi slices with a delicious chewy bite",
+    "image": "\"/images/catalog\"/sweet-kiwi.png",
+    "badge": "Popular",
+    "variants": [
+      {
+        "id": "sweet-kiwi-250",
+        "size": "250g",
+        "price": 159,
+        "mrp": 200
+      },
+      {
+        "id": "sweet-kiwi-500",
+        "size": "500g",
+        "price": 299,
+        "mrp": 390
+      },
+      {
+        "id": "sweet-kiwi-1kg",
+        "size": "1 Kg",
+        "price": 560,
+        "mrp": 750
+      }
+    ]
+  },
+  {
+    "id": "honey-amla",
+    "name": "Honey Amla",
+    "localName": "Honey Amla",
+    "category": "solar-dried",
+    "description": "Wild honey dipped Indian gooseberry (Amla) candy — immunity booster",
+    "image": "\"/images/catalog\"/honey-amla.png",
+    "badge": "Health Special",
+    "variants": [
+      {
+        "id": "amla-hny-250",
+        "size": "250g",
+        "price": 119,
+        "mrp": 150
+      },
+      {
+        "id": "amla-hny-500",
+        "size": "500g",
+        "price": 219,
+        "mrp": 280
+      },
+      {
+        "id": "amla-hny-1kg",
+        "size": "1 Kg",
+        "price": 400,
+        "mrp": 520
+      }
+    ]
+  },
+  {
+    "id": "jeera-amla",
+    "name": "Jeera Amla",
+    "localName": "Jeera Amla",
+    "category": "solar-dried",
+    "description": "Cumin and herbal spice infused digestive Amla mouth freshener",
+    "image": "\"/images/catalog\"/jeera-amla.png",
+    "variants": [
+      {
+        "id": "amla-jr-250",
+        "size": "250g",
+        "price": 119,
+        "mrp": 150
+      },
+      {
+        "id": "amla-jr-500",
+        "size": "500g",
+        "price": 219,
+        "mrp": 280
+      },
+      {
+        "id": "amla-jr-1kg",
+        "size": "1 Kg",
+        "price": 400,
+        "mrp": 520
+      }
+    ]
+  },
+  {
+    "id": "salt-amla",
+    "name": "Salt Amla",
+    "localName": "Namkeen Amla",
+    "category": "solar-dried",
+    "description": "Rock salt seasoned sun-dried Amla pieces, tangy & refreshing",
+    "image": "\"/images/catalog\"/salt-amla.png",
+    "variants": [
+      {
+        "id": "amla-slt-250",
+        "size": "250g",
+        "price": 129,
+        "mrp": 170
+      },
+      {
+        "id": "amla-slt-500",
+        "size": "500g",
+        "price": 239,
+        "mrp": 310
+      },
+      {
+        "id": "amla-slt-1kg",
+        "size": "1 Kg",
+        "price": 450,
+        "mrp": 590
+      }
+    ]
+  },
+  {
+    "id": "seeds-chia",
+    "name": "Organic Chia Seeds",
+    "localName": "Chia",
+    "category": "seeds",
+    "description": "Omega-3 rich raw black chia seeds for smoothies and wellness",
+    "image": "\"/images/catalog\"/chia.jpg",
+    "badge": "Superfood",
+    "variants": [
+      {
+        "id": "schia-250",
+        "size": "250g",
+        "price": 99,
+        "mrp": 130
+      },
+      {
+        "id": "schia-500",
+        "size": "500g",
+        "price": 189,
+        "mrp": 250
+      },
+      {
+        "id": "schia-1kg",
+        "size": "1 Kg",
+        "price": 360,
+        "mrp": 480
+      }
+    ]
+  },
+  {
+    "id": "seeds-flax",
+    "name": "Organic Flax Seeds",
+    "localName": "Alsi",
+    "category": "seeds",
+    "description": "Nutritious brown flax seeds (Alsi), packed with fiber & lignans",
+    "image": "\"/images/catalog\"/flax-seeds.png",
+    "variants": [
+      {
+        "id": "sflax-250",
+        "size": "250g",
+        "price": 79,
+        "mrp": 100
+      },
+      {
+        "id": "sflax-500",
+        "size": "500g",
+        "price": 139,
+        "mrp": 180
+      },
+      {
+        "id": "sflax-1kg",
+        "size": "1 Kg",
+        "price": 250,
+        "mrp": 340
+      }
+    ]
+  },
+  {
+    "id": "seeds-haleem",
+    "name": "Haleem Seeds",
+    "localName": "Garden Cress",
+    "category": "seeds",
+    "description": "Iron-rich Garden Cress (Haleem / Chandrasur) seeds for vitality",
+    "image": "\"/images/catalog\"/haleem-seeds.png",
+    "variants": [
+      {
+        "id": "shaleem-250",
+        "size": "250g",
+        "price": 89,
+        "mrp": 120
+      },
+      {
+        "id": "shaleem-500",
+        "size": "500g",
+        "price": 169,
+        "mrp": 220
+      },
+      {
+        "id": "shaleem-1kg",
+        "size": "1 Kg",
+        "price": 320,
+        "mrp": 420
+      }
+    ]
+  },
+  {
+    "id": "seeds-sunflower",
+    "name": "Sunflower Seeds",
+    "localName": "Sunflower",
+    "category": "seeds",
+    "description": "Hulled raw sunflower seed kernels for snacking and baking",
+    "image": "\"/images/catalog\"/sunflower-seeds.png",
+    "variants": [
+      {
+        "id": "ssun-250",
+        "size": "250g",
+        "price": 79,
+        "mrp": 100
+      },
+      {
+        "id": "ssun-500",
+        "size": "500g",
+        "price": 139,
+        "mrp": 180
+      },
+      {
+        "id": "ssun-1kg",
+        "size": "1 Kg",
+        "price": 250,
+        "mrp": 340
+      }
+    ]
+  },
+  {
+    "id": "seeds-pumpkin",
+    "name": "Pumpkin Seeds",
+    "localName": "Kaddu",
+    "category": "seeds",
+    "description": "Shelled green pepita pumpkin seeds, rich in zinc and magnesium",
+    "image": "\"/images/catalog\"/pumpkin-seeds.jpg",
+    "variants": [
+      {
+        "id": "spumpkin-250",
+        "size": "250g",
+        "price": 179,
+        "mrp": 230
+      },
+      {
+        "id": "spumpkin-500",
+        "size": "500g",
+        "price": 339,
+        "mrp": 440
+      },
+      {
+        "id": "spumpkin-1kg",
+        "size": "1 Kg",
+        "price": 650,
+        "mrp": 850
+      }
+    ]
+  },
+  {
+    "id": "seeds-watermelon",
+    "name": "Watermelon Seeds",
+    "localName": "Tarbooza / Magaz",
+    "category": "seeds",
+    "description": "Hand-peeled white magaz watermelon seed kernels",
+    "image": "\"/images/catalog\"/chia.jpg",
+    "variants": [
+      {
+        "id": "swater-250",
+        "size": "250g",
+        "price": 189,
+        "mrp": 250
+      },
+      {
+        "id": "swater-500",
+        "size": "500g",
+        "price": 369,
+        "mrp": 480
+      },
+      {
+        "id": "swater-1kg",
+        "size": "1 Kg",
+        "price": 700,
+        "mrp": 900
+      }
+    ]
+  },
+  {
+    "id": "phool-makhana",
+    "name": "Phool Makhana",
+    "localName": "Makhana",
+    "category": "mixes",
+    "description": "Crisp raw puffed lotus seeds — low calorie, high protein snack",
+    "image": "\"/images/catalog\"/makhana.jpg",
+    "badge": "Bestseller",
+    "variants": [
+      {
+        "id": "mak-raw-250",
+        "size": "250g",
+        "price": 279,
+        "mrp": 360
+      },
+      {
+        "id": "mak-raw-500",
+        "size": "500g",
+        "price": 529,
+        "mrp": 690
+      },
+      {
+        "id": "mak-raw-1kg",
+        "size": "1 Kg",
+        "price": 1000,
+        "mrp": 1299
+      }
+    ]
+  },
+  {
+    "id": "power-trail-mix",
+    "name": "Power Trail Mix",
+    "category": "mixes",
+    "description": "Mamra almonds, pistachios, cashews, cranberries & pumpkin seeds",
+    "image": "\"/images/catalog\"/trail-mix.jpg",
+    "variants": [
+      {
+        "id": "mix-power-250",
+        "size": "250g",
+        "price": 329,
+        "mrp": 420
+      },
+      {
+        "id": "mix-power-500",
+        "size": "500g",
+        "price": 629,
+        "mrp": 810
+      },
+      {
+        "id": "mix-power-1kg",
+        "size": "1 Kg",
+        "price": 1199,
+        "mrp": 1550
+      }
+    ]
+  },
+  {
+    "id": "saffron",
+    "name": "Kashmiri Mongra Saffron",
+    "localName": "Kesar",
+    "category": "spices",
+    "description": "Deep-red Mongra threads, high crocin, hand-picked",
+    "image": "/images/spices/spices-hero.png",
+    "badge": "Rare",
+    "variants": [
+      {
+        "id": "saffron-1g",
+        "size": "1g",
+        "price": 499,
+        "mrp": 649
+      },
+      {
+        "id": "saffron-2g",
+        "size": "2g",
+        "price": 949,
+        "mrp": 1250
+      },
+      {
+        "id": "saffron-5g",
+        "size": "5g",
+        "price": 2199,
+        "mrp": 2899
+      }
+    ]
+  },
+  {
+    "id": "wild-honey",
+    "name": "Wild Forest Honey",
+    "localName": "Shahad",
+    "category": "honey",
+    "description": "Raw, unheated multi-floral honey from forest hives",
+    "image": "/images/honey/wild-honey-hero.png",
+    "badge": "Organic",
+    "variants": [
+      {
+        "id": "honey-250",
+        "size": "250ml",
+        "price": 349,
+        "mrp": 450
+      },
+      {
+        "id": "honey-500",
+        "size": "500ml",
+        "price": 649,
+        "mrp": 850
+      },
+      {
+        "id": "honey-1l",
+        "size": "1 Litre",
+        "price": 1199,
+        "mrp": 1550
+      }
+    ]
+  },
+  {
+    "id": "dark-chocolate-almond-rocks",
+    "name": "Dark Chocolate Almond Rocks",
+    "category": "chocolates",
+    "description": "70% dark Belgian chocolate loaded with roasted almonds",
+    "image": "/images/chocolates/godiva-dark-truffe.png",
+    "badge": "Bestseller",
+    "variants": [
+      {
+        "id": "choco-alm-200",
+        "size": "200g",
+        "price": 399,
+        "mrp": 520
+      },
+      {
+        "id": "choco-alm-400",
+        "size": "400g",
+        "price": 749,
+        "mrp": 970
+      }
+    ]
+  },
+  {
+    "id": "royal-gifting-box",
+    "name": "Royal Celebration Gift Box",
+    "category": "gifting",
+    "description": "Wooden keepsake box with tins of almonds, cashews, pista & saffron",
+    "image": "/images/gifting/gift-box-classic.jpg",
+    "badge": "Gift Special",
+    "variants": [
+      {
+        "id": "gift-royal-small",
+        "size": "4 x 200g",
+        "price": 1499,
+        "mrp": 1899
+      },
+      {
+        "id": "gift-royal-large",
+        "size": "4 x 400g",
+        "price": 2799,
+        "mrp": 3599
+      }
+    ]
+  },
+  {
+    "id": "deccan-chilli-cashews",
+    "name": "Deccan Chilli & Lime Roasted Cashews",
+    "localName": "Mirchi Kaju",
+    "category": "flavored-nuts",
+    "subcategory": "savory-roasted",
+    "description": "Jumbo W240 cashews wok-roasted with authentic AP Guntur chilli & zesty kaffir lime seasoning",
+    "image": "\"/images/catalog\"/cashews.jpg",
+    "badge": "Signature",
+    "variants": [
+      {
+        "id": "deccan-chilli-250",
+        "size": "250g",
+        "price": 329,
+        "mrp": 420
+      },
+      {
+        "id": "deccan-chilli-500",
+        "size": "500g",
+        "price": 629,
+        "mrp": 790
+      },
+      {
+        "id": "deccan-chilli-1kg",
+        "size": "1 Kg",
+        "price": 1199,
+        "mrp": 1499
+      }
+    ]
+  },
+  {
+    "id": "smoky-garlic-almonds",
+    "name": "Smoky Garlic Butter Glazed Almonds",
+    "localName": "Garlic Badam",
+    "category": "flavored-nuts",
+    "subcategory": "savory-roasted",
+    "description": "Hand-selected California almonds slow-roasted in garlic butter, rosemary & smoked pink salt",
+    "image": "\"/images/catalog\"/almonds.jpg",
+    "badge": "Chef Special",
+    "variants": [
+      {
+        "id": "smoky-garlic-250",
+        "size": "250g",
+        "price": 349,
+        "mrp": 440
+      },
+      {
+        "id": "smoky-garlic-500",
+        "size": "500g",
+        "price": 659,
+        "mrp": 820
+      },
+      {
+        "id": "smoky-garlic-1kg",
+        "size": "1 Kg",
+        "price": 1249,
+        "mrp": 1550
+      }
+    ]
+  },
+  {
+    "id": "honey-sesame-cashews",
+    "name": "Honey Glazed Sesame Roasted Cashews",
+    "localName": "Honey Kaju",
+    "category": "flavored-nuts",
+    "subcategory": "sweet-roasted",
+    "description": "Cashews wok-tossed in pure wild forest honey and coated with crunchy toasted white sesame",
+    "image": "\"/images/catalog\"/cashews.jpg",
+    "badge": "Sweet & Crunchy",
+    "variants": [
+      {
+        "id": "honey-sesame-250",
+        "size": "250g",
+        "price": 339,
+        "mrp": 430
+      },
+      {
+        "id": "honey-sesame-500",
+        "size": "500g",
+        "price": 649,
+        "mrp": 810
+      }
+    ]
+  },
+  {
+    "id": "tangy-masala-pista",
+    "name": "Royal Chatpata Masala Pistachios",
+    "localName": "Masala Pista",
+    "category": "flavored-nuts",
+    "subcategory": "savory-roasted",
+    "description": "Naturally opened Iranian pistachios roasted with tangy royal chatpata spices & dried mango powder",
+    "image": "\"/images/catalog\"/pistachios.jpg",
+    "badge": "Chatpata",
+    "variants": [
+      {
+        "id": "tangy-masala-250",
+        "size": "250g",
+        "price": 379,
+        "mrp": 480
+      },
+      {
+        "id": "tangy-masala-500",
+        "size": "500g",
+        "price": 719,
+        "mrp": 890
+      }
+    ]
+  },
+  {
+    "id": "pepper-salt-walnuts",
+    "name": "Malabar Black Pepper & Rock Salt Walnuts",
+    "localName": "Pepper Akhrot",
+    "category": "flavored-nuts",
+    "subcategory": "savory-roasted",
+    "description": "Chilean light walnut kernels toasted with freshly cracked Malabar black pepper & Himalayan rock salt",
+    "image": "\"/images/catalog\"/walnuts.jpg",
+    "badge": "Gourmet",
+    "variants": [
+      {
+        "id": "pepper-salt-250",
+        "size": "250g",
+        "price": 369,
+        "mrp": 470
+      },
+      {
+        "id": "pepper-salt-500",
+        "size": "500g",
+        "price": 699,
+        "mrp": 870
+      }
+    ]
+  },
+  {
+    "id": "royal-saffron-stuffed-dates",
+    "name": "Royal Saffron & Pistachio Stuffed Dates",
+    "localName": "Saffron Stuffed Khajur",
+    "category": "stuffed-dates",
+    "subcategory": "delicacies",
+    "description": "King Medjool dates filled with Iranian pistachios, crushed green cardamom & Kashmiri saffron honey glaze",
+    "image": "\"/images/catalog\"/dates.jpg",
+    "badge": "Royal Luxury",
+    "variants": [
+      {
+        "id": "royal-saffron-dates-250",
+        "size": "250g",
+        "price": 449,
+        "mrp": 580
+      },
+      {
+        "id": "royal-saffron-dates-500",
+        "size": "500g",
+        "price": 849,
+        "mrp": 1090
+      }
+    ]
+  },
+  {
+    "id": "cardamom-almond-stuffed-dates",
+    "name": "Cardamom Almond & Honey Stuffed Dates",
+    "localName": "Badam Khajur",
+    "category": "stuffed-dates",
+    "subcategory": "delicacies",
+    "description": "Plump dates stuffed with slow-roasted California almonds & infused with cardamom wild honey",
+    "image": "\"/images/catalog\"/dates.jpg",
+    "badge": "Customer Favorite",
+    "variants": [
+      {
+        "id": "cardamom-dates-250",
+        "size": "250g",
+        "price": 399,
+        "mrp": 520
+      },
+      {
+        "id": "cardamom-dates-500",
+        "size": "500g",
+        "price": 769,
+        "mrp": 980
+      }
+    ]
+  },
+  {
+    "id": "cocoa-dipped-stuffed-dates",
+    "name": "Dark Cocoa Dipped Nut-Stuffed Dates",
+    "localName": "Chocolate Khajur",
+    "category": "stuffed-dates",
+    "subcategory": "delicacies",
+    "description": "Medjool dates stuffed with cashew paste, dipped in 70% artisanal dark cocoa & sea salt flakes",
+    "image": "\"/images/catalog\"/dates.jpg",
+    "badge": "Artisanal",
+    "variants": [
+      {
+        "id": "cocoa-dates-250",
+        "size": "250g",
+        "price": 479,
+        "mrp": 620
+      },
+      {
+        "id": "cocoa-dates-500",
+        "size": "500g",
+        "price": 899,
+        "mrp": 1150
+      }
+    ]
+  },
+  {
+    "id": "sunkissed-mango-strips",
+    "name": "Sun-Kissed Alphonso Mango Strips",
+    "localName": "Solar Aam",
+    "category": "solar-dried",
+    "subcategory": "solar-fruits",
+    "description": "Chewy, naturally sweet Alphonso mango slices solar-dried to preserve natural fruit nectar without sulfur",
+    "image": "\"/images/catalog\"/apricots.jpg",
+    "badge": "Solar Dried",
+    "variants": [
+      {
+        "id": "solar-mango-250",
+        "size": "250g",
+        "price": 329,
+        "mrp": 420
+      },
+      {
+        "id": "solar-mango-500",
+        "size": "500g",
+        "price": 619,
+        "mrp": 790
+      }
+    ]
+  },
+  {
+    "id": "golden-apricot-kernels",
+    "name": "Golden Sun-Dried Turkish Apricots",
+    "localName": "Jardalu",
+    "category": "solar-dried",
+    "subcategory": "solar-fruits",
+    "description": "Whole sun-dried seedless golden apricots with soft texture and rich dietary fiber",
+    "image": "\"/images/catalog\"/apricots.jpg",
+    "badge": "100% Natural",
+    "variants": [
+      {
+        "id": "golden-apricot-250",
+        "size": "250g",
+        "price": 299,
+        "mrp": 380
+      },
+      {
+        "id": "golden-apricot-500",
+        "size": "500g",
+        "price": 569,
+        "mrp": 720
+      }
+    ]
+  },
+  {
+    "id": "solar-kiwi-coins",
+    "name": "Solar Dehydrated Tangy Kiwi Coins",
+    "localName": "Dried Kiwi",
+    "category": "solar-dried",
+    "subcategory": "solar-fruits",
+    "description": "Vibrant green solar-dried kiwi coins packed with Vitamin C and natural tangy flavor",
+    "image": "\"/images/catalog\"/apricots.jpg",
+    "badge": "Vitamin C Boost",
+    "variants": [
+      {
+        "id": "solar-kiwi-250",
+        "size": "250g",
+        "price": 319,
+        "mrp": 410
+      },
+      {
+        "id": "solar-kiwi-500",
+        "size": "500g",
+        "price": 599,
+        "mrp": 760
+      }
+    ]
+  },
+  {
+    "id": "admin-stock-qa-item-1",
+    "name": "[TEST] Stock Inventory Audit Item (500 units)",
+    "localName": "Stock Audit",
+    "category": "stock-inventory-test",
+    "subcategory": "stock-levels-qa",
+    "description": "Internal testing item for stock inventory synchronization, restock counters & low stock threshold alert testing",
+    "image": "/images/catalog/almonds.jpg",
+    "badge": "Admin/Dev Only",
+    "variants": [
+      {
+        "id": "admin-stock-qa-250",
+        "size": "250g",
+        "price": 100,
+        "mrp": 150
+      },
+      {
+        "id": "admin-stock-qa-500",
+        "size": "500g",
+        "price": 190,
+        "mrp": 300
+      },
+      {
+        "id": "admin-stock-qa-1000",
+        "size": "1 Kg",
+        "price": 360,
+        "mrp": 500
+      }
+    ]
+  },
+  {
+    "id": "admin-order-qa-item-2",
+    "name": "[TEST] Order & Checkout Workflow QA Item",
+    "localName": "QA Order",
+    "category": "orders-qa-test",
+    "subcategory": "order-workflow-qa",
+    "description": "Internal testing item for verifying live checkout, payment status webhooks & invoice generation",
+    "image": "/images/catalog/cashews.jpg",
+    "badge": "Admin/Dev Only",
+    "variants": [
+      {
+        "id": "admin-order-qa-250",
+        "size": "250g",
+        "price": 50,
+        "mrp": 100
+      },
+      {
+        "id": "admin-order-qa-500",
+        "size": "500g",
+        "price": 90,
+        "mrp": 180
+      }
+    ]
+  },
+  {
+    "id": "dev-sandbox-item-3",
+    "name": "[TEST] Developer Telemetry & Metric Probe",
+    "localName": "Dev Probe",
+    "category": "dev-sandbox",
+    "subcategory": "developer-logs-qa",
+    "description": "Internal testing probe item for verifying developer console real-time logs, telemetry engine & DB payload sync",
+    "image": "/images/catalog/mamra-pistachios.jpg",
+    "badge": "Admin/Dev Only",
+    "variants": [
+      {
+        "id": "dev-probe-250",
+        "size": "250g",
+        "price": 10,
+        "mrp": 20
+      },
+      {
+        "id": "dev-probe-500",
+        "size": "500g",
+        "price": 20,
+        "mrp": 40
+      }
+    ]
+  }
+];
 
     defaultCatalog.forEach(function (p) {
       prodSh.appendRow([p.id, p.name, p.category, p.description, p.image, p.badge]);
