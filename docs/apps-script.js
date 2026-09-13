@@ -1526,6 +1526,7 @@ function doPost(e) {
 
     // Public actions
     if (action === "placeOrder") return json(placeOrder(body.order));
+    if (action === "createCashfreeOrder") return json(createCashfreeOrderSessionBackend(body));
     if (action === "getOrderStatus") return json(getOrderStatus(body.orderId));
     if (action === "adminLogin") return json({ ok: checkPassword(body.password) });
     if (action === "getProducts") return json({ ok: true, products: readProducts() });
@@ -2488,4 +2489,65 @@ function uploadImage(body) {
     subfolder: catName,
     usedFallback: usedFallback
   };
+}
+
+// -------- Cashfree Order Session Server-to-Server Backend --------
+
+function createCashfreeOrderSessionBackend(body) {
+  var appId = "141222992671a6448dce6df4eec9222141";
+  var secretKey = "cfsk_ma_prod_63f90d086bebf60c0fddf21af52c864c_66193dae";
+  var mode = "production";
+
+  var endpoint = (mode === "production") 
+    ? "https://api.cashfree.com/pg/orders" 
+    : "https://sandbox.cashfree.com/pg/orders";
+
+  var cleanPhone = String(body.customerPhone || "9652526920").replace(/\D/g, "").slice(-10) || "9652526920";
+
+  var payload = {
+    order_id: String(body.orderId || ("HON_" + Date.now())),
+    order_amount: Number(body.orderAmount) || 1,
+    order_currency: "INR",
+    customer_details: {
+      customer_id: "CUST_" + cleanPhone,
+      customer_name: String(body.customerName || "House of Nuts Customer"),
+      customer_email: String(body.customerEmail || "houseofnutsproddatur@gmail.com"),
+      customer_phone: cleanPhone
+    },
+    order_meta: {
+      return_url: "https://houseofnuts.store/orders?order_id={order_id}",
+      notify_url: body.notifyUrl || "https://script.google.com/macros/s/AKfycbzOt0eUwPlTbge4ZdzfvkJd3sxmDwG-2J9vqt3JAjV79agTJV9ZGgX4YRzFVpSa2P0/exec"
+    }
+  };
+
+  var options = {
+    method: "post",
+    contentType: "application/json",
+    headers: {
+      "x-api-version": "2025-01-01",
+      "x-client-id": appId,
+      "x-client-secret": secretKey
+    },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+
+  try {
+    var response = UrlFetchApp.fetch(endpoint, options);
+    var resData = JSON.parse(response.getContentText());
+    if (resData && resData.payment_session_id) {
+      return {
+        ok: true,
+        paymentSessionId: resData.payment_session_id,
+        cfOrderId: String(resData.cf_order_id || body.orderId)
+      };
+    } else {
+      return {
+        ok: false,
+        error: (resData && resData.message) ? resData.message : "Cashfree Order Session Creation Failed"
+      };
+    }
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
 }
