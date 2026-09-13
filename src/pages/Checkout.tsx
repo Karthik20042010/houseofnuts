@@ -141,6 +141,9 @@ const CheckoutPage = () => {
     }
 
     setSubmitting(true);
+    if (timer <= 0) {
+      setTimer(300);
+    }
 
     let cfPaymentId: string | undefined;
     let cfOrderId: string | undefined;
@@ -155,7 +158,11 @@ const CheckoutPage = () => {
       });
 
       if (!sessionRes.ok || !sessionRes.paymentSessionId) {
-        toast.error(sessionRes.error || "Could not start Cashfree payment session. Please try again.");
+        toast.error(
+          sessionRes.error?.includes("unknown action")
+            ? "Google Apps Script code needs to be updated. Please copy docs/apps-script.js to Code.gs and re-deploy."
+            : sessionRes.error || "Could not start Cashfree payment session. Please try again."
+        );
         setSubmitting(false);
         return;
       }
