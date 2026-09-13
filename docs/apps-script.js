@@ -946,11 +946,18 @@ function uploadImage(body) {
   var blob = Utilities.newBlob(bytes, body.mimeType || "image/jpeg", body.filename || "image.jpg");
 
   var parentFolder;
+  var usedFallback = false;
   try {
     parentFolder = DriveApp.getFolderById(TARGET_DRIVE_FOLDER_ID);
   } catch (e) {
-    var folders = DriveApp.getFoldersByName("HouseOfNuts_ProductImages");
-    parentFolder = folders.hasNext() ? folders.next() : DriveApp.createFolder("HouseOfNuts_ProductImages");
+    usedFallback = true;
+    var pictureFolders = DriveApp.getFoldersByName("Pictures");
+    if (pictureFolders.hasNext()) {
+      parentFolder = pictureFolders.next();
+    } else {
+      var prodFolders = DriveApp.getFoldersByName("HouseOfNuts_ProductImages");
+      parentFolder = prodFolders.hasNext() ? prodFolders.next() : DriveApp.createFolder("HouseOfNuts_ProductImages");
+    }
   }
 
   var rawCat = body.category ? String(body.category).trim().toLowerCase() : "general";
@@ -987,5 +994,14 @@ function uploadImage(body) {
     }
   } catch (err) { }
 
-  return { ok: true, url: url, fileId: fileId, category: catName };
+  return {
+    ok: true,
+    url: url,
+    fileId: fileId,
+    category: catName,
+    parentFolder: parentFolder.getName(),
+    parentFolderId: parentFolder.getId(),
+    subfolder: catName,
+    usedFallback: usedFallback
+  };
 }
