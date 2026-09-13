@@ -15,14 +15,10 @@
 // -------- Setup & Scope Authorization Helper --------
 
 function authorizeScriptPermissions() {
-  try {
-    UrlFetchApp.fetch("https://api.cashfree.com/pg/orders", { muteHttpExceptions: true });
-    MailApp.getRemainingDailyQuota();
-    SpreadsheetApp.getActive();
-    DriveApp.getRootFolder();
-  } catch (e) {
-    Logger.log("Permission test result: " + e);
-  }
+  UrlFetchApp.fetch("https://api.cashfree.com/pg/orders", { muteHttpExceptions: true });
+  MailApp.getRemainingDailyQuota();
+  SpreadsheetApp.getActive();
+  DriveApp.getRootFolder();
 }
 
 function setupDatabase() {
