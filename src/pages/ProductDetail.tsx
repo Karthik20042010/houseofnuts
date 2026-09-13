@@ -292,15 +292,17 @@ const ProductDetail = () => {
               </span>
               <h1 className="font-display text-4xl sm:text-5xl mt-1 leading-tight">{product.name}</h1>
               
-              <div className="flex items-center gap-2 mt-3">
-                <div className="flex" aria-label={`Rated ${avgRating.toFixed(1)} out of 5`}>
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={14} className={i < Math.round(avgRating) ? "fill-accent text-accent" : "text-border"} />
-                  ))}
+              {reviewCount > 0 && (
+                <div className="flex items-center gap-2 mt-3">
+                  <div className="flex" aria-label={`Rated ${avgRating.toFixed(1)} out of 5`}>
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} size={14} className={i < Math.round(avgRating) ? "fill-accent text-accent" : "text-border"} />
+                    ))}
+                  </div>
+                  <span className="text-sm font-medium font-body">{avgRating.toFixed(1)}</span>
+                  <span className="text-xs text-muted-foreground font-body">({reviewCount} reviews)</span>
                 </div>
-                <span className="text-sm font-medium font-body">{avgRating.toFixed(1)}</span>
-                <span className="text-xs text-muted-foreground font-body">({reviewCount} reviews)</span>
-              </div>
+              )}
             </div>
 
             {isComingSoon && (
