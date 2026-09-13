@@ -175,18 +175,49 @@ const TARGET_PRICES = [
   { productId: "dark-chocolate-almond-rocks", variantId: "choco-alm-400", size: "400g", price: 749, mrp: 970 },
 
   { productId: "royal-gifting-box", variantId: "gift-royal-small", size: "4 x 200g", price: 1499, mrp: 1899 },
-  { productId: "royal-gifting-box", variantId: "gift-royal-large", size: "4 x 400g", price: 2799, mrp: 3599 }
+  { productId: "royal-gifting-box", variantId: "gift-royal-large", size: "4 x 400g", price: 2799, mrp: 3599 },
+
+  // Admin & Developer QA Test Items
+  { productId: "admin-stock-qa-item-1", variantId: "admin-stock-qa-250", size: "250g", price: 100, mrp: 150 },
+  { productId: "admin-stock-qa-item-1", variantId: "admin-stock-qa-500", size: "500g", price: 190, mrp: 300 },
+  { productId: "admin-stock-qa-item-1", variantId: "admin-stock-qa-1000", size: "1 Kg", price: 360, mrp: 500 },
+
+  { productId: "admin-order-qa-item-2", variantId: "admin-order-qa-250", size: "250g", price: 50, mrp: 100 },
+  { productId: "admin-order-qa-item-2", variantId: "admin-order-qa-500", size: "500g", price: 90, mrp: 180 },
+
+  { productId: "dev-sandbox-item-3", variantId: "dev-probe-250", size: "250g", price: 10, mrp: 20 },
+  { productId: "dev-sandbox-item-3", variantId: "dev-probe-500", size: "500g", price: 20, mrp: 40 },
 ];
+
+const SECRET_SALT = "HON_SECURE_PAYLOAD_2026_PROD_KEY";
+
+function obfuscatePayload(payload) {
+  try {
+    const rawJson = JSON.stringify(payload);
+    let obfuscated = "";
+    for (let i = 0; i < rawJson.length; i++) {
+      const charCode = rawJson.charCodeAt(i) ^ SECRET_SALT.charCodeAt(i % SECRET_SALT.length);
+      obfuscated += String.fromCharCode(charCode);
+    }
+    return Buffer.from(obfuscated, "binary").toString("base64");
+  } catch (e) {
+    return Buffer.from(JSON.stringify(payload)).toString("base64");
+  }
+}
 
 async function sendApiWithPassword(action, payload) {
   let lastErrorText = "";
   for (const pw of PASSWORD_CANDIDATES) {
     try {
+      const rawData = { action, password: pw, ...payload };
+      const encryptedPayload = obfuscatePayload(rawData);
+
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
-          action,
+          enc: encryptedPayload,
+          action: action,
           password: pw,
           ...payload,
         }),
