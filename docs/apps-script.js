@@ -2510,16 +2510,24 @@ function createCashfreeOrderSessionBackend(body) {
     ? "https://api.cashfree.com/pg/orders" 
     : "https://sandbox.cashfree.com/pg/orders";
 
-  var cleanPhone = String(body.customerPhone || "9652526920").replace(/\D/g, "").slice(-10) || "9652526920";
+  var rawPhone = String(body.customerPhone || "").replace(/\D/g, "");
+  var cleanPhone = (rawPhone.length >= 10) ? rawPhone.slice(-10) : "9652526920";
+
+  var rawEmail = String(body.customerEmail || "").trim();
+  var cleanEmail = (rawEmail.indexOf("@") > 0 && rawEmail.indexOf(".") > 0) ? rawEmail : "houseofnutsproddatur@gmail.com";
+
+  var cleanName = String(body.customerName || "").trim() || "House of Nuts Customer";
+  var cleanAmount = Number(body.orderAmount) > 0 ? Number(body.orderAmount) : 1;
+  var orderIdStr = String(body.orderId || ("HON_" + Date.now())).replace(/[^a-zA-Z0-9_-]/g, "_");
 
   var payload = {
-    order_id: String(body.orderId || ("HON_" + Date.now())),
-    order_amount: Number(body.orderAmount) || 1,
+    order_id: orderIdStr,
+    order_amount: cleanAmount,
     order_currency: "INR",
     customer_details: {
       customer_id: "CUST_" + cleanPhone,
-      customer_name: String(body.customerName || "House of Nuts Customer"),
-      customer_email: String(body.customerEmail || "houseofnutsproddatur@gmail.com"),
+      customer_name: cleanName,
+      customer_email: cleanEmail,
       customer_phone: cleanPhone
     },
     order_meta: {
@@ -2550,9 +2558,11 @@ function createCashfreeOrderSessionBackend(body) {
         cfOrderId: String(resData.cf_order_id || body.orderId)
       };
     } else {
+      var msg = (resData && resData.message) ? resData.message : "Cashfree Order Session Creation Failed";
+      if (resData && resData.code) msg += " (" + resData.code + ")";
       return {
         ok: false,
-        error: (resData && resData.message) ? resData.message : "Cashfree Order Session Creation Failed"
+        error: msg
       };
     }
   } catch (err) {
