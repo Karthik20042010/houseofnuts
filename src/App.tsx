@@ -170,7 +170,7 @@ const App = () => (
                 </div>
                 <MobileTabBar />
               </BrowserRouter>
-              <WhatsAppButton />
+              {/* <WhatsAppButton /> */}
               <Chatbot />
             </CartProvider>
           </InventoryProvider>
