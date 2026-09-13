@@ -532,13 +532,13 @@ const CheckoutPage = () => {
           </div>
 
           {/* Payment Method Selector Tabs */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {[
-              { id: "cashfree", label: "Cashfree", icon: ShieldCheck, recommended: true },
+              { id: "cashfree", label: "Cashfree Gateway", icon: ShieldCheck, recommended: true },
               { id: "upi", label: "UPI & QR", icon: QrCode },
-              { id: "card", label: "Cards", icon: CreditCard },
-              { id: "cod", label: "COD", icon: Truck },
-              { id: "bank", label: "Bank Transfer", icon: Building2 },
+              // { id: "card", label: "Cards", icon: CreditCard },
+              { id: "cod", label: "Cash on Delivery", icon: Truck },
+              // { id: "bank", label: "Bank Transfer", icon: Building2 },
             ].map((m) => {
               const Icon = m.icon;
               const active = selectedMethod === m.id;
@@ -687,7 +687,8 @@ const CheckoutPage = () => {
             </div>
           )}
 
-          {/* TAB 2: CREDIT / DEBIT CARD */}
+          {/* TAB 2: CREDIT / DEBIT CARD (Commented out — handled securely via Cashfree Gateway) */}
+          {/*
           {selectedMethod === "card" && (
             <div className="bg-card border border-border p-5 rounded-2xl space-y-4 animate-in fade-in duration-200">
               <div className="flex items-center justify-between pb-2 border-b border-border/60">
@@ -756,6 +757,7 @@ const CheckoutPage = () => {
               </div>
             </div>
           )}
+          */}
 
           {/* TAB 3: CASH ON DELIVERY */}
           {selectedMethod === "cod" && (
@@ -781,7 +783,8 @@ const CheckoutPage = () => {
             </div>
           )}
 
-          {/* TAB 4: DIRECT BANK TRANSFER */}
+          {/* TAB 4: DIRECT BANK TRANSFER (Commented out — handled securely via Cashfree Gateway) */}
+          {/*
           {selectedMethod === "bank" && (
             <div className="bg-card border border-border p-5 rounded-2xl space-y-4 animate-in fade-in duration-200 font-body">
               <div className="flex items-center justify-between pb-2 border-b border-border/60">
@@ -822,6 +825,7 @@ const CheckoutPage = () => {
               </div>
             </div>
           )}
+          */}
 
           {/* Place Order Confirmation Button */}
           <div className="pt-2">
