@@ -99,3 +99,23 @@ export async function submitToGoogleSheet(order: Order): Promise<void> {
 export async function sendOwnerEmailNotification(order: Order): Promise<void> {
   // Email is sent from Apps Script on placeOrder.
 }
+
+export async function fetchOrderStatus(orderId: string): Promise<{
+  ok: boolean;
+  orderId?: string;
+  status?: Order["status"];
+  paymentStatus?: Order["paymentStatus"];
+  error?: string;
+}> {
+  try {
+    return await apiGet<{
+      ok: boolean;
+      orderId?: string;
+      status?: Order["status"];
+      paymentStatus?: Order["paymentStatus"];
+      error?: string;
+    }>(`getOrderStatus&orderId=${encodeURIComponent(orderId)}`);
+  } catch {
+    return { ok: false, error: "network_error" };
+  }
+}

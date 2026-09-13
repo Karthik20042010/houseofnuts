@@ -21,7 +21,7 @@ import {
   Loader2,
   Sparkles,
 } from "lucide-react";
-import { generateOrderId, saveOrder, placeOrderApi, type Order } from "@/lib/orders";
+import { generateOrderId, saveOrder, placeOrderApi, fetchOrderStatus, type Order } from "@/lib/orders";
 import { GoogleLoginModal } from "@/components/auth/GoogleLoginModal";
 import { toast } from "sonner";
 
@@ -63,6 +63,30 @@ const CheckoutPage = () => {
       }));
     }
   }, [isGoogleAuthenticated, googleUser]);
+
+  // Automated Live Payment Status Polling Loop
+  useEffect(() => {
+    if (step !== "payment" || !orderId) return;
+
+    let isMounted = true;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetchOrderStatus(orderId);
+        if (isMounted && res && res.ok && (res.paymentStatus === "paid" || res.status === "confirmed")) {
+          clearInterval(interval);
+          toast.success("🎉 Payment verified live! Order confirmed.");
+          handlePaymentDone();
+        }
+      } catch {
+        // Silent catch for smooth background polling
+      }
+    }, 3500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [step, orderId]);
 
   // Countdown timer for payment step
   useEffect(() => {

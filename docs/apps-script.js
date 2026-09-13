@@ -1463,9 +1463,31 @@ function setupDatabase() {
 
 // -------- Endpoint Routing --------
 
+function getOrderStatus(orderId) {
+  if (!orderId) return { ok: false, error: "Missing orderId parameter" };
+  try {
+    var sh = ensureOrdersSheet();
+    var values = sh.getDataRange().getValues();
+    for (var i = 1; i < values.length; i++) {
+      var rowId = String(values[i][1] || "").trim();
+      if (rowId.toLowerCase() === String(orderId).trim().toLowerCase()) {
+        return {
+          ok: true,
+          orderId: rowId,
+          status: String(values[i][8] || "pending"),
+          paymentStatus: String(values[i][9] || "pending"),
+          timestamp: values[i][0]
+        };
+      }
+    }
+  } catch (err) { }
+  return { ok: false, error: "Order not found" };
+}
+
 function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) || "";
   try {
+    if (action === "getOrderStatus") return json(getOrderStatus(e && e.parameter && e.parameter.orderId));
     if (action === "getInventory") return json({ ok: true, stock: getInventoryMap() });
     if (action === "getProducts") return json({ ok: true, products: readProducts() });
     if (action === "getPrices") return json({ ok: true, prices: readPricesMap() });
@@ -1504,6 +1526,7 @@ function doPost(e) {
 
     // Public actions
     if (action === "placeOrder") return json(placeOrder(body.order));
+    if (action === "getOrderStatus") return json(getOrderStatus(body.orderId));
     if (action === "adminLogin") return json({ ok: checkPassword(body.password) });
     if (action === "getProducts") return json({ ok: true, products: readProducts() });
     if (action === "getPrices") return json({ ok: true, prices: readPricesMap() });
