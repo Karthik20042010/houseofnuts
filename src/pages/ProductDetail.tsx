@@ -28,6 +28,7 @@ const ProductDetail = () => {
   const { products } = useCatalog();
   const [selectedVariant, setSelectedVariant] = useState(0);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const { addViewed } = useRecentlyViewed();
 
@@ -37,9 +38,12 @@ const ProductDetail = () => {
 
   const product = products.find((p) => p.id === id);
 
+  // Smooth auto scroll to top when item is opened & track recently viewed
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setActiveImageIndex(0);
     if (product) addViewed(product.id);
-  }, [product, addViewed]);
+  }, [id, product, addViewed]);
 
   if (!product) {
     return (
@@ -64,6 +68,17 @@ const ProductDetail = () => {
 
   const gallery = getProductGallery(product);
   const activeImageSrc = gallery[activeImageIndex] || getProductImageSrc(product);
+
+  // Auto-scroll product image gallery slideshow every 3.5s (pauses on hover/touch)
+  useEffect(() => {
+    if (gallery.length <= 1 || isPaused) return;
+
+    const interval = setInterval(() => {
+      setActiveImageIndex((prev) => (prev + 1) % gallery.length);
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [gallery.length, isPaused]);
 
   const minSwipeDistance = 40;
 
@@ -181,9 +196,17 @@ const ProductDetail = () => {
           {/* Image & Multi-Image Gallery Interactive Swipe Carousel */}
           <div className="space-y-4 font-body">
             <div
-              onTouchStart={handleTouchStart}
+              onTouchStart={(e) => {
+                setIsPaused(true);
+                handleTouchStart(e);
+              }}
               onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
+              onTouchEnd={() => {
+                handleTouchEnd();
+                setTimeout(() => setIsPaused(false), 4000);
+              }}
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
               className="gradient-linen aspect-square relative overflow-hidden rounded-2xl shine border border-border/60 group select-none touch-pan-y cursor-grab active:cursor-grabbing"
             >
               {/* Sliding Viewport */}
