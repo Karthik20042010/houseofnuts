@@ -154,34 +154,37 @@ const CheckoutPage = () => {
         customerEmail: form.email,
       });
 
-      if (sessionRes.paymentSessionId) {
-        const success = await triggerCashfreeCheckout({
-          paymentSessionId: sessionRes.paymentSessionId,
-          orderId,
-          onSuccess: (details) => {
-            cfPaymentId = details?.cfPaymentId;
-            cfOrderId = sessionRes.cfOrderId || orderId;
-          },
-          onFailure: (err) => {
-            toast.error(err);
-            setSubmitting(false);
-          },
-        });
-
-        if (!success) {
-          setSubmitting(false);
-          return;
-        }
-      } else {
-        cfOrderId = `CF_${orderId}`;
-        cfPaymentId = `CF_PAY_${Date.now()}`;
+      if (!sessionRes.ok || !sessionRes.paymentSessionId) {
+        toast.error(sessionRes.error || "Could not start Cashfree payment session. Please try again.");
+        setSubmitting(false);
+        return;
       }
+
+      const success = await triggerCashfreeCheckout({
+        paymentSessionId: sessionRes.paymentSessionId,
+        orderId,
+        onSuccess: (details) => {
+          cfPaymentId = details?.cfPaymentId;
+          cfOrderId = sessionRes.cfOrderId || orderId;
+        },
+        onFailure: (err) => {
+          toast.error(err);
+          setSubmitting(false);
+        },
+      });
+
+      if (!success) {
+        setSubmitting(false);
+        return;
+      }
+
+      if (!cfOrderId) cfOrderId = sessionRes.cfOrderId || orderId;
     }
 
     const noteParts = [];
     if (appliedDiscount) noteParts.push(`[Promo: ${appliedDiscount.code} (-₹${discountAmount})]`);
     if (utrNumber.trim()) noteParts.push(`[UTR/Ref: ${utrNumber.trim()}]`);
-    if (selectedMethod === "cashfree") noteParts.push(`[Cashfree Pay ID: ${cfPaymentId || "Pending"}]`);
+    if (selectedMethod === "cashfree") noteParts.push(`[Cashfree Pay ID: ${cfPaymentId || "Verified"}]`);
     if (selectedMethod === "cod") noteParts.push("[Payment Option: Cash on Delivery]");
     if (selectedMethod === "bank") noteParts.push("[Payment Option: Direct Bank NEFT/IMPS]");
     if (form.notes.trim()) noteParts.push(form.notes.trim());
@@ -236,9 +239,9 @@ const CheckoutPage = () => {
     }
 
     saveOrder(order);
+    setStep("done");
     clearCart();
     await refreshInventory();
-    setStep("done");
     setSubmitting(false);
   }, [
     orderId,
