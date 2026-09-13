@@ -1,4 +1,5 @@
 import { apiPost } from "./api";
+import { logEvent } from "./logger";
 
 declare global {
   interface Window {
@@ -64,6 +65,7 @@ export interface CreateCashfreeOrderResponse {
 export async function createCashfreeOrderSession(
   params: CreateCashfreeOrderParams
 ): Promise<CreateCashfreeOrderResponse> {
+  logEvent("cashfree", "info", `Initiating session creation for Order #${params.orderId} (₹${params.orderAmount})`, params);
   try {
     const backendRes = await apiPost<CreateCashfreeOrderResponse>("createCashfreeOrder", {
       orderId: params.orderId,
@@ -77,23 +79,31 @@ export async function createCashfreeOrderSession(
     });
 
     if (backendRes && backendRes.ok && backendRes.paymentSessionId) {
+      logEvent("cashfree", "info", `Session created successfully for Order #${params.orderId}`, {
+        paymentSessionId: backendRes.paymentSessionId,
+        cfOrderId: backendRes.cfOrderId,
+      });
       return backendRes;
     }
 
     if (backendRes && !backendRes.ok) {
+      const errorMsg = backendRes.error || "Failed to create Cashfree payment session via backend.";
+      logEvent("cashfree", "error", `Session creation rejected for Order #${params.orderId}: ${errorMsg}`, backendRes);
       return {
         ok: false,
-        error: backendRes.error || "Failed to create Cashfree payment session via backend.",
+        error: errorMsg,
       };
     }
   } catch (e) {
-    console.error("Backend createCashfreeOrder session error:", e);
+    const errMsg = e instanceof Error ? e.message : String(e);
+    logEvent("cashfree", "error", `Session creation network exception for Order #${params.orderId}: ${errMsg}`, e);
     return {
       ok: false,
       error: "Unable to reach Google Apps Script backend. Please verify your internet connection and backend deployment.",
     };
   }
 
+  logEvent("cashfree", "error", `Session creation returned empty result for Order #${params.orderId}`);
   return {
     ok: false,
     error: "Failed to generate Cashfree payment session.",
@@ -102,19 +112,23 @@ export async function createCashfreeOrderSession(
 
 export interface TriggerCashfreePaymentOptions {
   paymentSessionId: string;
-  orderId: string;
+  orderId?: string;
   onSuccess?: (details?: { cfPaymentId?: string }) => void;
   onFailure?: (errorMsg: string) => void;
 }
 
 export const triggerCashfreeCheckout = async ({
   paymentSessionId,
+  orderId = "UNKNOWN",
   onSuccess,
   onFailure,
 }: TriggerCashfreePaymentOptions): Promise<boolean> => {
+  logEvent("cashfree", "info", `Opening Cashfree Checkout Modal for Order #${orderId}`, { paymentSessionId });
   const cashfree = getCashfree();
   if (!cashfree) {
-    onFailure?.("Cashfree SDK failed to load. Please refresh the page and try again.");
+    const msg = "Cashfree SDK failed to load. Please refresh the page and try again.";
+    logEvent("cashfree", "error", msg);
+    onFailure?.(msg);
     return false;
   }
 
@@ -125,23 +139,29 @@ export const triggerCashfreeCheckout = async ({
     });
 
     if (result.error) {
-      onFailure?.(result.error.message || "Payment was cancelled or not completed.");
+      const msg = result.error.message || "Payment was cancelled or not completed.";
+      logEvent("cashfree", "warn", `Checkout Modal closed or errored for Order #${orderId}: ${msg}`, result.error);
+      onFailure?.(msg);
       return false;
     }
 
     if (result.redirect) {
+      logEvent("cashfree", "info", `Redirecting for Order #${orderId}`);
       return true;
     }
 
     if (result.paymentDetails) {
+      logEvent("cashfree", "info", `Payment successful for Order #${orderId}`, result.paymentDetails);
       onSuccess?.({ cfPaymentId: result.paymentDetails.cfPaymentId });
       return true;
     }
 
+    logEvent("cashfree", "info", `Modal closed for Order #${orderId}`);
     return true;
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "An unexpected error occurred during Cashfree payment.";
-    onFailure?.(msg);
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    logEvent("cashfree", "error", `Cashfree SDK Exception for Order #${orderId}: ${errMsg}`, err);
+    onFailure?.(errMsg);
     return false;
   }
 };
