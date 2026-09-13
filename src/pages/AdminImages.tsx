@@ -501,14 +501,16 @@ const AdminImages = () => {
           <h2 className="font-display text-2xl">Product Images</h2>
         </div>
         <div className="flex items-center gap-2">
-          <a
-            href={import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_URL || "https://drive.google.com/drive/folders/16BLOa7rZQ1O6Ob54l89ABTbVSfi1xui3?usp=sharing"}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body border border-border hover:border-foreground/40 transition-colors"
-          >
-            <Cloud size={13} className="text-accent" /> Google Drive Folder <ExternalLink size={12} />
-          </a>
+          {import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_URL && (
+            <a
+              href={import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body border border-border hover:border-foreground/40 transition-colors"
+            >
+              <Cloud size={13} className="text-accent" /> Google Drive Folder <ExternalLink size={12} />
+            </a>
+          )}
           <button
             onClick={() => setBulkOpen((v) => !v)}
             className="flex items-center gap-2 px-4 py-2 text-[11px] uppercase tracking-[0.15em] font-body bg-primary text-primary-foreground hover:bg-accent transition-colors"
