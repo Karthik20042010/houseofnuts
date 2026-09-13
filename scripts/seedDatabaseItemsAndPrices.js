@@ -50,6 +50,22 @@ const TARGET_PRICES = [
   { productId: "pistachios", variantId: "pista-500", size: "500g", price: 929, mrp: 1200 },
   { productId: "pistachios", variantId: "pista-1kg", size: "1 Kg", price: 1800, mrp: 2350 },
 
+  { productId: "super-jumbo-cashews-w180", variantId: "cashew-w180-250", size: "250g", price: 349, mrp: 450 },
+  { productId: "super-jumbo-cashews-w180", variantId: "cashew-w180-500", size: "500g", price: 679, mrp: 880 },
+  { productId: "super-jumbo-cashews-w180", variantId: "cashew-w180-1kg", size: "1 Kg", price: 1300, mrp: 1699 },
+
+  { productId: "split-cashews-tukda", variantId: "cashew-tukda-250", size: "250g", price: 199, mrp: 260 },
+  { productId: "split-cashews-tukda", variantId: "cashew-tukda-500", size: "500g", price: 379, mrp: 490 },
+  { productId: "split-cashews-tukda", variantId: "cashew-tukda-1kg", size: "1 Kg", price: 720, mrp: 950 },
+
+  { productId: "gurbandi-almonds", variantId: "gurbandi-250", size: "250g", price: 289, mrp: 380 },
+  { productId: "gurbandi-almonds", variantId: "gurbandi-500", size: "500g", price: 549, mrp: 720 },
+  { productId: "gurbandi-almonds", variantId: "gurbandi-1kg", size: "1 Kg", price: 1050, mrp: 1390 },
+
+  { productId: "raw-pista-giri", variantId: "pista-giri-250", size: "250g", price: 549, mrp: 690 },
+  { productId: "raw-pista-giri", variantId: "pista-giri-500", size: "500g", price: 1049, mrp: 1350 },
+  { productId: "raw-pista-giri", variantId: "pista-giri-1kg", size: "1 Kg", price: 1999, mrp: 2500 },
+
   { productId: "brazil-nuts", variantId: "brazil-250", size: "250g", price: 899, mrp: 1150 },
   { productId: "brazil-nuts", variantId: "brazil-500", size: "500g", price: 1749, mrp: 2250 },
   { productId: "brazil-nuts", variantId: "brazil-1kg", size: "1 Kg", price: 3400, mrp: 4200 },
