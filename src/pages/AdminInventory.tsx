@@ -39,6 +39,8 @@ import {
   getSubcategoriesForCategory,
   addCustomSubcategory,
   addCustomProduct,
+  deleteCustomProduct,
+  deleteVariantFromProduct,
   getPriceOverrides,
   savePriceOverrides,
   saveProductDisplayOrder,
@@ -729,6 +731,22 @@ export const AdminInventory = () => {
     refreshCatalogLocal();
   };
 
+  const handleDeleteProduct = (product: Product) => {
+    if (window.confirm(`Are you sure you want to delete "${product.name}" from your catalog?`)) {
+      deleteCustomProduct(product.id);
+      refreshCatalogLocal();
+      toast.success(`Deleted product "${product.name}"`);
+    }
+  };
+
+  const handleDeleteVariant = (product: Product, variantId: string, variantSize: string) => {
+    if (window.confirm(`Are you sure you want to delete the ${variantSize} variant from "${product.name}"?`)) {
+      deleteVariantFromProduct(product.id, variantId);
+      refreshCatalogLocal();
+      toast.success(`Deleted ${variantSize} variant from ${product.name}`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-20 flex justify-center items-center gap-2 text-xs text-muted-foreground font-body">
@@ -1161,6 +1179,14 @@ export const AdminInventory = () => {
                     >
                       <PlusCircle size={14} /> + Add Weight Variant / Rate
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteProduct(p)}
+                      className="text-xs border border-destructive/30 hover:bg-destructive hover:text-destructive-foreground px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors font-semibold cursor-pointer text-destructive"
+                      title="Delete Product Item"
+                    >
+                      <Trash2 size={14} /> Delete
+                    </button>
                   </div>
                 </div>
 
@@ -1281,6 +1307,14 @@ export const AdminInventory = () => {
                                 Edited
                               </span>
                             )}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteVariant(p, v.id, v.size)}
+                              className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors ml-1"
+                              title={`Delete ${v.size} variant`}
+                            >
+                              <Trash2 size={13} />
+                            </button>
                           </div>
                         </div>
 

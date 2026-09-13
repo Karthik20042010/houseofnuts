@@ -409,6 +409,27 @@ export function saveProductDisplayOrder(orderedIds: string[]) {
   }
 }
 
+const CUSTOM_DELETED_PRODUCTS_KEY = "hon_deleted_products_v1";
+const CUSTOM_DELETED_VARIANTS_KEY = "hon_deleted_variants_v1";
+
+export function getDeletedProductIds(): string[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_DELETED_PRODUCTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function getDeletedVariantIds(): string[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_DELETED_VARIANTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function getAllProducts(baseProducts: Product[]): Product[] {
   let customProducts: Product[] = [];
   try {
@@ -420,30 +441,46 @@ export function getAllProducts(baseProducts: Product[]): Product[] {
     customProducts = [];
   }
 
+  const deletedProductIds = new Set(getDeletedProductIds());
+  const deletedVariantIds = new Set(getDeletedVariantIds());
   const overrides = getPriceOverrides();
   const combinedMap = new Map<string, Product>();
 
   for (const p of baseProducts) {
+    if (deletedProductIds.has(p.id)) continue;
+
     const inferredSubcat = autoInferSubcategory(p);
-    const updatedVariants = p.variants.map((v) => {
-      const ov = overrides[v.id];
-      if (ov) {
-        return { ...v, price: ov.price, mrp: ov.mrp ?? v.mrp };
-      }
-      return v;
-    });
-    combinedMap.set(p.id, { ...p, subcategory: inferredSubcat, variants: updatedVariants });
+    const updatedVariants = p.variants
+      .filter((v) => !deletedVariantIds.has(v.id))
+      .map((v) => {
+        const ov = overrides[v.id];
+        if (ov) {
+          return { ...v, price: ov.price, mrp: ov.mrp ?? v.mrp };
+        }
+        return v;
+      });
+
+    if (updatedVariants.length > 0) {
+      combinedMap.set(p.id, { ...p, subcategory: inferredSubcat, variants: updatedVariants });
+    }
   }
 
   for (const cp of customProducts) {
-    const updatedVariants = cp.variants.map((v) => {
-      const ov = overrides[v.id];
-      if (ov) {
-        return { ...v, price: ov.price, mrp: ov.mrp ?? v.mrp };
-      }
-      return v;
-    });
-    combinedMap.set(cp.id, { ...cp, variants: updatedVariants });
+    if (deletedProductIds.has(cp.id)) continue;
+
+    const updatedVariants = cp.variants
+      .filter((v) => !deletedVariantIds.has(v.id))
+      .map((v) => {
+        const ov = overrides[v.id];
+        if (ov) {
+          return { ...v, price: ov.price, mrp: ov.mrp ?? v.mrp };
+        }
+        return v;
+      });
+
+    if (updatedVariants.length > 0) {
+      combinedMap.set(cp.id, { ...cp, variants: updatedVariants });
+    }
   }
 
   const allList = Array.from(combinedMap.values());
@@ -463,8 +500,64 @@ export function getAllProducts(baseProducts: Product[]): Product[] {
   return allList;
 }
 
+export function deleteCustomProduct(productId: string): boolean {
+  try {
+    const deletedProds = getDeletedProductIds();
+    if (!deletedProds.includes(productId)) {
+      deletedProds.push(productId);
+      localStorage.setItem(CUSTOM_DELETED_PRODUCTS_KEY, JSON.stringify(deletedProds));
+    }
+
+    const raw = localStorage.getItem(CUSTOM_PRODUCTS_KEY);
+    if (raw) {
+      const stored: Product[] = JSON.parse(raw);
+      const filtered = stored.filter((p) => p.id !== productId);
+      localStorage.setItem(CUSTOM_PRODUCTS_KEY, JSON.stringify(filtered));
+    }
+
+    window.dispatchEvent(new CustomEvent("hon-catalog-update"));
+    syncCatalogConfigToRemote();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function deleteVariantFromProduct(productId: string, variantId: string): boolean {
+  try {
+    const deletedVars = getDeletedVariantIds();
+    if (!deletedVars.includes(variantId)) {
+      deletedVars.push(variantId);
+      localStorage.setItem(CUSTOM_DELETED_VARIANTS_KEY, JSON.stringify(deletedVars));
+    }
+
+    const raw = localStorage.getItem(CUSTOM_PRODUCTS_KEY);
+    if (raw) {
+      const stored: Product[] = JSON.parse(raw);
+      const target = stored.find((p) => p.id === productId);
+      if (target) {
+        target.variants = target.variants.filter((v) => v.id !== variantId);
+        localStorage.setItem(CUSTOM_PRODUCTS_KEY, JSON.stringify(stored));
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent("hon-catalog-update"));
+    syncCatalogConfigToRemote();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function addCustomProduct(newProduct: Omit<Product, "id"> & { id?: string }): Product {
   const id = newProduct.id || newProduct.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+
+  // Un-delete product if re-created
+  try {
+    const deleted = getDeletedProductIds().filter((d) => d !== id);
+    localStorage.setItem(CUSTOM_DELETED_PRODUCTS_KEY, JSON.stringify(deleted));
+  } catch {}
+
   const fullProduct: Product = {
     ...newProduct,
     id,
@@ -495,6 +588,12 @@ export function addCustomProduct(newProduct: Omit<Product, "id"> & { id?: string
 
 export function addVariantToProduct(productId: string, variant: ProductVariant): boolean {
   try {
+    // Un-delete variant if re-created
+    if (variant.id) {
+      const deletedVars = getDeletedVariantIds().filter((v) => v !== variant.id);
+      localStorage.setItem(CUSTOM_DELETED_VARIANTS_KEY, JSON.stringify(deletedVars));
+    }
+
     const raw = localStorage.getItem(CUSTOM_PRODUCTS_KEY);
     const stored: Product[] = raw ? JSON.parse(raw) : [];
     const target = stored.find((p) => p.id === productId);
