@@ -33,8 +33,6 @@ export async function apiPost<T = unknown>(
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({
       enc: encryptedPayload,
-      action: action, // Fallback for backward compatibility
-      ...payload
     }),
     redirect: "follow",
   });
