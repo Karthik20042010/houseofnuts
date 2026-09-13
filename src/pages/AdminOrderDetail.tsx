@@ -147,6 +147,18 @@ const AdminOrderDetail = () => {
                   </a>
                 }
               />
+              {order.paymentMethod && (
+                <Field label="Payment Method" value={order.paymentMethod.toUpperCase()} onCopy={() => copy(order.paymentMethod!, "Payment Method")} />
+              )}
+              {order.cashfreePaymentId && (
+                <Field label="Cashfree Pay ID" value={order.cashfreePaymentId} onCopy={() => copy(order.cashfreePaymentId!, "Cashfree Pay ID")} />
+              )}
+              {order.cashfreeOrderId && (
+                <Field label="Cashfree Order ID" value={order.cashfreeOrderId} onCopy={() => copy(order.cashfreeOrderId!, "Cashfree Order ID")} />
+              )}
+              {order.utrReference && (
+                <Field label="UTR / Ref No" value={order.utrReference} onCopy={() => copy(order.utrReference!, "UTR Reference")} />
+              )}
               {order.notes && (
                 <div className="sm:col-span-2">
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Notes</div>

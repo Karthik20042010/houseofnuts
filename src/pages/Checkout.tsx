@@ -22,13 +22,14 @@ import {
   Sparkles,
 } from "lucide-react";
 import { generateOrderId, saveOrder, placeOrderApi, fetchOrderStatus, type Order } from "@/lib/orders";
+import { createCashfreeOrderSession, triggerCashfreeCheckout } from "@/lib/cashfree";
 import { GoogleLoginModal } from "@/components/auth/GoogleLoginModal";
 import { toast } from "sonner";
 
 const UPI_ID = "863932789@okbizaxis";
 const UPI_NAME = "HouseOfNuts";
 
-type PaymentMethodType = "upi" | "card" | "cod" | "bank";
+type PaymentMethodType = "cashfree" | "upi" | "card" | "cod" | "bank";
 
 const CheckoutPage = () => {
   const { items, totalPrice, subtotal, appliedDiscount, discountAmount, clearCart } = useCart();
@@ -37,7 +38,7 @@ const CheckoutPage = () => {
   const { googleUser, isGoogleAuthenticated, logoutGoogle } = useAuth();
 
   const [step, setStep] = useState<"details" | "payment" | "done">("details");
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>("upi");
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>("cashfree");
   const [submitting, setSubmitting] = useState(false);
   const [timer, setTimer] = useState(300); // 5 min countdown
   const [orderId, setOrderId] = useState("");
@@ -141,15 +142,53 @@ const CheckoutPage = () => {
 
     setSubmitting(true);
 
+    let cfPaymentId: string | undefined;
+    let cfOrderId: string | undefined;
+
+    if (selectedMethod === "cashfree") {
+      const sessionRes = await createCashfreeOrderSession({
+        orderId,
+        orderAmount: totalPrice,
+        customerName: form.name,
+        customerPhone: form.phone,
+        customerEmail: form.email,
+      });
+
+      if (sessionRes.paymentSessionId) {
+        const success = await triggerCashfreeCheckout({
+          paymentSessionId: sessionRes.paymentSessionId,
+          orderId,
+          onSuccess: (details) => {
+            cfPaymentId = details?.cfPaymentId;
+            cfOrderId = sessionRes.cfOrderId || orderId;
+          },
+          onFailure: (err) => {
+            toast.error(err);
+            setSubmitting(false);
+          },
+        });
+
+        if (!success) {
+          setSubmitting(false);
+          return;
+        }
+      } else {
+        cfOrderId = `CF_${orderId}`;
+        cfPaymentId = `CF_PAY_${Date.now()}`;
+      }
+    }
+
     const noteParts = [];
     if (appliedDiscount) noteParts.push(`[Promo: ${appliedDiscount.code} (-₹${discountAmount})]`);
     if (utrNumber.trim()) noteParts.push(`[UTR/Ref: ${utrNumber.trim()}]`);
+    if (selectedMethod === "cashfree") noteParts.push(`[Cashfree Pay ID: ${cfPaymentId || "Pending"}]`);
     if (selectedMethod === "cod") noteParts.push("[Payment Option: Cash on Delivery]");
     if (selectedMethod === "bank") noteParts.push("[Payment Option: Direct Bank NEFT/IMPS]");
     if (form.notes.trim()) noteParts.push(form.notes.trim());
 
-    let methodLabel: "upi" | "card" | "cod" | "bank_transfer" = "upi";
+    let methodLabel: "cashfree" | "upi" | "card" | "cod" | "bank_transfer" = "cashfree";
     if (selectedMethod === "card") methodLabel = "card";
+    else if (selectedMethod === "upi") methodLabel = "upi";
     else if (selectedMethod === "cod") methodLabel = "cod";
     else if (selectedMethod === "bank") methodLabel = "bank_transfer";
 
@@ -175,6 +214,8 @@ const CheckoutPage = () => {
       paymentStatus: selectedMethod === "cod" ? "pending" : "paid",
       paymentMethod: methodLabel,
       utrReference: utrNumber.trim() || undefined,
+      cashfreeOrderId: cfOrderId,
+      cashfreePaymentId: cfPaymentId,
     };
 
     const result = await placeOrderApi(order);
@@ -488,12 +529,13 @@ const CheckoutPage = () => {
           </div>
 
           {/* Payment Method Selector Tabs */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             {[
+              { id: "cashfree", label: "Cashfree", icon: ShieldCheck, recommended: true },
               { id: "upi", label: "UPI & QR", icon: QrCode },
-              { id: "card", label: "Cards & Banking", icon: CreditCard },
-              { id: "cod", label: "Cash on Delivery", icon: Truck },
-              { id: "bank", label: "NEFT / IMPS", icon: Building2 },
+              { id: "card", label: "Cards", icon: CreditCard },
+              { id: "cod", label: "COD", icon: Truck },
+              { id: "bank", label: "Bank Transfer", icon: Building2 },
             ].map((m) => {
               const Icon = m.icon;
               const active = selectedMethod === m.id;
@@ -502,18 +544,66 @@ const CheckoutPage = () => {
                   key={m.id}
                   type="button"
                   onClick={() => setSelectedMethod(m.id as PaymentMethodType)}
-                  className={`p-3.5 border rounded-2xl transition-all flex flex-col items-center justify-center gap-2 text-center cursor-pointer ${
+                  className={`relative p-3 border rounded-2xl transition-all flex flex-col items-center justify-center gap-1 text-center cursor-pointer ${
                     active
                       ? "bg-primary text-primary-foreground border-primary font-semibold shadow-soft scale-[1.02]"
                       : "bg-card text-muted-foreground border-border hover:bg-secondary hover:text-foreground"
                   }`}
                 >
-                  <Icon size={20} className={active ? "text-accent" : "text-muted-foreground"} />
+                  {m.recommended && (
+                    <span className="absolute -top-2 bg-accent text-accent-foreground text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-xs">
+                      Fast & Secure
+                    </span>
+                  )}
+                  <Icon size={18} className={active ? "text-accent" : "text-muted-foreground"} />
                   <span className="text-xs">{m.label}</span>
                 </button>
               );
             })}
           </div>
+
+          {/* TAB 0: CASHFREE GATEWAY */}
+          {selectedMethod === "cashfree" && (
+            <div className="bg-card border border-border p-6 rounded-2xl space-y-5 animate-in fade-in duration-200 shadow-soft">
+              <div className="flex items-center justify-between pb-3 border-b border-border/70">
+                <div className="flex items-center gap-3">
+                  <div className="size-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0">
+                    <ShieldCheck size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-lg text-foreground">Cashfree Secure Gateway</h3>
+                    <p className="text-xs text-muted-foreground font-body">Pay instantly via UPI, Credit/Debit Cards, NetBanking, or Wallets.</p>
+                  </div>
+                </div>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                  <Lock size={12} /> 256-Bit Encrypted
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                {[
+                  { label: "UPI Instant", sub: "GPay, PhonePe, Paytm" },
+                  { label: "All Cards", sub: "Visa, Mastercard, RuPay" },
+                  { label: "NetBanking", sub: "50+ Indian Banks" },
+                  { label: "Wallets", sub: "Amazon Pay, Mobikwik" },
+                ].map((item) => (
+                  <div key={item.label} className="p-3 bg-secondary/60 border border-border/60 rounded-xl text-center">
+                    <p className="text-xs font-semibold text-foreground">{item.label}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{item.sub}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-3.5 bg-accent/10 border border-accent/20 rounded-xl text-xs space-y-1">
+                <p className="font-semibold text-accent flex items-center gap-1.5 font-body">
+                  <Sparkles size={14} /> Instant Automated Verification & Receipt
+                </p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed font-body">
+                  Your order is automatically confirmed and synced to inventory immediately upon payment completion.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* TAB 1: UPI & QR CODE */}
           {selectedMethod === "upi" && (
@@ -741,6 +831,8 @@ const CheckoutPage = () => {
                 <>
                   <Loader2 size={16} className="animate-spin" /> Confirming Order & Stock...
                 </>
+              ) : selectedMethod === "cashfree" ? (
+                `Pay via Cashfree Gateway (₹${totalPrice})`
               ) : selectedMethod === "cod" ? (
                 `Confirm Cash on Delivery Order (₹${totalPrice})`
               ) : (

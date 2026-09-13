@@ -21,9 +21,11 @@ export interface Order {
   itemsSummary: string;
   total: number;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
-  paymentStatus: "pending" | "paid" | "refunded";
-  paymentMethod?: "upi" | "card" | "cod" | "bank_transfer";
+  paymentStatus: "pending" | "paid" | "refunded" | "failed";
+  paymentMethod?: "cashfree" | "upi" | "card" | "cod" | "bank_transfer";
   utrReference?: string;
+  cashfreeOrderId?: string;
+  cashfreePaymentId?: string;
 }
 
 const STORAGE_KEY = "hon-orders";

@@ -1,3 +1,5 @@
+import { apiPost } from "./api";
+
 declare global {
   interface Window {
     Cashfree?: (config: { mode: "sandbox" | "production" }) => {
@@ -7,7 +9,11 @@ declare global {
       }) => Promise<{
         error?: { message: string; code?: string };
         redirect?: boolean;
-        paymentDetails?: unknown;
+        paymentDetails?: {
+          paymentMessage?: string;
+          paymentStatus?: string;
+          cfPaymentId?: string;
+        };
       }>;
     };
   }
@@ -28,10 +34,43 @@ export const getCashfree = () => {
   return cashfreeInstance;
 };
 
+export interface CreateCashfreeOrderParams {
+  orderId: string;
+  orderAmount: number;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+}
+
+export interface CreateCashfreeOrderResponse {
+  ok: boolean;
+  paymentSessionId?: string;
+  cfOrderId?: string;
+  error?: string;
+}
+
+export async function createCashfreeOrderSession(
+  params: CreateCashfreeOrderParams
+): Promise<CreateCashfreeOrderResponse> {
+  try {
+    const response = await apiPost<CreateCashfreeOrderResponse>("createCashfreeOrder", {
+      orderId: params.orderId,
+      orderAmount: params.orderAmount,
+      customerName: params.customerName,
+      customerPhone: params.customerPhone,
+      customerEmail: params.customerEmail,
+    });
+    return response;
+  } catch (err) {
+    console.error("Failed to create Cashfree order session:", err);
+    return { ok: false, error: "Network error initiating Cashfree payment session." };
+  }
+}
+
 export interface TriggerCashfreePaymentOptions {
   paymentSessionId: string;
   orderId: string;
-  onSuccess?: () => void;
+  onSuccess?: (details?: { cfPaymentId?: string }) => void;
   onFailure?: (errorMsg: string) => void;
 }
 
@@ -62,7 +101,7 @@ export const triggerCashfreeCheckout = async ({
     }
 
     if (result.paymentDetails) {
-      onSuccess?.();
+      onSuccess?.({ cfPaymentId: result.paymentDetails.cfPaymentId });
       return true;
     }
 
