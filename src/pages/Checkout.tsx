@@ -106,6 +106,31 @@ const CheckoutPage = () => {
       setIsGoogleModalOpen(true);
       return;
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email.trim())) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    const cleanPhone = form.phone.replace(/\D/g, "");
+    if (cleanPhone.length < 10) {
+      toast.error(
+        `Please enter a valid 10-digit mobile number (e.g. 96525 26920). You entered: ${form.phone || "empty"}`
+      );
+      return;
+    }
+
+    if (form.name.trim().length < 2) {
+      toast.error("Please enter your full name.");
+      return;
+    }
+
+    if (form.address.trim().length < 5) {
+      toast.error("Please enter your full delivery address.");
+      return;
+    }
+
     setOrderId(generateOrderId());
     setTimer(300);
     setStep("payment");
@@ -479,9 +504,23 @@ const CheckoutPage = () => {
                   required
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full border border-border bg-background px-4 py-2.5 font-body text-xs rounded-xl focus:outline-none focus:border-accent"
+                  className={`w-full border bg-background px-4 py-2.5 font-body text-xs rounded-xl focus:outline-none ${
+                    form.phone && form.phone.replace(/\D/g, "").length < 10
+                      ? "border-destructive focus:border-destructive"
+                      : "border-border focus:border-accent"
+                  }`}
                   placeholder="+91 98765 43210"
                 />
+                {form.phone && form.phone.replace(/\D/g, "").length < 10 && (
+                  <p className="text-[11px] text-destructive mt-1 font-body">
+                    ⚠️ Enter a valid 10-digit mobile number ({form.phone.replace(/\D/g, "").length}/10 digits)
+                  </p>
+                )}
+                {form.phone && form.phone.replace(/\D/g, "").length >= 10 && (
+                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-body">
+                    ✓ Valid 10-digit mobile number
+                  </p>
+                )}
               </div>
             </div>
 
