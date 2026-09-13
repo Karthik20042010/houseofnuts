@@ -255,7 +255,23 @@ function detectBrowser(): string {
 
 export function readStoredHits(): PageHit[] {
   const raw = localStorage.getItem(STORAGE_KEY_HITS);
-  if (!raw) return [];
+  if (!raw) {
+    const locInfo = detectLocationFromTimezone();
+    const initialHit: PageHit = {
+      id: "hit_init_" + Date.now(),
+      path: "/",
+      title: "House of Nuts Storefront",
+      timestamp: new Date().toISOString(),
+      userType: "guest",
+      location: locInfo.location,
+      country: locInfo.country,
+      city: locInfo.city,
+      device: detectDevice(),
+      browser: detectBrowser(),
+    };
+    localStorage.setItem(STORAGE_KEY_HITS, JSON.stringify([initialHit]));
+    return [initialHit];
+  }
   try {
     return JSON.parse(raw) as PageHit[];
   } catch {
@@ -353,40 +369,32 @@ export function trackActivityLog(
   }
 }
 
-// Generates smooth past 30 months baseline trend data for long-term historical analytics comparison
+// Aggregates actual tracked hits per month key (YYYY-MM) over past 30 months
 function generateHistorical30MonthsTrend(actualHits: PageHit[]): MonthTrendStat[] {
   const months: MonthTrendStat[] = [];
   const now = new Date();
 
-  // Create baseline map for actual hits per month key (YYYY-MM)
-  const actualHitsByMonth: Record<string, { total: number; members: number; guests: number }> = {};
+  const actualHitsByMonth: Record<string, { total: number; members: number; guests: number; users: Set<string> }> = {};
   actualHits.forEach((h) => {
     const d = new Date(h.timestamp);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    if (!actualHitsByMonth[key]) actualHitsByMonth[key] = { total: 0, members: 0, guests: 0 };
+    if (!actualHitsByMonth[key]) actualHitsByMonth[key] = { total: 0, members: 0, guests: 0, users: new Set() };
     actualHitsByMonth[key].total += 1;
+    actualHitsByMonth[key].users.add(h.userEmail || (h.city + "_" + h.device));
     if (h.userType === "member") actualHitsByMonth[key].members += 1;
     else actualHitsByMonth[key].guests += 1;
   });
 
-  // Loop back 30 months
   for (let i = 29; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const dateLabel = d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
 
     const actual = actualHitsByMonth[key];
-    
-    // Baseline realistic organic growth model over 30 months
-    const growthFactor = 1 + (30 - i) * 0.08; 
-    const baseViews = Math.round((450 + (i % 7) * 90 + Math.sin(i) * 120) * growthFactor);
-    const baseMembers = Math.round(baseViews * 0.42);
-    const baseGuests = baseViews - baseMembers;
-
-    const totalViews = (actual ? actual.total : 0) + baseViews;
-    const memberViews = (actual ? actual.members : 0) + baseMembers;
-    const guestViews = (actual ? actual.guests : 0) + baseGuests;
-    const uniqueVisitors = Math.round(totalViews * 0.65);
+    const totalViews = actual ? actual.total : 0;
+    const memberViews = actual ? actual.members : 0;
+    const guestViews = actual ? actual.guests : 0;
+    const uniqueVisitors = actual ? actual.users.size : 0;
 
     months.push({
       monthKey: dateLabel,
@@ -416,38 +424,21 @@ export function getAnalyticsSummary(range: DateRangeFilter): AnalyticsSummary {
 
   const filteredHits = hits.filter((h) => now - new Date(h.timestamp).getTime() <= timeLimitMs);
 
-  const totalViews = Math.max(filteredHits.length, range === "24h" ? 42 : range === "7d" ? 380 : range === "30d" ? 1850 : 24500);
-  const memberHitsCount = filteredHits.filter((h) => h.userType === "member").length;
-  const memberViews = Math.max(memberHitsCount, Math.round(totalViews * 0.44));
+  const totalViews = filteredHits.length;
+  const memberViews = filteredHits.filter((h) => h.userType === "member").length;
   const guestViews = totalViews - memberViews;
-  const uniqueVisitors = Math.round(totalViews * 0.67);
+  const uniqueVisitors = new Set(filteredHits.map((h) => h.userEmail || (h.city + "_" + h.device))).size;
 
   // Page breakdown aggregation
-  const pageMap: Record<string, { title: string; views: number; members: number }> = {
-    "/": { title: "Home Page", views: 0, members: 0 },
-    "/shop": { title: "All Products Shop", views: 0, members: 0 },
-    "/category/dry-fruits": { title: "Dry Fruits Category", views: 0, members: 0 },
-    "/category/nuts-seeds": { title: "Nuts & Seeds Category", views: 0, members: 0 },
-    "/checkout": { title: "Checkout Page", views: 0, members: 0 },
-    "/gifting": { title: "Gift Boxes Page", views: 0, members: 0 },
-    "/journal": { title: "Nut Journal Articles", views: 0, members: 0 },
-  };
+  const pageMap: Record<string, { title: string; views: number; members: number; users: Set<string> }> = {};
 
   filteredHits.forEach((h) => {
     if (!pageMap[h.path]) {
-      pageMap[h.path] = { title: h.title || h.path, views: 0, members: 0 };
+      pageMap[h.path] = { title: h.title || h.path, views: 0, members: 0, users: new Set() };
     }
     pageMap[h.path].views += 1;
+    pageMap[h.path].users.add(h.userEmail || (h.city + "_" + h.device));
     if (h.userType === "member") pageMap[h.path].members += 1;
-  });
-
-  // Ensure default pages have realistic metrics if fresh
-  Object.keys(pageMap).forEach((p) => {
-    if (pageMap[p].views === 0) {
-      const scale = p === "/" ? 0.35 : p === "/shop" ? 0.22 : 0.08;
-      pageMap[p].views = Math.round(totalViews * scale);
-      pageMap[p].members = Math.round(pageMap[p].views * 0.45);
-    }
   });
 
   const pageStats: PageVisitStat[] = Object.entries(pageMap)
@@ -455,20 +446,13 @@ export function getAnalyticsSummary(range: DateRangeFilter): AnalyticsSummary {
       path,
       title: data.title,
       views: data.views,
-      uniqueVisitors: Math.round(data.views * 0.72),
+      uniqueVisitors: data.users.size,
       membersViews: data.members,
     }))
     .sort((a, b) => b.views - a.views);
 
   // Location statistics aggregation
-  const locMap: Record<string, { country: string; city: string; count: number; members: number; guests: number }> = {
-    "Mumbai, India": { country: "India", city: "Mumbai", count: 0, members: 0, guests: 0 },
-    "Bengaluru, India": { country: "India", city: "Bengaluru", count: 0, members: 0, guests: 0 },
-    "Delhi, India": { country: "India", city: "Delhi", count: 0, members: 0, guests: 0 },
-    "Dubai, United Arab Emirates": { country: "United Arab Emirates", city: "Dubai", count: 0, members: 0, guests: 0 },
-    "London, United Kingdom": { country: "United Kingdom", city: "London", count: 0, members: 0, guests: 0 },
-    "New York, United States": { country: "United States", city: "New York", count: 0, members: 0, guests: 0 },
-  };
+  const locMap: Record<string, { country: string; city: string; count: number; members: number; guests: number }> = {};
 
   filteredHits.forEach((h) => {
     const locKey = `${h.city}, ${h.country}`;
@@ -478,16 +462,6 @@ export function getAnalyticsSummary(range: DateRangeFilter): AnalyticsSummary {
     locMap[locKey].count += 1;
     if (h.userType === "member") locMap[locKey].members += 1;
     else locMap[locKey].guests += 1;
-  });
-
-  // Scale location baseline
-  Object.keys(locMap).forEach((key) => {
-    if (locMap[key].count === 0) {
-      const weight = key.includes("Mumbai") ? 0.38 : key.includes("Bengaluru") ? 0.24 : key.includes("Delhi") ? 0.18 : 0.08;
-      locMap[key].count = Math.round(totalViews * weight);
-      locMap[key].members = Math.round(locMap[key].count * 0.46);
-      locMap[key].guests = locMap[key].count - locMap[key].members;
-    }
   });
 
   const locationStats: VisitorLocationStat[] = Object.values(locMap)
@@ -501,18 +475,13 @@ export function getAnalyticsSummary(range: DateRangeFilter): AnalyticsSummary {
     }))
     .sort((a, b) => b.count - a.count);
 
-  const topLocation = locationStats[0] ? `${locationStats[0].city}, ${locationStats[0].country}` : "Mumbai, India";
+  const topLocation = locationStats[0] ? `${locationStats[0].city}, ${locationStats[0].country}` : "Proddatur, India";
 
   // Device Breakdown
   const deviceCounts = { Desktop: 0, Mobile: 0, Tablet: 0 };
   filteredHits.forEach((h) => {
     if (deviceCounts[h.device] !== undefined) deviceCounts[h.device] += 1;
   });
-  if (deviceCounts.Desktop + deviceCounts.Mobile + deviceCounts.Tablet === 0) {
-    deviceCounts.Mobile = Math.round(totalViews * 0.58);
-    deviceCounts.Desktop = Math.round(totalViews * 0.35);
-    deviceCounts.Tablet = totalViews - deviceCounts.Mobile - deviceCounts.Desktop;
-  }
 
   const deviceBreakdown = [
     { device: "Mobile", count: deviceCounts.Mobile },
@@ -549,7 +518,7 @@ export function getAnalyticsSummary(range: DateRangeFilter): AnalyticsSummary {
     memberViews,
     guestViews,
     topLocation,
-    activeNow: Math.max(activeNowCount, 4),
+    activeNow: activeNowCount,
     pageStats,
     locationStats,
     monthlyTrends,
