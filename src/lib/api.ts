@@ -61,3 +61,18 @@ export async function apiGet<T = unknown>(
     }
   }
 }
+
+export async function fetchProductSpecsFromDB(): Promise<Record<string, ProductSpecification>> {
+  try {
+    const res = await apiGet<{ ok: boolean; specs?: Record<string, ProductSpecification> }>("getProductSpecs");
+    if (res && res.ok && res.specs && Object.keys(res.specs).length > 0) {
+      const { setDynamicProductSpecs } = await import("./productDetails");
+      setDynamicProductSpecs(res.specs);
+      return res.specs;
+    }
+  } catch (err) {
+    console.warn("Could not fetch product specs from DB, using fallback static specs:", err);
+  }
+  return {};
+}
+

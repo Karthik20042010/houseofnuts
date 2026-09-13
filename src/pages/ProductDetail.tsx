@@ -16,6 +16,7 @@ import ReviewsSection from "@/components/ReviewsSection";
 import { getAverageRating } from "@/lib/reviews";
 import { getProductImageSrc, getProductGallery } from "@/lib/productImages";
 import { getProductSpecification } from "@/lib/productDetails";
+import { fetchProductSpecsFromDB } from "@/lib/api";
 import ProductImage from "@/components/ProductImage";
 import { toast } from "sonner";
 
@@ -64,7 +65,14 @@ const ProductDetail = () => {
   const relatedProducts = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
   const { avg: avgRating, count: reviewCount } = getAverageRating(product.id);
   const wishlisted = isInWishlist(product.id);
-  const specs = getProductSpecification(product.id, product.category, product.name);
+  const [specs, setSpecs] = useState(() => getProductSpecification(product.id, product.category, product.name));
+
+  useEffect(() => {
+    setSpecs(getProductSpecification(product.id, product.category, product.name));
+    fetchProductSpecsFromDB().then(() => {
+      setSpecs(getProductSpecification(product.id, product.category, product.name));
+    });
+  }, [product.id, product.category, product.name]);
 
   const gallery = getProductGallery(product);
   const activeImageSrc = gallery[activeImageIndex] || getProductImageSrc(product);

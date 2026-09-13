@@ -71,6 +71,7 @@ function doGet(e) {
     if (action === "getInventory") return json({ ok: true, stock: getInventoryMap() });
     if (action === "getProducts") return json({ ok: true, products: readProducts() });
     if (action === "getPrices") return json({ ok: true, prices: readPricesMap() });
+    if (action === "getProductSpecs") return json({ ok: true, specs: readProductSpecsMap() });
     if (action === "getCatalogConfig") return json(getCatalogConfig());
     if (action === "getUsers") return json({ ok: true, users: readUsers() });
     return json({ ok: false, error: "unknown action: " + action });
@@ -109,6 +110,7 @@ function doPost(e) {
     if (action === "getProducts") return json({ ok: true, products: readProducts() });
     if (action === "getPrices") return json({ ok: true, prices: readPricesMap() });
     if (action === "getInventory") return json({ ok: true, stock: getInventoryMap() });
+    if (action === "getProductSpecs") return json({ ok: true, specs: readProductSpecsMap() });
     if (action === "getCatalogConfig") return json(getCatalogConfig());
     if (action === "registerGoogleUser") return json(registerGoogleUser(body));
     if (action === "submitMessage") return json(addMessage(body));
@@ -438,6 +440,49 @@ function setSinglePrice(variantId, newPrice) {
     }
   }
   return { ok: false, error: "Variant ID not found in Prices sheet" };
+}
+
+// -------- Sheet 9: ProductSpecs Tab --------
+
+function ensureProductSpecsSheet() {
+  var sh = SpreadsheetApp.getActive().getSheetByName("ProductSpecs");
+  if (!sh) {
+    sh = SpreadsheetApp.getActive().insertSheet("ProductSpecs");
+    sh.appendRow(["productId", "grade", "origin", "processing", "ingredients", "shelfLife", "storage", "flavorProfile", "energy", "protein", "carbs", "healthyFats", "fiber", "iron", "calcium", "potassium", "healthBenefits"]);
+  }
+  return sh;
+}
+
+function readProductSpecsMap() {
+  var sh = ensureProductSpecsSheet();
+  var rows = sh.getDataRange().getValues();
+  var specs = {};
+  if (rows.length <= 1) return specs;
+  for (var i = 1; i < rows.length; i++) {
+    var pid = String(rows[i][0] || "").trim();
+    if (!pid) continue;
+    specs[pid] = {
+      grade: String(rows[i][1] || ""),
+      origin: String(rows[i][2] || ""),
+      processing: String(rows[i][3] || ""),
+      ingredients: String(rows[i][4] || ""),
+      shelfLife: String(rows[i][5] || ""),
+      storage: String(rows[i][6] || ""),
+      flavorProfile: String(rows[i][7] || ""),
+      nutritionalPer100g: {
+        energy: String(rows[i][8] || ""),
+        protein: String(rows[i][9] || ""),
+        carbs: String(rows[i][10] || ""),
+        healthyFats: String(rows[i][11] || ""),
+        fiber: String(rows[i][12] || ""),
+        iron: String(rows[i][13] || ""),
+        calcium: String(rows[i][14] || ""),
+        potassium: String(rows[i][15] || "")
+      },
+      healthBenefits: String(rows[i][16] || "").split("|").map(function(s){ return s.trim(); }).filter(Boolean)
+    };
+  }
+  return specs;
 }
 
 function updatePrices(items) {
