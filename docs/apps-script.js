@@ -983,7 +983,7 @@ function checkEmailHealth() {
 
 // -------- Drive Image Upload --------
 
-var TARGET_DRIVE_FOLDER_ID = "16BLOa7rZQ1O6Ob54l89ABTbVSfi1xui3";
+var TARGET_DRIVE_FOLDER_ID = ""; // Leave blank to use auto-created Pictures folder in Drive
 
 function uploadImage(body) {
   if (!body.productId || !body.dataBase64) return { ok: false, error: "missing data" };
@@ -993,7 +993,11 @@ function uploadImage(body) {
   var parentFolder;
   var usedFallback = false;
   try {
-    parentFolder = DriveApp.getFolderById(TARGET_DRIVE_FOLDER_ID);
+    if (TARGET_DRIVE_FOLDER_ID && String(TARGET_DRIVE_FOLDER_ID).trim().length > 5) {
+      parentFolder = DriveApp.getFolderById(TARGET_DRIVE_FOLDER_ID);
+    } else {
+      throw new Error("Using default Pictures folder");
+    }
   } catch (e) {
     usedFallback = true;
     var pictureFolders = DriveApp.getFoldersByName("Pictures");
