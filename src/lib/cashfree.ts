@@ -73,20 +73,38 @@ export async function createCashfreeOrderSession(
         "https://script.google.com/macros/s/AKfycbzOt0eUwPlTbge4ZdzfvkJd3sxmDwG-2J9vqt3JAjV79agTJV9ZGgX4YRzFVpSa2P0/exec",
     });
 
-    if (backendRes && backendRes.ok && backendRes.paymentSessionId) {
+    const sessionToken =
+      backendRes?.paymentSessionId ||
+      (backendRes as Record<string, unknown>)?.payment_session_id ||
+      ((backendRes as Record<string, unknown>)?.data as Record<string, unknown>)?.payment_session_id;
+
+    const cfOrderIdVal =
+      backendRes?.cfOrderId ||
+      (backendRes as Record<string, unknown>)?.cf_order_id ||
+      ((backendRes as Record<string, unknown>)?.data as Record<string, unknown>)?.cf_order_id ||
+      params.orderId;
+
+    if (sessionToken && typeof sessionToken === "string") {
       logEvent("cashfree", "info", `Session created successfully for Order #${params.orderId}`, {
-        paymentSessionId: backendRes.paymentSessionId,
-        cfOrderId: backendRes.cfOrderId,
+        paymentSessionId: sessionToken,
+        cfOrderId: cfOrderIdVal,
       });
-      return backendRes;
+      return {
+        ok: true,
+        paymentSessionId: sessionToken,
+        cfOrderId: String(cfOrderIdVal),
+      };
     }
 
-    if (backendRes && !backendRes.ok) {
-      const errorMsg = backendRes.error || "Failed to create Cashfree payment session via backend.";
+    if (backendRes) {
+      const errorMsg =
+        backendRes.error ||
+        (backendRes as Record<string, unknown>).message ||
+        "Failed to create Cashfree payment session via backend.";
       logEvent("cashfree", "error", `Session creation rejected for Order #${params.orderId}: ${errorMsg}`, backendRes);
       return {
         ok: false,
-        error: errorMsg,
+        error: String(errorMsg),
       };
     }
   } catch (e) {
