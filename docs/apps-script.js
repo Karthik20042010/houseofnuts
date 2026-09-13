@@ -2362,13 +2362,21 @@ function writeLogToDriveFile(entryObj) {
 
     var dateStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     var fileName = "system_log_" + dateStr + ".json";
-    var files = folder.getFilesByName(fileName);
+
+    var existingFile = null;
+    var files = folder.getFiles();
+    while (files.hasNext()) {
+      var f = files.next();
+      if (f.getName() === fileName) {
+        existingFile = f;
+        break;
+      }
+    }
 
     var logLine = JSON.stringify(entryObj) + "\n";
-    if (files && files.hasNext()) {
-      var file = files.next();
-      var existingContent = file.getAs(MimeType.PLAIN_TEXT).getDataAsString();
-      file.setContent(existingContent + logLine);
+    if (existingFile) {
+      var existingContent = existingFile.getAs(MimeType.PLAIN_TEXT).getDataAsString();
+      existingFile.setContent(existingContent + logLine);
     } else {
       folder.createFile(fileName, logLine, MimeType.PLAIN_TEXT);
     }
