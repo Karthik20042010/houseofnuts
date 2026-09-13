@@ -1023,7 +1023,9 @@ function uploadImage(body) {
   var targetSubfolder = subfolders.hasNext() ? subfolders.next() : parentFolder.createFolder(catName);
 
   var file = targetSubfolder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  try {
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (sharingErr) { }
 
   var fileId = file.getId();
   var url = "https://lh3.googleusercontent.com/d/" + fileId;
@@ -1031,11 +1033,23 @@ function uploadImage(body) {
   try {
     var sh = ensureProductsSheet();
     var values = sh.getDataRange().getValues();
+    var updatedRow = false;
     for (var i = 1; i < values.length; i++) {
       if (String(values[i][0]).toLowerCase() === String(body.productId).toLowerCase()) {
         sh.getRange(i + 1, 5).setValue(url);
+        updatedRow = true;
         break;
       }
+    }
+    if (!updatedRow && body.productId) {
+      sh.appendRow([
+        body.productId,
+        body.productName || body.productId,
+        catName.toLowerCase(),
+        body.description || "Uploaded catalog product",
+        url,
+        body.badge || "New"
+      ]);
     }
   } catch (err) { }
 
