@@ -1,7 +1,10 @@
 import { checkRateLimit } from "./rateLimiter";
 import { obfuscatePayload } from "./encryption";
 
-export const API_URL = (import.meta.env.VITE_APPS_SCRIPT_URL as string) || "";
+export const API_URL =
+  (import.meta.env.APPS_SCRIPT_URL as string) ||
+  (import.meta.env.VITE_APPS_SCRIPT_URL as string) ||
+  "https://script.google.com/macros/s/AKfycbzOt0eUwPlTbge4ZdzfvkJd3sxmDwG-2J9vqt3JAjV79agTJV9ZGgX4YRzFVpSa2P0/exec";
 
 // Sensitive actions subjected to rate limiting
 const SENSITIVE_ACTIONS: Record<string, { max: number; windowMs: number }> = {

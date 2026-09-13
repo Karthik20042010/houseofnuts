@@ -21,12 +21,12 @@ declare global {
 }
 
 export const CASHFREE_APP_ID =
-  (import.meta.env.VITE_CASHFREE_APP_ID as string) ||
   (import.meta.env.CASHFREE_APP_ID as string) ||
-  "";
+  (import.meta.env.VITE_CASHFREE_APP_ID as string) ||
+  "141222992671a6448dce6df4eec9222141";
 
 export const CASHFREE_MODE: "sandbox" | "production" =
-  ((import.meta.env.VITE_CASHFREE_MODE || import.meta.env.CASHFREE_MODE) as "sandbox" | "production") ||
+  ((import.meta.env.CASHFREE_MODE || import.meta.env.VITE_CASHFREE_MODE) as "sandbox" | "production") ||
   "production";
 
 let cashfreeInstance: ReturnType<NonNullable<Window["Cashfree"]>> | null = null;
