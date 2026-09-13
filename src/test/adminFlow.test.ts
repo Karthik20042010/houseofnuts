@@ -72,4 +72,35 @@ describe("Admin User Flow & Full Administrative Access Control", () => {
     expect(isAdminLoggedIn()).toBe(false);
     expect(getActiveRole()).toBe("user");
   });
+
+  it("should accept both object options and positional arguments for adminUploadImage", async () => {
+    sessionStorage.setItem(
+      "hon-admin-session",
+      JSON.stringify({ password: "hon_setup_bypass_2026", role: "admin", loggedInAt: Date.now() })
+    );
+
+    // Mock fetch for apiPost
+    const dummyFile = new File(["dummy content"], "test-almonds.jpg", { type: "image/jpeg" });
+
+    global.fetch = async (url: RequestInfo | URL, init?: RequestInit) => {
+      return {
+        ok: true,
+        json: async () => ({ ok: true, url: "https://lh3.googleusercontent.com/d/mock-file-id" }),
+      } as Response;
+    };
+
+    // Test positional signature
+    const url1 = await import("@/lib/admin").then((m) => m.adminUploadImage("california-almonds", dummyFile, "nuts"));
+    expect(url1).toBe("https://lh3.googleusercontent.com/d/mock-file-id");
+
+    // Test object signature
+    const url2 = await import("@/lib/admin").then((m) =>
+      m.adminUploadImage({
+        productId: "mamra-almonds",
+        file: dummyFile,
+        category: "nuts",
+      })
+    );
+    expect(url2).toBe("https://lh3.googleusercontent.com/d/mock-file-id");
+  });
 });

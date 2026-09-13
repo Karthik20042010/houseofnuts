@@ -953,7 +953,20 @@ function uploadImage(body) {
     parentFolder = folders.hasNext() ? folders.next() : DriveApp.createFolder("HouseOfNuts_ProductImages");
   }
 
-  var catName = body.category ? String(body.category).trim() : "General";
+  var rawCat = body.category ? String(body.category).trim().toLowerCase() : "general";
+  var catName = "General";
+
+  if (rawCat.indexOf("nut") !== -1) catName = "Nuts";
+  else if (rawCat.indexOf("dry") !== -1 || rawCat.indexOf("fruit") !== -1) catName = "Dry Fruits";
+  else if (rawCat.indexOf("spice") !== -1) catName = "Spices";
+  else if (rawCat.indexOf("honey") !== -1) catName = "Wild Honey";
+  else if (rawCat.indexOf("choc") !== -1) catName = "Chocolates";
+  else if (rawCat.indexOf("mix") !== -1) catName = "Trail Mixes";
+  else if (rawCat.indexOf("gift") !== -1) catName = "Gifting";
+  else if (rawCat.indexOf("seed") !== -1) catName = "Seeds";
+  else if (rawCat.indexOf("solar") !== -1) catName = "Solar Dried";
+  else if (body.category) catName = body.category.charAt(0).toUpperCase() + body.category.slice(1);
+
   var subfolders = parentFolder.getFoldersByName(catName);
   var targetSubfolder = subfolders.hasNext() ? subfolders.next() : parentFolder.createFolder(catName);
 

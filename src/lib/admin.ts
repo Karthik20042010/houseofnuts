@@ -122,33 +122,76 @@ export async function adminUpdatePrices(
   if (!res.ok) throw new Error(res.error || "Price update failed");
 }
 
-// Uploads an image file to the shop owner's Google Drive via Apps Script and
-// returns a public URL suitable for <img src>. The file is base64-encoded on
-// the client (Apps Script has no multipart body helper worth using).
-export async function adminUploadImage(
-  productId: string,
-  file: File,
-  category?: string,
-): Promise<string> {
-  const password = requireAuth();
-  const dataBase64 = await new Promise<string>((resolve, reject) => {
+export interface UploadImageOptions {
+  productId: string;
+  file?: File;
+  category?: string;
+  filename?: string;
+  mimeType?: string;
+  dataBase64?: string;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => {
-      const s = String(r.result);
+      const s = String(r.result || "");
       const i = s.indexOf(",");
       resolve(i >= 0 ? s.slice(i + 1) : s);
     };
     r.onerror = () => reject(r.error);
     r.readAsDataURL(file);
   });
+}
+
+// Uploads an image file to the shop owner's Google Drive via Apps Script and
+// returns a public URL suitable for <img src>. Supports both positional
+// args (productId, file, category) and an options object payload.
+export async function adminUploadImage(
+  productIdOrOpts: string | UploadImageOptions,
+  fileObj?: File,
+  categoryParam?: string,
+): Promise<string> {
+  const password = requireAuth();
+  let productId: string;
+  let category: string;
+  let filename: string;
+  let mimeType: string;
+  let dataBase64: string;
+
+  if (typeof productIdOrOpts === "object" && productIdOrOpts !== null) {
+    const opts = productIdOrOpts;
+    productId = opts.productId;
+    category = opts.category || "";
+    if (opts.file) {
+      filename = opts.file.name;
+      mimeType = opts.file.type || "image/jpeg";
+      dataBase64 = await fileToBase64(opts.file);
+    } else if (opts.dataBase64) {
+      filename = opts.filename || "image.jpg";
+      mimeType = opts.mimeType || "image/jpeg";
+      dataBase64 = opts.dataBase64;
+    } else {
+      throw new Error("Missing file or base64 data for upload");
+    }
+  } else {
+    productId = productIdOrOpts;
+    category = categoryParam || "";
+    if (!fileObj) throw new Error("Missing file object for upload");
+    filename = fileObj.name;
+    mimeType = fileObj.type || "image/jpeg";
+    dataBase64 = await fileToBase64(fileObj);
+  }
+
   const res = await apiPost<{ ok: boolean; url?: string; error?: string }>("uploadImage", {
     password,
     productId,
-    category: category || "",
-    filename: file.name,
-    mimeType: file.type || "image/jpeg",
+    category,
+    filename,
+    mimeType,
     dataBase64,
   });
+
   if (!res.ok || !res.url) throw new Error(res.error || "Upload failed");
   return res.url;
 }

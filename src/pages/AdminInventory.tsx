@@ -471,30 +471,19 @@ export const AdminInventory = () => {
     targetProductId?: string
   ): Promise<string> => {
     try {
-      const base64Raw = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const res = String(reader.result || "");
-          const commaIdx = res.indexOf(",");
-          resolve(commaIdx !== -1 ? res.substring(commaIdx + 1) : res);
-        };
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      });
-
-      const driveRes = await adminUploadImage({
-        productId: targetProductId || file.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-        dataBase64: base64Raw,
-        filename: file.name,
-        mimeType: file.type,
+      const pid = targetProductId || file.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const driveUrl = await adminUploadImage({
+        productId: pid,
+        file,
         category,
       });
-
-      if (driveRes && driveRes.ok && driveRes.url) {
-        return driveRes.url;
+      if (driveUrl) {
+        toast.success("Image uploaded to Google Drive subfolder!");
+        return driveUrl;
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn("Drive image upload failed, using local preview fallback:", err);
+      toast.warning("Drive upload offline or failed. Using local preview.");
     }
 
     return await fileToDataUrl(file);
