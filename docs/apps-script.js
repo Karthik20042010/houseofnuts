@@ -2494,6 +2494,7 @@ function uploadImage(body) {
 // -------- Cashfree Order Session Server-to-Server Backend --------
 
 function createCashfreeOrderSessionBackend(body) {
+  body = body || {};
   var appId = "141222992671a6448dce6df4eec9222141";
   var secretKey = "cfsk_ma_prod_63f90d086bebf60c0fddf21af52c864c_66193dae";
   var mode = "production";
