@@ -42,14 +42,15 @@ export default function AdminBills() {
   });
 
   const sendWhatsApp = (b: any) => {
-    if (!b.pdf_url) return toast.error("PDF not available for this bill");
-    const phone = b.customer_phone.replace(/\D/g, "");
+    const phone = (b.customer_phone || "").replace(/\D/g, "");
+    if (!phone) return toast.error("Customer phone number not available");
     const intl = phone.length === 10 ? `91${phone}` : phone;
     const msg = encodeURIComponent(
       `Hello ${b.customer_name},\n\nThank you for shopping with ${BUSINESS_INFO.name}!\n\n` +
       `${b.bill_type === "estimate" ? "Estimate" : "Bill"} #${b.bill_number}\n` +
       `Total: ₹${Number(b.total).toFixed(2)}\n\n` +
-      `View / download: ${b.pdf_url}\n\n– ${BUSINESS_INFO.proprietor}\n${BUSINESS_INFO.name}`
+      (b.pdf_url ? `View / download: ${b.pdf_url}\n\n` : "") +
+      `– ${BUSINESS_INFO.proprietor}\n${BUSINESS_INFO.name}`
     );
     window.open(`https://wa.me/${intl}?text=${msg}`, "_blank");
   };

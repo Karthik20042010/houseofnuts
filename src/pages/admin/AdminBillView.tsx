@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, MessageCircle, Printer } from "lucide-react";
 import { BUSINESS_INFO } from "@/lib/businessInfo";
+import { generateBillPdf } from "@/lib/billPdf";
 import { toast } from "sonner";
 
 export default function AdminBillView() {
@@ -21,17 +22,45 @@ export default function AdminBillView() {
     })();
   }, [id]);
 
-  if (!bill) return <div className="p-6 space-y-6"><p>Loading...</p></div>;
+  if (!bill) return <div className="p-6 space-y-6"><p>Loading bill details...</p></div>;
+
+  const handleOpenPdf = () => {
+    if (bill.pdf_url) {
+      window.open(bill.pdf_url, "_blank");
+      return;
+    }
+    const blob = generateBillPdf({
+      billNumber: bill.bill_number,
+      billType: bill.bill_type,
+      date: new Date(bill.created_at).toLocaleDateString("en-IN"),
+      customerName: bill.customer_name,
+      customerPhone: bill.customer_phone,
+      customerAddress: bill.customer_address,
+      items: items.map((i) => ({
+        name: i.product_name,
+        unit: i.unit,
+        quantity: Number(i.quantity),
+        price: Number(i.price_per_unit),
+        total: Number(i.line_total),
+      })),
+      subtotal: Number(bill.subtotal),
+      discount: Number(bill.discount),
+      total: Number(bill.total),
+      notes: bill.notes,
+    });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  };
 
   const sendWhatsApp = () => {
-    if (!bill.pdf_url) return toast.error("PDF not yet ready");
-    const phone = bill.customer_phone.replace(/\D/g, "");
+    const phone = (bill.customer_phone || "").replace(/\D/g, "");
+    if (!phone) return toast.error("Customer phone number not available");
     const intl = phone.length === 10 ? `91${phone}` : phone;
     const msg = encodeURIComponent(
       `Hello ${bill.customer_name},\n\nThank you for shopping with ${BUSINESS_INFO.name}!\n\n` +
       `${bill.bill_type === "estimate" ? "Estimate" : "Bill"} #${bill.bill_number}\n` +
       `Total: ₹${Number(bill.total).toFixed(2)}\n\n` +
-      `View / download: ${bill.pdf_url}\n\n` +
+      (bill.pdf_url ? `View / download: ${bill.pdf_url}\n\n` : "") +
       `– ${BUSINESS_INFO.proprietor}\n${BUSINESS_INFO.name}`
     );
     window.open(`https://wa.me/${intl}?text=${msg}`, "_blank");
@@ -51,16 +80,12 @@ export default function AdminBillView() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {bill.pdf_url && (
-            <>
-              <a href={bill.pdf_url} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline"><Download className="w-4 h-4 mr-2" />PDF</Button>
-              </a>
-              <a href={bill.pdf_url} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline"><Printer className="w-4 h-4 mr-2" />Print</Button>
-              </a>
-            </>
-          )}
+          <Button variant="outline" onClick={handleOpenPdf}>
+            <Download className="w-4 h-4 mr-2" />PDF
+          </Button>
+          <Button variant="outline" onClick={handleOpenPdf}>
+            <Printer className="w-4 h-4 mr-2" />Print
+          </Button>
           <Button onClick={sendWhatsApp} className="bg-[hsl(142,70%,40%)] hover:bg-[hsl(142,70%,35%)] text-white">
             <MessageCircle className="w-4 h-4 mr-2" />Send via WhatsApp
           </Button>
