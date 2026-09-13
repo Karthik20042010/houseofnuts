@@ -32,6 +32,10 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics.tsx"));
 const AdminOrders = lazy(() => import("./pages/AdminOrders.tsx"));
 const AdminOrderDetail = lazy(() => import("./pages/AdminOrderDetail.tsx"));
+const AdminBills = lazy(() => import("./pages/admin/AdminBills.tsx"));
+const AdminBillNew = lazy(() => import("./pages/admin/AdminBillNew.tsx"));
+const AdminBillView = lazy(() => import("./pages/admin/AdminBillView.tsx"));
+const AdminCustomers = lazy(() => import("./pages/admin/AdminCustomers.tsx"));
 const AdminInventory = lazy(() => import("./pages/AdminInventory.tsx"));
 const AdminMessages = lazy(() => import("./pages/AdminMessages.tsx"));
 const AdminImages = lazy(() => import("./pages/AdminImages.tsx"));
@@ -119,6 +123,38 @@ const App = () => (
                           element={
                             <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
                               <AdminOrderDetail />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin/bills"
+                          element={
+                            <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
+                              <AdminBills />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin/bills/new"
+                          element={
+                            <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
+                              <AdminBillNew />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin/bills/:id"
+                          element={
+                            <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
+                              <AdminBillView />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin/customers"
+                          element={
+                            <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
+                              <AdminCustomers />
                             </ProtectedRoute>
                           }
                         />

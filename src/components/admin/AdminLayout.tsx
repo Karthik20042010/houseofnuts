@@ -14,6 +14,10 @@ const titleFor = (path: string) => {
   if (path.startsWith("/admin/images")) return "Product Images";
   if (path.startsWith("/admin/developer")) return "Developer Console";
   if (path.startsWith("/admin/roles")) return "Role & Permission Management";
+  if (path === "/admin/bills/new") return "Create New Invoice / Estimate";
+  if (path.startsWith("/admin/bills/")) return "Invoice Detail & PDF";
+  if (path.startsWith("/admin/bills")) return "Billing & Invoices Registry";
+  if (path.startsWith("/admin/customers")) return "Customer Directory";
   if (path.startsWith("/admin/orders/")) return "Order Detail";
   return "Orders Management";
 };
