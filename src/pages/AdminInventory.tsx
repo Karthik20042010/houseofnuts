@@ -29,7 +29,7 @@ import {
   ArrowLeft,
   ArrowRight,
 } from "lucide-react";
-import { adminUpdateInventory, adminUploadImage } from "@/lib/admin";
+import { adminUpdateInventory, adminUpdatePrices, adminUploadImage } from "@/lib/admin";
 import { fetchInventory, StockMap } from "@/lib/inventory";
 import { products as baseProducts, Product, ProductVariant } from "@/data/products";
 import {
@@ -45,6 +45,7 @@ import {
   savePriceOverrides,
   saveProductDisplayOrder,
   saveCategoryDisplayOrder,
+  syncCatalogConfigToRemote,
   PriceOverride,
 } from "@/lib/customCatalog";
 import {
@@ -394,12 +395,29 @@ export const AdminInventory = () => {
       savePriceOverrides(pricesMap);
       setInitialPrices({ ...pricesMap });
 
-      const items: Array<{ variantId: string; productId: string; size: string; stock: number }> = [];
+      // Prepare Price Master Payload for Google Sheets DB
+      const priceItems: Array<{ variantId: string; productId: string; size: string; price: number; mrp?: number }> = [];
+      for (const p of allProds) {
+        for (const v of p.variants) {
+          const currentPrice = pricesMap[v.id]?.price ?? v.price;
+          const currentMrp = pricesMap[v.id]?.mrp ?? (v.mrp || Math.round(v.price * 1.25));
+          priceItems.push({
+            variantId: v.id,
+            productId: p.id,
+            size: v.size,
+            price: currentPrice,
+            mrp: currentMrp,
+          });
+        }
+      }
+
+      // Prepare Stock Inventory Payload for Google Sheets DB
+      const stockItems: Array<{ variantId: string; productId: string; size: string; stock: number }> = [];
       for (const p of allProds) {
         for (const v of p.variants) {
           const val = stock[v.id];
           if (val === UNTRACKED || val === undefined) continue;
-          items.push({
+          stockItems.push({
             variantId: v.id,
             productId: p.id,
             size: v.size,
@@ -408,13 +426,25 @@ export const AdminInventory = () => {
         }
       }
 
-      await adminUpdateInventory(items);
+      // 1. Dispatch Price Master update to Google Sheets DB API
+      if (priceItems.length > 0) {
+        await adminUpdatePrices(priceItems);
+      }
+
+      // 2. Dispatch Stock Inventory update to Google Sheets DB API
+      if (stockItems.length > 0) {
+        await adminUpdateInventory(stockItems);
+      }
+
+      // 3. Dispatch Catalog Config Overrides to Config tab
+      syncCatalogConfigToRemote();
+
       sessionStorage.removeItem("hon-inventory");
       setInitialStock({ ...stock });
 
-      toast.success(`Saved ${totalDirtyCount} rate & stock updates!`);
+      toast.success(`Saved rate & stock updates to Google Sheets DB!`);
     } catch (e) {
-      toast.error((e as Error).message || "Failed to save inventory updates");
+      toast.error((e as Error).message || "Failed to save inventory & price updates to DB");
     } finally {
       setSaving(false);
     }

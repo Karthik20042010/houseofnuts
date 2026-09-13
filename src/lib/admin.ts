@@ -111,7 +111,15 @@ export async function adminUpdateInventory(
 ): Promise<void> {
   const password = requireAuth();
   const res = await apiPost<{ ok: boolean; error?: string }>("updateInventory", { password, items });
-  if (!res.ok) throw new Error(res.error || "Update failed");
+  if (!res.ok) throw new Error(res.error || "Inventory update failed");
+}
+
+export async function adminUpdatePrices(
+  items: Array<{ variantId: string; productId: string; size: string; price: number; mrp?: number }>,
+): Promise<void> {
+  const password = requireAuth();
+  const res = await apiPost<{ ok: boolean; error?: string }>("updatePrices", { password, items });
+  if (!res.ok) throw new Error(res.error || "Price update failed");
 }
 
 // Uploads an image file to the shop owner's Google Drive via Apps Script and
