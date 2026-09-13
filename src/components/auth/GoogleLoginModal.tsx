@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useAuth, deriveRoleFromEmail } from "@/contexts/AuthContext";
+import { sendOtp, verifyOtp } from "@/lib/otpService";
 import { ROLE_LABELS } from "@/types/auth";
 import {
   X,
@@ -211,17 +212,33 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
     }
   };
 
-  const handleSendMobileOtp = (e: React.FormEvent) => {
+  const handleSendMobileOtp = async (e: React.FormEvent, channel: "sms" | "whatsapp" = "sms") => {
     e.preventDefault();
     const cleanNumber = phoneNumber.replace(/\D/g, "");
     if (cleanNumber.length < 10) {
       toast.error("Please enter a valid 10-digit mobile number.");
       return;
     }
-    setOtpStep("verify");
-    setResendTimer(30);
-    setOtpDigits(["", "", "", ""]);
-    toast.success(`Verification OTP sent to +91 ${cleanNumber}. (Demo Code: 1234)`);
+    setLoading(true);
+    try {
+      const res = await sendOtp(cleanNumber, channel);
+      if (res.success) {
+        setOtpStep("verify");
+        setResendTimer(30);
+        setOtpDigits(["", "", "", ""]);
+        if (res.demoOtp) {
+          toast.success(`${res.message} (Code: ${res.demoOtp})`);
+        } else {
+          toast.success(res.message);
+        }
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err) {
+      toast.error(`OTP dispatch failed: ${String(err)}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerifyMobileOtp = async (e: React.FormEvent) => {
@@ -234,12 +251,17 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
     setLoading(true);
     try {
       const cleanNumber = phoneNumber.replace(/\D/g, "");
-      const userEmail = `member_${cleanNumber.slice(-4)}@houseofnuts.com`;
-      const resUser = await loginWithGoogle(userEmail, `Customer (+91 ${cleanNumber})`);
-      toast.success("Mobile number verified successfully!");
-      onSuccess?.();
-      onClose();
-      performNavigation(resUser.role);
+      const res = await verifyOtp(cleanNumber, codeStr);
+      if (res.success) {
+        const userEmail = `member_${cleanNumber.slice(-4)}@houseofnuts.com`;
+        const resUser = await loginWithGoogle(userEmail, `Customer (+91 ${cleanNumber})`);
+        toast.success("Mobile number verified successfully!");
+        onSuccess?.();
+        onClose();
+        performNavigation(resUser.role);
+      } else {
+        toast.error(res.message);
+      }
     } catch {
       toast.error("OTP verification failed.");
     } finally {
