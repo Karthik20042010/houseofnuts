@@ -379,6 +379,36 @@ function ProductRow({ product }: { product: Product }) {
     }
   };
 
+  const onSyncBase64ToDrive = async () => {
+    if (!currentSrc.startsWith("data:image/")) return;
+    setUploading(true);
+    const t = toast.loading(`Syncing base64 image to Google Drive…`);
+    try {
+      const commaIdx = currentSrc.indexOf(",");
+      const dataBase64 = commaIdx >= 0 ? currentSrc.slice(commaIdx + 1) : currentSrc;
+      const mimeMatch = currentSrc.match(/^data:(image\/[a-zA-Z0-9+-]+);base64,/);
+      const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+      const ext = mimeType.split("/")[1] || "jpg";
+      const filename = `${product.id}.${ext}`;
+
+      const driveUrl = await adminUploadImage({
+        productId: product.id,
+        category: product.category,
+        filename,
+        mimeType,
+        dataBase64,
+      });
+
+      setProductImage(product.id, driveUrl);
+      setUrl("");
+      toast.success(`Image uploaded to Drive & published!`, { id: t });
+    } catch (e) {
+      toast.error((e as Error).message || "Drive sync failed", { id: t });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="bg-background border border-border rounded-sm p-4 flex flex-col sm:flex-row gap-4">
       <div className="relative shrink-0">
@@ -389,7 +419,7 @@ function ProductRow({ product }: { product: Product }) {
         />
         {isOverridden && (
           <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-[9px] uppercase tracking-wider font-body px-1.5 py-0.5 rounded-sm">
-            Custom
+            {currentSrc.startsWith("data:image/") ? "Local Base64" : "Custom"}
           </span>
         )}
       </div>
@@ -447,6 +477,16 @@ function ProductRow({ product }: { product: Product }) {
                 e.target.value = "";
               }}
             />
+            {currentSrc.startsWith("data:image/") && (
+              <button
+                onClick={onSyncBase64ToDrive}
+                disabled={uploading}
+                className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                title="Upload local base64 data to Google Drive & publish URL"
+              >
+                <Cloud size={13} /> Sync to Drive
+              </button>
+            )}
             <button
               onClick={() => driveRef.current?.click()}
               disabled={uploading}
