@@ -490,19 +490,11 @@ function ProductRow({ product }: { product: Product }) {
             <button
               onClick={() => driveRef.current?.click()}
               disabled={uploading}
-              className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body bg-accent text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50"
-              title="Upload to Google Drive & publish a public link"
+              className="flex items-center gap-1.5 px-3.5 py-2 text-[11px] uppercase tracking-[0.15em] font-body bg-accent text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50 font-medium"
+              title="Upload file directly to Google Drive & publish public link"
             >
               {uploading ? <Loader2 size={13} className="animate-spin" /> : <Cloud size={13} />}
-              {uploading ? "Uploading" : "Drive"}
-            </button>
-            <button
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-              className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body border border-border hover:border-foreground/40 transition-colors disabled:opacity-50"
-              title="Preview locally on this browser only"
-            >
-              <Upload size={13} /> Local
+              {uploading ? "Uploading..." : "Upload Image"}
             </button>
             <button
               onClick={onReset}
