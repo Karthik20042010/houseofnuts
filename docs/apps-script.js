@@ -1531,6 +1531,11 @@ function doPost(e) {
       if (rateLimitErr) return json({ ok: false, error: rateLimitErr });
     }
 
+    // Cashfree Webhook Event Detector
+    if (body.data || body.event_type || action === "cashfreeWebhook") {
+      return json(handleCashfreeWebhook(body));
+    }
+
     // Public actions
     if (action === "placeOrder") return json(placeOrder(body.order));
     if (action === "createCashfreeOrder") return json(createCashfreeOrderSessionBackend(body));
@@ -2552,6 +2557,7 @@ function createCashfreeOrderSessionBackend(body) {
     var response = UrlFetchApp.fetch(endpoint, options);
     var resData = JSON.parse(response.getContentText());
     if (resData && resData.payment_session_id) {
+      logNotification(orderIdStr, "cashfree_session_created", cleanEmail, "Session Created (₹" + cleanAmount + ")", "success", "cfOrderId: " + resData.cf_order_id + " | session: " + resData.payment_session_id);
       return {
         ok: true,
         paymentSessionId: resData.payment_session_id,
@@ -2560,12 +2566,55 @@ function createCashfreeOrderSessionBackend(body) {
     } else {
       var msg = (resData && resData.message) ? resData.message : "Cashfree Order Session Creation Failed";
       if (resData && resData.code) msg += " (" + resData.code + ")";
+      logNotification(orderIdStr, "cashfree_session_error", cleanEmail, "Session Failed (₹" + cleanAmount + ")", "failed", msg);
       return {
         ok: false,
         error: msg
       };
     }
   } catch (err) {
+    logNotification(orderIdStr, "cashfree_system_exception", cleanEmail, "System Exception", "failed", String(err));
     return { ok: false, error: String(err) };
+  }
+}
+
+// -------- Cashfree Webhook & Event Logger --------
+
+function handleCashfreeWebhook(body) {
+  try {
+    var data = body.data || {};
+    var orderData = data.order || {};
+    var paymentData = data.payment || {};
+    var orderId = String(orderData.order_id || body.order_id || "");
+    var paymentStatus = String(paymentData.payment_status || data.payment_status || body.type || "UNKNOWN");
+    var cfPaymentId = String(paymentData.cf_payment_id || "");
+    var utr = String(paymentData.bank_reference || "");
+
+    logNotification(
+      orderId || "WEBHOOK", 
+      "cashfree_webhook", 
+      "Cashfree Gateway", 
+      "Webhook Event: " + (body.event_type || "PAYMENT_NOTIFICATION"), 
+      paymentStatus, 
+      "cfPaymentId: " + cfPaymentId + " | UTR: " + utr
+    );
+
+    if (orderId && (paymentStatus === "SUCCESS" || paymentStatus === "PAID")) {
+      var sh = ensureOrdersSheet();
+      var values = sh.getDataRange().getValues();
+      for (var i = 1; i < values.length; i++) {
+        if (String(values[i][1]) === orderId) {
+          sh.getRange(i + 1, 10).setValue("confirmed"); // Status column
+          sh.getRange(i + 1, 11).setValue("paid"); // Payment Status column
+          if (cfPaymentId) sh.getRange(i + 1, 12).setValue(cfPaymentId);
+          if (utr) sh.getRange(i + 1, 13).setValue(utr);
+          break;
+        }
+      }
+    }
+    return { ok: true, status: "webhook_processed" };
+  } catch (e) {
+    logNotification("WEBHOOK_ERR", "cashfree_webhook_error", "Cashfree Gateway", "Webhook Processing Failed", "error", String(e));
+    return { ok: false, error: String(e) };
   }
 }
