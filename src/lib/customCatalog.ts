@@ -56,6 +56,13 @@ export const DEFAULT_SUBCATEGORIES: CustomSubcategory[] = [
   { id: "chia-flax", label: "Organic Chia & Flax Seeds", parentCategory: "seeds" },
   { id: "sunflower-pumpkin", label: "Pumpkin & Sunflower Seeds", parentCategory: "seeds" },
 
+  // Gourmet Flavors
+  { id: "savory-roasted", label: "Savory & Spice Roasted", parentCategory: "flavored-nuts" },
+  { id: "sweet-roasted", label: "Honey & Sweet Glazed", parentCategory: "flavored-nuts" },
+
+  // Stuffed Dates
+  { id: "delicacies", label: "Nut & Saffron Delicacies", parentCategory: "stuffed-dates" },
+
   // Solar Dried
   { id: "solar-fruits", label: "Solar Dried Natural Fruits", parentCategory: "solar-dried" },
 
