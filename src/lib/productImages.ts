@@ -30,6 +30,11 @@ function write(next: Overrides) {
   listeners.forEach((l) => l());
 }
 
+export function clearProductImageCache() {
+  cache = null;
+  listeners.forEach((l) => l());
+}
+
 export function getAllOverrides(): Overrides {
   return { ...read() };
 }
@@ -38,21 +43,37 @@ export function getProductImageSrc(product: { id: string; image: string }): stri
   return read()[product.id] || product.image;
 }
 
+import { syncCatalogConfigToRemote } from "./customCatalog";
+
 export function setProductImage(productId: string, src: string) {
   const next = { ...read(), [productId]: src };
   write(next);
+  syncCatalogConfigToRemote();
 }
 
 const GALLERY_STORAGE_KEY = "hon-product-gallery-overrides-v1";
 
-export function getProductGallery(product: { id: string; image: string; images?: string[] }): string[] {
+export function getProductGallery(product: { id: string; image: string; images?: string[]; category?: string; name?: string }): string[] {
   let customGallery: string[] | undefined;
   try {
     const raw = localStorage.getItem(GALLERY_STORAGE_KEY);
     if (raw) {
       const map = JSON.parse(raw);
+      const keys = Object.keys(map);
+      const massMappedKeys = keys.filter((k) => Array.isArray(map[k]) && map[k].length > 10);
+      if (massMappedKeys.length > 0) {
+        for (const key of massMappedKeys) {
+          delete map[key];
+        }
+        localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(map));
+        syncCatalogConfigToRemote();
+      }
+      
       if (Array.isArray(map[product.id]) && map[product.id].length > 0) {
-        customGallery = map[product.id];
+        const unique = Array.from(new Set(map[product.id] as string[]));
+        if (unique.length <= 10) {
+          customGallery = unique;
+        }
       }
     }
   } catch {
@@ -64,8 +85,9 @@ export function getProductGallery(product: { id: string; image: string; images?:
   }
 
   const primary = getProductImageSrc(product);
-  const extra = product.images || [];
-  const list = [primary, ...extra.filter((img) => img !== primary)];
+  const extra = (product.images && product.images.length > 0) ? product.images.filter((img) => typeof img === "string") : [primary];
+  const sanitizedExtra = extra.length > 10 ? [primary] : extra;
+  const list = [primary, ...sanitizedExtra.filter((img) => img !== primary)];
   return Array.from(new Set(list));
 }
 
@@ -77,6 +99,8 @@ export function setProductGallery(productId: string, images: string[]) {
     localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(map));
     if (images.length > 0) {
       setProductImage(productId, images[0]);
+    } else {
+      syncCatalogConfigToRemote();
     }
     listeners.forEach((l) => l());
   } catch {
@@ -88,6 +112,33 @@ export function clearProductImage(productId: string) {
   const next = { ...read() };
   delete next[productId];
   write(next);
+  syncCatalogConfigToRemote();
+}
+
+export function clearAllProductImageOverrides() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(GALLERY_STORAGE_KEY);
+    
+    // Clean up any custom products saved in localStorage that had multi-image arrays attached
+    const customProdsRaw = localStorage.getItem("hon_custom_products_v1");
+    if (customProdsRaw) {
+      const customProds = JSON.parse(customProdsRaw);
+      if (Array.isArray(customProds)) {
+        const cleaned = customProds.map((p: Record<string, unknown>) => ({
+          ...p,
+          images: undefined,
+        }));
+        localStorage.setItem("hon_custom_products_v1", JSON.stringify(cleaned));
+      }
+    }
+
+    cache = null;
+    listeners.forEach((l) => l());
+    syncCatalogConfigToRemote();
+  } catch {
+    // Ignore
+  }
 }
 
 function subscribe(cb: () => void) {

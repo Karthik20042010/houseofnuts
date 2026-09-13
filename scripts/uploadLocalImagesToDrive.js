@@ -1,38 +1,59 @@
 import fs from "fs";
 import path from "path";
 
-const API_URL = "https://script.google.com/macros/s/AKfycby2SAhuk8unb47wnbuowm_7LqQul7SFkj34TnMI1OJVc23b9uKyDQidQjDUkeKgZ5Q/exec";
+// Read API URL from .env if available
+let API_URL = "https://script.google.com/macros/s/AKfycby2SAhuk8unb47wnbuowm_7LqQul7SFkj34TnMI1OJVc23b9uKyDQidQjDUkeKgZ5Q/exec";
+try {
+  const envPath = path.resolve("./.env");
+  if (fs.existsSync(envPath)) {
+    const envText = fs.readFileSync(envPath, "utf-8");
+    const match = envText.match(/VITE_APPS_SCRIPT_URL=(.+)/);
+    if (match && match[1]) {
+      API_URL = match[1].trim();
+    }
+  }
+} catch (e) {
+  // Use fallback
+}
+
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 const CATALOG_DIR = path.resolve("./public/images/catalog");
 
 // Mapping image filenames to productId & category
 const PRODUCT_MAP = [
   { file: "almonds.jpg", id: "california-almonds", category: "nuts" },
   { file: "mamra-almonds.jpg", id: "mamra-almonds", category: "nuts" },
+  { file: "cashews.jpg", id: "cashews-w320", category: "nuts" },
   { file: "cashews.jpg", id: "jumbo-cashews", category: "nuts" },
-  { file: "pistachios.jpg", id: "pistachios-salted", category: "nuts" },
-  { file: "walnuts.jpg", id: "chilean-walnuts", category: "nuts" },
-  { file: "dates.jpg", id: "medjool-dates", category: "dry-fruits" },
-  { file: "berry-mix.jpg", id: "berry-trail-mix", category: "mixes" },
-  { file: "anjeer.jpg", id: "anjeer-figs", category: "dry-fruits" },
-  { file: "apricots.jpg", id: "turkish-apricots", category: "dry-fruits" },
-  { file: "black-raisins.jpg", id: "black-raisins", category: "dry-fruits" },
+  { file: "walnuts.jpg", id: "walnuts", category: "nuts" },
+  { file: "pistachios.jpg", id: "pistachios", category: "nuts" },
   { file: "brazil-nuts.jpg", id: "brazil-nuts", category: "nuts" },
-  { file: "chia.jpg", id: "chia-seeds", category: "seeds" },
-  { file: "pumpkin-seeds.jpg", id: "pumpkin-seeds", category: "seeds" },
-  { file: "makhana.jpg", id: "foxnuts-makhana", category: "solar-dried" },
-  { file: "cheese-makhana.jpg", id: "cheese-makhana", category: "solar-dried" },
-  { file: "peri-peri-makhana.jpg", id: "peri-peri-makhana", category: "solar-dried" },
-  { file: "salted-makhana.jpg", id: "salted-makhana", category: "solar-dried" },
-  { file: "trail-mix.jpg", id: "daily-trail-mix", category: "mixes" },
-  { file: "roasted-almonds.jpg", id: "roasted-almonds", category: "nuts" },
-  { file: "roasted-cashews.jpg", id: "roasted-cashews", category: "nuts" },
-  { file: "roasted-pistachios.jpg", id: "roasted-pistachios", category: "nuts" },
-  { file: "roasted-walnuts.jpg", id: "roasted-walnuts", category: "nuts" },
-  { file: "salted-almonds.jpg", id: "salted-almonds", category: "nuts" },
-  { file: "salted-cashews.jpg", id: "salted-cashews", category: "nuts" },
-  { file: "fried-cashews.jpg", id: "fried-cashews", category: "nuts" },
-  { file: "masala-cashews.jpg", id: "masala-cashews", category: "nuts" },
-  { file: "honey-walnuts.jpg", id: "honey-walnuts", category: "honey" },
+  { file: "pecan-nuts.png", id: "pecan-nuts", category: "nuts" },
+
+  { file: "blueberry.png", id: "blueberries", category: "dry-fruits" },
+  { file: "blackberry.png", id: "blackberries", category: "dry-fruits" },
+  { file: "plum.png", id: "plum-standard", category: "dry-fruits" },
+  { file: "plum.png", id: "plum-premium", category: "dry-fruits" },
+  { file: "anjeer.jpg", id: "figs", category: "dry-fruits" },
+  { file: "raisins.jpg", id: "raisins", category: "dry-fruits" },
+
+  { file: "dried-mango.png", id: "solar-mango", category: "solar-dried" },
+  { file: "dried-pineapple.png", id: "solar-pineapple", category: "solar-dried" },
+  { file: "dried-kiwi.jpg", id: "dried-kiwi-slices", category: "solar-dried" },
+  { file: "sweet-kiwi.png", id: "sweet-dried-kiwi", category: "solar-dried" },
+  { file: "honey-amla.png", id: "honey-amla", category: "solar-dried" },
+  { file: "jeera-amla.png", id: "jeera-amla", category: "solar-dried" },
+  { file: "salt-amla.png", id: "salt-amla", category: "solar-dried" },
+
+  { file: "chia.jpg", id: "seeds-chia", category: "seeds" },
+  { file: "flax-seeds.png", id: "seeds-flax", category: "seeds" },
+  { file: "haleem-seeds.png", id: "seeds-haleem", category: "seeds" },
+  { file: "sunflower-seeds.png", id: "seeds-sunflower", category: "seeds" },
+  { file: "pumpkin-seeds.jpg", id: "seeds-pumpkin", category: "seeds" },
+  { file: "chia.jpg", id: "seeds-watermelon", category: "seeds" },
+
+  { file: "makhana.jpg", id: "phool-makhana", category: "mixes" },
+  { file: "trail-mix.jpg", id: "power-trail-mix", category: "mixes" },
 ];
 
 async function uploadAll() {
@@ -52,16 +73,19 @@ async function uploadAll() {
       console.log(`[UPLOADING] ${item.file} -> Category: ${item.category} (Product: ${item.id})...`);
       const fileBuffer = fs.readFileSync(filePath);
       const dataBase64 = fileBuffer.toString("base64");
+      const ext = path.extname(item.file).toLowerCase();
+      const mimeType = ext === ".png" ? "image/png" : "image/jpeg";
 
       const response = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
           action: "uploadImage",
+          password: ADMIN_PASSWORD,
           productId: item.id,
           category: item.category,
           filename: item.file,
-          mimeType: "image/jpeg",
+          mimeType: mimeType,
           dataBase64: dataBase64
         }),
         redirect: "follow"
@@ -73,7 +97,7 @@ async function uploadAll() {
         if (json.ok) {
           console.log(`  ✅ Success: ${json.url}`);
         } else {
-          console.warn(`  ⚠️ Error: ${json.error || resText}`);
+          console.warn(`  ⚠️ Response: ${json.error || resText}`);
         }
       } catch (e) {
         console.warn(`  ⚠️ Raw response: ${resText.slice(0, 100)}`);
@@ -83,7 +107,7 @@ async function uploadAll() {
     }
   }
 
-  console.log("\n✅ Automated Google Drive catalog upload process completed.");
+  console.log("\n✅ Google Drive catalog upload process completed.");
 }
 
 uploadAll();

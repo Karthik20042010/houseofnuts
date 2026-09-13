@@ -111,7 +111,9 @@ export const AccountProfile: React.FC = () => {
     if (rawProfile) {
       try {
         setProfileData(JSON.parse(rawProfile));
-      } catch {}
+      } catch {
+        /* ignore storage parse error */
+      }
     } else if (googleUser) {
       setProfileData((prev) => ({
         ...prev,
@@ -130,7 +132,9 @@ export const AccountProfile: React.FC = () => {
           );
           setAddresses(filtered);
         }
-      } catch {}
+      } catch {
+        /* ignore storage parse error */
+      }
     }
   }, [userProfileKey, userAddressKey, googleUser]);
 
@@ -264,13 +268,14 @@ export const AccountProfile: React.FC = () => {
     navigate("/login", { replace: true });
   };
 
+  const [imgError, setImgError] = useState(false);
+
   if (!isLoggedIn && !isGoogleAuthenticated) {
     return null;
   }
 
   const displayName = profileData.name;
   const displayEmail = profileData.email;
-  const [imgError, setImgError] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-clay-light text-foreground">

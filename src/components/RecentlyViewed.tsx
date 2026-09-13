@@ -1,4 +1,4 @@
-import { products } from "@/data/products";
+import { useCatalog } from "@/lib/customCatalog";
 import ProductCard from "@/components/ProductCard";
 import { Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
@@ -8,6 +8,7 @@ interface RecentlyViewedProps {
 }
 
 const RecentlyViewed = ({ viewedIds }: RecentlyViewedProps) => {
+  const { products } = useCatalog();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -15,6 +16,7 @@ const RecentlyViewed = ({ viewedIds }: RecentlyViewedProps) => {
   const recentProducts = viewedIds
     .map((id) => products.find((p) => p.id === id))
     .filter(Boolean) as typeof products;
+
 
   const checkScroll = () => {
     const el = scrollRef.current;

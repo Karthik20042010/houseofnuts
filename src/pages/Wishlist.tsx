@@ -3,16 +3,19 @@ import { Link, useNavigate } from "react-router-dom";
 import { Heart, ShoppingBag, Trash2, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useCart } from "@/contexts/CartContext";
-import { products, Product } from "@/data/products";
+import { Product } from "@/data/products";
+import { useCatalog } from "@/lib/customCatalog";
 import { getProductImageSrc } from "@/lib/productImages";
 import { toast } from "sonner";
 
 export const Wishlist: React.FC = () => {
+  const { products } = useCatalog();
   const { wishlistIds, removeFromWishlist, clearWishlist } = useWishlist();
   const { addToCart } = useCart();
   const navigate = useNavigate();
 
   const savedProducts = products.filter((p) => wishlistIds.includes(p.id));
+
 
   const handleMoveToCart = (product: Product) => {
     if (product.variants && product.variants.length > 0) {

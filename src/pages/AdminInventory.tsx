@@ -23,6 +23,11 @@ import {
   Images,
   Star,
   Edit3,
+  GripVertical,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import { adminUpdateInventory, adminUploadImage } from "@/lib/admin";
 import { fetchInventory, StockMap } from "@/lib/inventory";
@@ -36,6 +41,8 @@ import {
   addCustomProduct,
   getPriceOverrides,
   savePriceOverrides,
+  saveProductDisplayOrder,
+  saveCategoryDisplayOrder,
   PriceOverride,
 } from "@/lib/customCatalog";
 import {
@@ -43,6 +50,7 @@ import {
   getProductImageSrc,
   getProductGallery,
   setProductGallery,
+  clearAllProductImageOverrides,
 } from "@/lib/productImages";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -229,6 +237,84 @@ export const AdminInventory = () => {
     setSelectedMediaUrls([]);
     setTargetMappingProductIds([]);
     refreshCatalogLocal();
+  };
+
+  // Drag and Drop & Card Reordering Handlers
+  const [draggedProductId, setDraggedProductId] = useState<string | null>(null);
+
+  const handleReorderProducts = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return;
+
+    const currentOrder = allProds.map((p) => p.id);
+    const sourceIdx = currentOrder.indexOf(sourceId);
+    const targetIdx = currentOrder.indexOf(targetId);
+
+    if (sourceIdx === -1 || targetIdx === -1) return;
+
+    const newOrder = [...currentOrder];
+    const [moved] = newOrder.splice(sourceIdx, 1);
+    newOrder.splice(targetIdx, 0, moved);
+
+    saveProductDisplayOrder(newOrder);
+    refreshCatalogLocal();
+    toast.success("Updated product display order!");
+  };
+
+  const handleMoveProductStep = (productId: string, direction: -1 | 1) => {
+    const currentOrder = allProds.map((p) => p.id);
+    const idx = currentOrder.indexOf(productId);
+    if (idx === -1) return;
+
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= currentOrder.length) return;
+
+    const newOrder = [...currentOrder];
+    const [moved] = newOrder.splice(idx, 1);
+    newOrder.splice(targetIdx, 0, moved);
+
+    saveProductDisplayOrder(newOrder);
+    refreshCatalogLocal();
+    toast.success("Moved product order!");
+  };
+
+  // Category Drag and Drop Reordering Handlers
+  const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
+
+  const handleReorderCategories = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return;
+
+    const nonAllCategories = categoriesList.filter((c) => c.id !== "all");
+    const currentOrder = nonAllCategories.map((c) => c.id);
+    const sourceIdx = currentOrder.indexOf(sourceId);
+    const targetIdx = currentOrder.indexOf(targetId);
+
+    if (sourceIdx === -1 || targetIdx === -1) return;
+
+    const newOrder = [...currentOrder];
+    const [moved] = newOrder.splice(sourceIdx, 1);
+    newOrder.splice(targetIdx, 0, moved);
+
+    saveCategoryDisplayOrder(["all", ...newOrder]);
+    refreshCatalogLocal();
+    toast.success("Category sequence updated!");
+  };
+
+  const handleMoveCategoryStep = (catId: string, direction: -1 | 1) => {
+    const nonAllCategories = categoriesList.filter((c) => c.id !== "all");
+    const currentOrder = nonAllCategories.map((c) => c.id);
+    const idx = currentOrder.indexOf(catId);
+    if (idx === -1) return;
+
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= currentOrder.length) return;
+
+    const newOrder = [...currentOrder];
+    const [moved] = newOrder.splice(idx, 1);
+    newOrder.splice(targetIdx, 0, moved);
+
+    saveCategoryDisplayOrder(["all", ...newOrder]);
+    refreshCatalogLocal();
+    toast.success("Moved category order!");
   };
 
   // Reset subcategory selection when parent category changes
@@ -558,7 +644,7 @@ export const AdminInventory = () => {
     const createdProd = addCustomProduct({
       name: newProdName.trim(),
       localName: newProdLocalName.trim() || undefined,
-      category: newProdCategory as any,
+      category: newProdCategory as Product["category"],
       subcategory: newProdSubcategory,
       description: newProdDescription.trim() || "Hand-selected premium dry fruits",
       image: primaryImg,
@@ -574,18 +660,40 @@ export const AdminInventory = () => {
 
     setProductGallery(createdProd.id, newProdImages);
 
-    // Update stock map with initial stock for newly created variants
+    // Prepend newly created product to the front of store display order so it appears immediately at position #1
+    const currentOrder = allProds.map((p) => p.id);
+    saveProductDisplayOrder([createdProd.id, ...currentOrder.filter((id) => id !== createdProd.id)]);
+
+    // Update stock map with initial stock for newly created variants and push to DB
     const newStockMap = { ...stock };
+    const inventoryPayload: Array<{ variantId: string; productId: string; size: string; stock: number }> = [];
     newProdVariants.forEach((v, idx) => {
       const vId = createdProd.variants[idx]?.id;
       if (vId) {
         newStockMap[vId] = v.stock;
+        inventoryPayload.push({
+          variantId: vId,
+          productId: createdProd.id,
+          size: v.size,
+          stock: v.stock,
+        });
       }
     });
     setStock(newStockMap);
+    if (inventoryPayload.length > 0) {
+      adminUpdateInventory(inventoryPayload).catch((e) => {
+        console.debug("Remote inventory sync fallback:", e);
+      });
+    }
 
-    toast.success(`Product "${createdProd.name}" created with ${newProdImages.length} image(s)!`);
+    toast.success(`Product "${createdProd.name}" created & published to inventory!`);
     setIsAddProductOpen(false);
+
+    // Auto-switch parent & subcategory view filters so the newly added product is immediately visible
+    setSelectedParentCategory(createdProd.category);
+    if (createdProd.subcategory) {
+      setSelectedSubcategory(createdProd.subcategory);
+    }
 
     // Reset form
     setNewProdName("");
@@ -711,37 +819,78 @@ export const AdminInventory = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {/*
-            <button
-              type="button"
-              onClick={() => setSelectedParentCategory("all")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
-                selectedParentCategory === "all"
-                  ? "bg-accent text-accent-foreground font-bold shadow-xs"
-                  : "bg-muted/40 hover:bg-secondary text-muted-foreground"
-              }`}
-            >
-              All Categories ({allProds.length})
-            </button>
-            */}
+          <div className="flex items-center gap-2 flex-wrap">
             {categoriesList
               .filter((c) => c.id !== "all")
-              .map((c) => {
+              .map((c, idx, arr) => {
                 const count = allProds.filter((p) => p.category === c.id).length;
+                const isSelected = selectedParentCategory === c.id;
+                const isDragged = draggedCategoryId === c.id;
+
                 return (
-                  <button
+                  <div
                     key={c.id}
-                    type="button"
-                    onClick={() => setSelectedParentCategory(c.id)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
-                      selectedParentCategory === c.id
-                        ? "bg-accent text-accent-foreground font-bold shadow-xs"
-                        : "bg-muted/40 hover:bg-secondary text-foreground"
+                    draggable
+                    onDragStart={(e) => {
+                      setDraggedCategoryId(c.id);
+                      e.dataTransfer.setData("text/plain", c.id);
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (draggedCategoryId) {
+                        handleReorderCategories(draggedCategoryId, c.id);
+                        setDraggedCategoryId(null);
+                      }
+                    }}
+                    className={`group inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all ${
+                      isDragged
+                        ? "opacity-40 border-dashed border-accent"
+                        : isSelected
+                        ? "bg-accent text-accent-foreground border-accent font-bold shadow-xs"
+                        : "bg-muted/40 hover:bg-secondary border-border/60 text-foreground"
                     }`}
                   >
-                    {c.label} ({count})
-                  </button>
+                    <span
+                      className="cursor-grab active:cursor-grabbing text-muted-foreground/60 hover:text-foreground pr-0.5"
+                      title="Drag to reorder category order"
+                    >
+                      <GripVertical size={11} />
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedParentCategory(c.id)}
+                      className="cursor-pointer font-medium"
+                    >
+                      {c.label} ({count})
+                    </button>
+                    <div className="hidden group-hover:inline-flex items-center gap-0.5 ml-1 border-l border-border/40 pl-1">
+                      <button
+                        type="button"
+                        disabled={idx === 0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveCategoryStep(c.id, -1);
+                        }}
+                        className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground disabled:opacity-20"
+                        title="Move category left"
+                      >
+                        <ArrowLeft size={10} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={idx === arr.length - 1}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveCategoryStep(c.id, 1);
+                        }}
+                        className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground disabled:opacity-20"
+                        title="Move category right"
+                      >
+                        <ArrowRight size={10} />
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
           </div>
@@ -820,6 +969,18 @@ export const AdminInventory = () => {
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={() => {
+                clearAllProductImageOverrides();
+                refreshCatalogLocal();
+                toast.success("Reset all product image mappings to default!");
+              }}
+              className="px-3 py-1.5 text-xs font-body border border-amber-500/40 text-amber-700 dark:text-amber-300 bg-amber-500/10 rounded-xl hover:bg-amber-500/20 transition-colors"
+              title="Reset any accidental image mappings across all products"
+            >
+              Reset Image Mappings
+            </button>
+            <button
+              type="button"
               onClick={() => setAllInViewStock(UNTRACKED)}
               className="px-3 py-1.5 text-xs font-body border border-border rounded-xl hover:bg-secondary transition-colors"
               title="Untrack stock for visible products"
@@ -837,22 +998,30 @@ export const AdminInventory = () => {
         </div>
       </div>
 
-      {/* Active Breadcrumb Summary */}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground font-body bg-muted/20 px-4 py-2 rounded-xl border border-border/60">
-        <Filter size={13} className="text-accent" />
-        <span>Showing:</span>
-        <span className="font-semibold text-foreground">
-          {selectedParentCategory === "all" ? "All Categories" : categoriesList.find((c) => c.id === selectedParentCategory)?.label}
-        </span>
-        <ChevronRight size={12} />
-        <span className="font-semibold text-foreground">
-          {selectedSubcategory === "all"
-            ? "All Subcategories"
-            : activeSubcategoriesList.find((s) => s.id === selectedSubcategory)?.label || selectedSubcategory}
-        </span>
-        <span className="ml-auto font-mono text-[11px] text-accent font-bold">
-          {filteredProducts.length} Product Item{filteredProducts.length === 1 ? "" : "s"} Found
-        </span>
+      {/* Active Breadcrumb Summary & Drag Reorder Hint */}
+      <div className="flex items-center justify-between gap-2 flex-wrap text-xs text-muted-foreground font-body bg-muted/20 px-4 py-2.5 rounded-xl border border-border/60">
+        <div className="flex items-center gap-2">
+          <Filter size={13} className="text-accent" />
+          <span>Showing:</span>
+          <span className="font-semibold text-foreground">
+            {selectedParentCategory === "all" ? "All Categories" : categoriesList.find((c) => c.id === selectedParentCategory)?.label}
+          </span>
+          <ChevronRight size={12} />
+          <span className="font-semibold text-foreground">
+            {selectedSubcategory === "all"
+              ? "All Subcategories"
+              : activeSubcategoriesList.find((s) => s.id === selectedSubcategory)?.label || selectedSubcategory}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] bg-accent/15 text-accent px-2 py-0.5 rounded font-mono font-medium hidden sm:inline-flex items-center gap-1">
+            <GripVertical size={11} /> Drag handle or use ↑↓ arrows to reorder items
+          </span>
+          <span className="font-mono text-[11px] text-accent font-bold">
+            {filteredProducts.length} Product Item{filteredProducts.length === 1 ? "" : "s"}
+          </span>
+        </div>
       </div>
 
       {/* Catalog & Inventory Product Grid */}
@@ -878,10 +1047,56 @@ export const AdminInventory = () => {
           filteredProducts.map((p) => {
             const gallery = getProductGallery(p);
             return (
-              <div key={p.id} className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
+              <div
+                key={p.id}
+                draggable
+                onDragStart={(e) => {
+                  setDraggedProductId(p.id);
+                  e.dataTransfer.setData("text/plain", p.id);
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (draggedProductId) {
+                    handleReorderProducts(draggedProductId, p.id);
+                    setDraggedProductId(null);
+                  }
+                }}
+                className={`bg-card border rounded-2xl overflow-hidden shadow-xs transition-all ${
+                  draggedProductId === p.id ? "opacity-40 border-dashed border-accent scale-[0.99]" : "border-border"
+                }`}
+              >
                 {/* Product Header & Image Gallery Preview */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border-b border-border bg-muted/20">
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-3">
+                    {/* Drag Handle & Ordering Arrows */}
+                    <div className="flex items-center gap-1 shrink-0 pt-1 sm:pt-0">
+                      <div
+                        className="p-1.5 rounded-lg border border-border/70 hover:bg-accent/10 hover:border-accent text-muted-foreground hover:text-accent cursor-grab active:cursor-grabbing transition-colors"
+                        title="Drag item to reorder position in store catalog"
+                      >
+                        <GripVertical size={16} />
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => handleMoveProductStep(p.id, -1)}
+                          className="p-0.5 rounded hover:bg-secondary text-muted-foreground hover:text-accent cursor-pointer transition-colors"
+                          title="Move item up"
+                        >
+                          <ArrowUp size={11} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveProductStep(p.id, 1)}
+                          className="p-0.5 rounded hover:bg-secondary text-muted-foreground hover:text-accent cursor-pointer transition-colors"
+                          title="Move item down"
+                        >
+                          <ArrowDown size={11} />
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Primary Image & Multi-Image Gallery Strip */}
                     <div className="relative group shrink-0">
                       <img
@@ -1214,9 +1429,23 @@ export const AdminInventory = () => {
 
             {/* Current Multi-Image Gallery Grid */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-foreground">
-                Current Gallery Photos ({editingProductImages.length})
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-foreground">
+                  Current Gallery Photos ({editingProductImages.length})
+                </label>
+                {editingProductImages.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingProductImages([editingProductImages[0]]);
+                      toast.info("Reset product gallery to single cover photo.");
+                    }}
+                    className="text-[11px] text-destructive hover:underline cursor-pointer font-semibold"
+                  >
+                    Reset Gallery (Remove Extra Photos)
+                  </button>
+                )}
+              </div>
 
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {editingProductImages.map((img, idx) => (
@@ -1853,6 +2082,7 @@ export const AdminInventory = () => {
                   2. Select Product IDs to Map Photos To ({targetMappingProductIds.length} Selected)
                 </span>
                 <div className="flex items-center gap-3 text-[11px]">
+                  {/*
                   <button
                     type="button"
                     onClick={() => setTargetMappingProductIds(allProds.map((p) => p.id))}
@@ -1861,6 +2091,7 @@ export const AdminInventory = () => {
                     Select All Products
                   </button>
                   <span>•</span>
+                  */}
                   <button
                     type="button"
                     onClick={() => setTargetMappingProductIds([])}

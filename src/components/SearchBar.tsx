@@ -23,7 +23,7 @@ const SearchBar = () => {
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const { products } = useCatalog();
+  const { products, categories } = useCatalog();
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();

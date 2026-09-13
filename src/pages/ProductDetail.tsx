@@ -10,7 +10,7 @@ import SEOHead from "@/components/SEOHead";
 import CartDrawer from "@/components/CartDrawer";
 import ProductCard from "@/components/ProductCard";
 import DeliveryEstimate from "@/components/DeliveryEstimate";
-import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf, Heart, Share2, Zap, Check, Clock, Sparkles } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf, Heart, Share2, Zap, Check, Clock, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import ReviewsSection from "@/components/ReviewsSection";
 import { getAverageRating } from "@/lib/reviews";
@@ -29,6 +29,10 @@ const ProductDetail = () => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const { addViewed } = useRecentlyViewed();
+
+  // Touch Swipe Gesture State for Mobile Carousel
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchEndX, setTouchEndX] = useState<number | null>(null);
 
   const product = products.find((p) => p.id === id);
 
@@ -58,6 +62,30 @@ const ProductDetail = () => {
 
   const gallery = getProductGallery(product);
   const activeImageSrc = gallery[activeImageIndex] || getProductImageSrc(product);
+
+  const minSwipeDistance = 40;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEndX(null);
+    setTouchStartX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEndX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX || !touchEndX) return;
+    const distance = touchStartX - touchEndX;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && gallery.length > 1) {
+      setActiveImageIndex((prev) => (prev + 1) % gallery.length);
+    } else if (isRightSwipe && gallery.length > 1) {
+      setActiveImageIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
+    }
+  };
 
   const handleAdd = () => {
     if (isComingSoon) return;
@@ -148,25 +176,89 @@ const ProductDetail = () => {
 
         {/* Product Section */}
         <div className="grid md:grid-cols-2 gap-8 md:gap-16 mb-20">
-          {/* Image & Multi-Image Gallery */}
-          <div className="space-y-4">
-            <div className="gradient-linen aspect-square relative overflow-hidden rounded-2xl shine border border-border/60">
-              <ProductImage
-                src={activeImageSrc}
-                alt={product.name}
-                eager
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="w-full h-full object-cover rounded-2xl"
-              />
+          {/* Image & Multi-Image Gallery Interactive Swipe Carousel */}
+          <div className="space-y-4 font-body">
+            <div
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              className="gradient-linen aspect-square relative overflow-hidden rounded-2xl shine border border-border/60 group select-none touch-pan-y cursor-grab active:cursor-grabbing"
+            >
+              {/* Sliding Viewport */}
+              <div
+                className="w-full h-full flex transition-transform duration-300 ease-out"
+                style={{ transform: `translateX(-${activeImageIndex * 100}%)` }}
+              >
+                {gallery.map((imgSrc, i) => (
+                  <div key={i} className="w-full h-full shrink-0 flex-none relative">
+                    <ProductImage
+                      src={imgSrc}
+                      alt={`${product.name} photo ${i + 1}`}
+                      eager={i === 0}
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="w-full h-full object-cover rounded-2xl"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Badges */}
               {isComingSoon ? (
-                <div className="absolute top-4 left-4 bg-amber-600/90 text-amber-50 px-3.5 py-1.5 text-xs uppercase tracking-wider font-semibold z-20 shadow-soft font-body rounded-full flex items-center gap-1.5">
+                <div className="absolute top-4 left-4 bg-amber-600/90 text-amber-50 px-3.5 py-1.5 text-xs uppercase tracking-wider font-semibold z-20 shadow-soft rounded-full flex items-center gap-1.5">
                   <Clock size={13} /> Coming Soon
                 </div>
               ) : product.badge ? (
-                <div className="absolute top-4 left-4 gradient-warm text-accent-foreground px-3 py-1.5 text-xs font-semibold uppercase tracking-wider shadow-glow font-body rounded-full">
+                <div className="absolute top-4 left-4 gradient-warm text-accent-foreground px-3 py-1.5 text-xs font-semibold uppercase tracking-wider shadow-glow rounded-full z-20">
                   {product.badge}
                 </div>
               ) : null}
+
+              {/* Previous / Next Arrows (Flipkart / Amazon style) */}
+              {gallery.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveImageIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
+                    }}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 z-20 size-10 rounded-full bg-background/90 hover:bg-background text-foreground border border-border/80 shadow-md flex items-center justify-center transition-all opacity-80 sm:opacity-0 sm:group-hover:opacity-100 hover:scale-110 cursor-pointer"
+                    aria-label="Previous photo"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveImageIndex((prev) => (prev + 1) % gallery.length);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 z-20 size-10 rounded-full bg-background/90 hover:bg-background text-foreground border border-border/80 shadow-md flex items-center justify-center transition-all opacity-80 sm:opacity-0 sm:group-hover:opacity-100 hover:scale-110 cursor-pointer"
+                    aria-label="Next photo"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </>
+              )}
+
+              {/* Flipkart Dots Pagination Bar */}
+              {gallery.length > 1 && (
+                <div className="absolute bottom-3 inset-x-0 z-20 flex items-center justify-center gap-1.5">
+                  {gallery.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setActiveImageIndex(i)}
+                      className={`rounded-full transition-all cursor-pointer ${
+                        activeImageIndex === i
+                          ? "w-5 h-2 bg-accent shadow-xs"
+                          : "size-2 bg-background/70 hover:bg-background/90"
+                      }`}
+                      aria-label={`Slide ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Gallery Thumbnails Strip */}

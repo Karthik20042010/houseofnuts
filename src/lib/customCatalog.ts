@@ -1,9 +1,6 @@
 import { Product, ProductVariant, categories as defaultCategories } from "@/data/products";
-
-const CUSTOM_PRODUCTS_KEY = "hon_custom_products_v1";
-const CUSTOM_CATEGORIES_KEY = "hon_custom_categories_v1";
-const CUSTOM_SUBCATEGORIES_KEY = "hon_custom_subcategories_v1";
-const CUSTOM_PRICE_OVERRIDES_KEY = "hon_custom_price_overrides_v1";
+import { apiGet, apiPost } from "./api";
+import { clearProductImageCache } from "./productImages";
 
 export interface CustomCategory {
   id: string;
@@ -63,19 +60,224 @@ export const DEFAULT_SUBCATEGORIES: CustomSubcategory[] = [
   { id: "solar-fruits", label: "Solar Dried Natural Fruits", parentCategory: "solar-dried" },
 ];
 
+const CUSTOM_PRODUCTS_KEY = "hon_custom_products_v1";
+const CUSTOM_CATEGORIES_KEY = "hon_custom_categories_v1";
+const CUSTOM_SUBCATEGORIES_KEY = "hon_custom_subcategories_v1";
+const CUSTOM_PRICE_OVERRIDES_KEY = "hon_custom_price_overrides_v1";
+const CUSTOM_CATEGORY_ORDER_KEY = "hon_category_display_order_v1";
+const CUSTOM_PRODUCT_ORDER_KEY = "hon_product_display_order_v1";
+
+let isFetchingRemote = false;
+
+export async function fetchRemoteCatalogConfig(): Promise<boolean> {
+  if (isFetchingRemote) return false;
+  isFetchingRemote = true;
+  let hasChanges = false;
+  try {
+    // 1. Fetch products & Google Drive image URLs from Google Sheets Products tab
+    try {
+      const prodRes = await apiGet<{ ok: boolean; products?: Product[] }>("getProducts");
+      if (prodRes && prodRes.ok && Array.isArray(prodRes.products) && prodRes.products.length > 0) {
+        const remoteProducts = prodRes.products;
+        const currentCustomRaw = localStorage.getItem(CUSTOM_PRODUCTS_KEY);
+        const currentCustom: Product[] = currentCustomRaw ? JSON.parse(currentCustomRaw) : [];
+
+        const mergedMap = new Map<string, Product>();
+        for (const p of remoteProducts) {
+          if (p.id) mergedMap.set(p.id, p);
+        }
+        for (const p of currentCustom) {
+          if (p.id && !mergedMap.has(p.id)) mergedMap.set(p.id, p);
+        }
+
+        const mergedList = Array.from(mergedMap.values());
+        localStorage.setItem(CUSTOM_PRODUCTS_KEY, JSON.stringify(mergedList));
+
+        // Sync Google Drive CDN image URLs for products
+        const currentImgOverridesRaw = localStorage.getItem("hon-product-image-overrides-v1");
+        const currentImgOverrides: Record<string, string> = currentImgOverridesRaw ? JSON.parse(currentImgOverridesRaw) : {};
+        let imgOverrideChanged = false;
+
+        for (const p of remoteProducts) {
+          if (p.id && p.image && (p.image.includes("googleusercontent") || p.image.includes("drive.google"))) {
+            if (currentImgOverrides[p.id] !== p.image) {
+              currentImgOverrides[p.id] = p.image;
+              imgOverrideChanged = true;
+            }
+          }
+        }
+        if (imgOverrideChanged) {
+          localStorage.setItem("hon-product-image-overrides-v1", JSON.stringify(currentImgOverrides));
+          clearProductImageCache();
+        }
+
+        hasChanges = true;
+      }
+    } catch (e) {
+      console.debug("Backend getProducts fetch fallback:", e);
+    }
+
+    // 2. Fetch central catalog config (custom categories, order, price/image overrides)
+    const res = await apiGet<{
+      ok: boolean;
+      config?: {
+        productOrder?: string[];
+        categoryOrder?: string[];
+        customCategories?: CustomCategory[];
+        customSubcategories?: CustomSubcategory[];
+        customProducts?: Product[];
+        priceOverrides?: Record<string, PriceOverride>;
+        imageOverrides?: Record<string, string>;
+        galleryOverrides?: Record<string, string[]>;
+      };
+    }>("getCatalogConfig");
+
+    if (res && res.ok && res.config) {
+      const {
+        productOrder,
+        categoryOrder,
+        customCategories,
+        customSubcategories,
+        customProducts,
+        priceOverrides,
+        imageOverrides,
+        galleryOverrides,
+      } = res.config;
+
+      if (productOrder) {
+        localStorage.setItem(CUSTOM_PRODUCT_ORDER_KEY, JSON.stringify(productOrder));
+        hasChanges = true;
+      }
+      if (categoryOrder) {
+        localStorage.setItem(CUSTOM_CATEGORY_ORDER_KEY, JSON.stringify(categoryOrder));
+        hasChanges = true;
+      }
+      if (customCategories) {
+        localStorage.setItem(CUSTOM_CATEGORIES_KEY, JSON.stringify(customCategories));
+        hasChanges = true;
+      }
+      if (customSubcategories) {
+        localStorage.setItem(CUSTOM_SUBCATEGORIES_KEY, JSON.stringify(customSubcategories));
+        hasChanges = true;
+      }
+      if (customProducts && customProducts.length > 0) {
+        const currentProductsRaw = localStorage.getItem(CUSTOM_PRODUCTS_KEY);
+        const currentProds: Product[] = currentProductsRaw ? JSON.parse(currentProductsRaw) : [];
+        const prodMap = new Map<string, Product>();
+        for (const p of currentProds) {
+          if (p.id) prodMap.set(p.id, p);
+        }
+        for (const p of customProducts) {
+          if (p.id) prodMap.set(p.id, p);
+        }
+        localStorage.setItem(CUSTOM_PRODUCTS_KEY, JSON.stringify(Array.from(prodMap.values())));
+        hasChanges = true;
+      }
+      if (priceOverrides) {
+        localStorage.setItem(CUSTOM_PRICE_OVERRIDES_KEY, JSON.stringify(priceOverrides));
+        hasChanges = true;
+      }
+      if (imageOverrides) {
+        const currentImgOverridesRaw = localStorage.getItem("hon-product-image-overrides-v1");
+        const currentImgOverrides: Record<string, string> = currentImgOverridesRaw ? JSON.parse(currentImgOverridesRaw) : {};
+        const mergedImgOverrides = { ...currentImgOverrides, ...imageOverrides };
+        localStorage.setItem("hon-product-image-overrides-v1", JSON.stringify(mergedImgOverrides));
+        clearProductImageCache();
+        hasChanges = true;
+      }
+      if (galleryOverrides) {
+        const cleanedGallery: Record<string, string[]> = {};
+        for (const [k, imgs] of Object.entries(galleryOverrides)) {
+          if (Array.isArray(imgs) && imgs.length <= 10) {
+            cleanedGallery[k] = imgs;
+          }
+        }
+        localStorage.setItem("hon-product-gallery-overrides-v1", JSON.stringify(cleanedGallery));
+        clearProductImageCache();
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      window.dispatchEvent(new CustomEvent("hon-catalog-update"));
+    }
+    return true;
+  } catch (err) {
+    console.debug("Backend catalog config fetch offline / using local cache:", err);
+  } finally {
+    isFetchingRemote = false;
+  }
+  return false;
+}
+
+export function syncCatalogConfigToRemote() {
+  try {
+    const config = {
+      productOrder: getProductDisplayOrder(),
+      categoryOrder: getCategoryDisplayOrder(),
+      customCategories: JSON.parse(localStorage.getItem(CUSTOM_CATEGORIES_KEY) || "[]"),
+      customSubcategories: JSON.parse(localStorage.getItem(CUSTOM_SUBCATEGORIES_KEY) || "[]"),
+      customProducts: JSON.parse(localStorage.getItem(CUSTOM_PRODUCTS_KEY) || "[]"),
+      priceOverrides: getPriceOverrides(),
+      imageOverrides: JSON.parse(localStorage.getItem("hon-product-image-overrides-v1") || "{}"),
+      galleryOverrides: JSON.parse(localStorage.getItem("hon-product-gallery-overrides-v1") || "{}"),
+    };
+    apiPost("saveCatalogConfig", { config }).catch((err) => {
+      console.debug("Remote catalog config save using local cache fallback:", err);
+    });
+  } catch {
+    // Ignore storage parse errors
+  }
+}
+
+export function getCategoryDisplayOrder(): string[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_CATEGORY_ORDER_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCategoryDisplayOrder(orderedIds: string[]) {
+  try {
+    localStorage.setItem(CUSTOM_CATEGORY_ORDER_KEY, JSON.stringify(orderedIds));
+    window.dispatchEvent(new CustomEvent("hon-catalog-update"));
+    syncCatalogConfigToRemote();
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export function getCustomCategories(): CustomCategory[] {
   try {
     const raw = localStorage.getItem(CUSTOM_CATEGORIES_KEY);
     const stored: CustomCategory[] = raw ? JSON.parse(raw) : [];
 
     const existingIds = new Set(defaultCategories.map((c) => c.id));
-    const merged = [...defaultCategories];
+    const merged: CustomCategory[] = [...defaultCategories];
     for (const c of stored) {
       if (!existingIds.has(c.id)) {
-        merged.push(c as any);
+        merged.push(c);
         existingIds.add(c.id);
       }
     }
+
+    const categoryOrder = getCategoryDisplayOrder();
+    if (categoryOrder && categoryOrder.length > 0) {
+      const orderMap = new Map<string, number>();
+      categoryOrder.forEach((id, idx) => orderMap.set(id, idx));
+
+      merged.sort((a, b) => {
+        if (a.id === "all") return -1;
+        if (b.id === "all") return 1;
+
+        const indexA = orderMap.has(a.id) ? (orderMap.get(a.id) as number) : 9999;
+        const indexB = orderMap.has(b.id) ? (orderMap.get(b.id) as number) : 9999;
+        return indexA - indexB;
+      });
+    }
+
     return merged;
   } catch {
     return [...defaultCategories];
@@ -93,6 +295,7 @@ export function addCustomCategory(label: string): CustomCategory {
       stored.push(newCat);
       localStorage.setItem(CUSTOM_CATEGORIES_KEY, JSON.stringify(stored));
       window.dispatchEvent(new CustomEvent("hon-catalog-update"));
+      syncCatalogConfigToRemote();
     }
   } catch {
     // Ignore storage errors
@@ -128,6 +331,7 @@ export function addCustomSubcategory(parentCategory: string, label: string): Cus
       stored.push(newSubcat);
       localStorage.setItem(CUSTOM_SUBCATEGORIES_KEY, JSON.stringify(stored));
       window.dispatchEvent(new CustomEvent("hon-catalog-update"));
+      syncCatalogConfigToRemote();
     }
   } catch {
     // Ignore
@@ -148,6 +352,7 @@ export function savePriceOverrides(overrides: Record<string, PriceOverride>) {
   try {
     localStorage.setItem(CUSTOM_PRICE_OVERRIDES_KEY, JSON.stringify(overrides));
     window.dispatchEvent(new CustomEvent("hon-catalog-update"));
+    syncCatalogConfigToRemote();
   } catch {
     // Ignore storage errors
   }
@@ -164,19 +369,44 @@ function autoInferSubcategory(product: Product): string | undefined {
   if (nameLower.includes("cashew") || localLower.includes("kaju") || idLower.includes("cashew")) return "cashews";
   if (nameLower.includes("pista") || nameLower.includes("pistachio") || idLower.includes("pista")) return "pistachios";
   if (nameLower.includes("walnut") || localLower.includes("akhrot") || idLower.includes("walnut")) return "walnuts";
+  if (nameLower.includes("pecan") || nameLower.includes("brazil")) return "nuts";
 
   if (nameLower.includes("date") || localLower.includes("khajur") || idLower.includes("date")) return "dates";
   if (nameLower.includes("fig") || localLower.includes("anjeer") || idLower.includes("fig")) return "figs";
   if (nameLower.includes("raisin") || localLower.includes("kishmish") || idLower.includes("raisin")) return "raisins";
-  if (nameLower.includes("berry") || nameLower.includes("apricot")) return "berries";
+  if (nameLower.includes("berry") || nameLower.includes("blueberry") || nameLower.includes("blackberry") || nameLower.includes("plum") || nameLower.includes("apricot")) return "berries";
 
   if (nameLower.includes("saffron") || localLower.includes("kesar")) return "saffron";
   if (nameLower.includes("cardamom") || localLower.includes("elaichi")) return "cardamom";
 
+  if (nameLower.includes("amla") || nameLower.includes("mango") || nameLower.includes("pineapple") || nameLower.includes("kiwi")) return "solar-fruits";
+  if (nameLower.includes("chia") || nameLower.includes("flax") || nameLower.includes("haleem")) return "chia-flax";
+  if (nameLower.includes("sunflower") || nameLower.includes("pumpkin") || nameLower.includes("watermelon")) return "sunflower-pumpkin";
+
   if (nameLower.includes("honey")) return "raw-honey";
-  if (nameLower.includes("trail") || nameLower.includes("mix")) return "trail-mixes";
+  if (nameLower.includes("trail") || nameLower.includes("mix") || nameLower.includes("makhana")) return "trail-mixes";
 
   return undefined;
+}
+
+
+export function getProductDisplayOrder(): string[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_PRODUCT_ORDER_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveProductDisplayOrder(orderedIds: string[]) {
+  try {
+    localStorage.setItem(CUSTOM_PRODUCT_ORDER_KEY, JSON.stringify(orderedIds));
+    window.dispatchEvent(new CustomEvent("hon-catalog-update"));
+    syncCatalogConfigToRemote();
+  } catch {
+    // Ignore storage errors
+  }
 }
 
 export function getAllProducts(baseProducts: Product[]): Product[] {
@@ -216,7 +446,21 @@ export function getAllProducts(baseProducts: Product[]): Product[] {
     combinedMap.set(cp.id, { ...cp, variants: updatedVariants });
   }
 
-  return Array.from(combinedMap.values());
+  const allList = Array.from(combinedMap.values());
+  const customOrder = getProductDisplayOrder();
+
+  if (customOrder && customOrder.length > 0) {
+    const orderMap = new Map<string, number>();
+    customOrder.forEach((id, idx) => orderMap.set(id, idx));
+
+    allList.sort((a, b) => {
+      const indexA = orderMap.has(a.id) ? (orderMap.get(a.id) as number) : 9999;
+      const indexB = orderMap.has(b.id) ? (orderMap.get(b.id) as number) : 9999;
+      return indexA - indexB;
+    });
+  }
+
+  return allList;
 }
 
 export function addCustomProduct(newProduct: Omit<Product, "id"> & { id?: string }): Product {
@@ -241,6 +485,7 @@ export function addCustomProduct(newProduct: Omit<Product, "id"> & { id?: string
     }
     localStorage.setItem(CUSTOM_PRODUCTS_KEY, JSON.stringify(stored));
     window.dispatchEvent(new CustomEvent("hon-catalog-update"));
+    syncCatalogConfigToRemote();
   } catch {
     // Ignore storage errors
   }
@@ -257,6 +502,7 @@ export function addVariantToProduct(productId: string, variant: ProductVariant):
       target.variants.push(variant);
       localStorage.setItem(CUSTOM_PRODUCTS_KEY, JSON.stringify(stored));
       window.dispatchEvent(new CustomEvent("hon-catalog-update"));
+      syncCatalogConfigToRemote();
       return true;
     }
   } catch {
@@ -273,6 +519,9 @@ export function useCatalog() {
   const [allProductsList, setAllProductsList] = useState(() => getAllProducts(defaultProducts));
 
   useEffect(() => {
+    // Sync remote central catalog config on mount for all visitors
+    fetchRemoteCatalogConfig();
+
     const handleUpdate = () => {
       setCategoriesList(getCustomCategories());
       setAllProductsList(getAllProducts(defaultProducts));

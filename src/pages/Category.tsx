@@ -65,6 +65,7 @@ const Category = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [bands, setBands] = useState<string[]>([]);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [selectedSubcat, setSelectedSubcat] = useState<string>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const gridReady = useGridReady(`${slug ?? ""}-${currentPage}-${sortBy}`);
 
@@ -72,12 +73,41 @@ const Category = () => {
     setCurrentPage(1);
     setBands([]);
     setInStockOnly(false);
+    setSelectedSubcat("all");
   }, [effectiveSlug]);
+
+  const subcategories = useMemo(() => {
+    if (!cat) return [];
+    return getSubcategoriesForCategory(cat.id);
+  }, [cat]);
 
   const filtered = useMemo(() => {
     if (!cat) return [];
     const visibleProducts = allProductsList.filter((p) => isCategoryVisibleToUser(p.category, auth));
     let base = cat.id === "all" ? [...visibleProducts] : visibleProducts.filter((p) => p.category === cat.id || p.subcategory === cat.id);
+
+    if (selectedSubcat && selectedSubcat !== "all") {
+      base = base.filter((p) => {
+        if (p.subcategory === selectedSubcat) return true;
+        const nameLower = p.name.toLowerCase();
+        const idLower = p.id.toLowerCase();
+        const localLower = (p.localName || "").toLowerCase();
+
+        if (selectedSubcat === "almonds") return nameLower.includes("almond") || localLower.includes("badam") || idLower.includes("almond");
+        if (selectedSubcat === "cashews") return nameLower.includes("cashew") || localLower.includes("kaju") || idLower.includes("cashew");
+        if (selectedSubcat === "pistachios") return nameLower.includes("pista") || nameLower.includes("pistachio") || idLower.includes("pista");
+        if (selectedSubcat === "walnuts") return nameLower.includes("walnut") || localLower.includes("akhrot") || idLower.includes("walnut");
+        if (selectedSubcat === "dates") return nameLower.includes("date") || localLower.includes("khajur") || idLower.includes("date");
+        if (selectedSubcat === "figs") return nameLower.includes("fig") || localLower.includes("anjeer") || idLower.includes("fig");
+        if (selectedSubcat === "raisins") return nameLower.includes("raisin") || localLower.includes("kishmish") || idLower.includes("raisin");
+        if (selectedSubcat === "berries") return nameLower.includes("berry") || nameLower.includes("blueberry") || nameLower.includes("blackberry") || nameLower.includes("plum");
+        if (selectedSubcat === "chia-flax") return nameLower.includes("chia") || nameLower.includes("flax") || nameLower.includes("haleem");
+        if (selectedSubcat === "sunflower-pumpkin") return nameLower.includes("sunflower") || nameLower.includes("pumpkin") || nameLower.includes("watermelon");
+        if (selectedSubcat === "solar-fruits") return nameLower.includes("amla") || nameLower.includes("mango") || nameLower.includes("pineapple") || nameLower.includes("kiwi");
+
+        return false;
+      });
+    }
 
     if (bands.length) {
       const active = priceBands.filter((b) => bands.includes(b.id));
@@ -98,7 +128,7 @@ const Category = () => {
       case "name-desc": return base.sort((a, b) => b.name.localeCompare(a.name));
       default: return base;
     }
-  }, [cat, sortBy, bands, inStockOnly, stock, auth]);
+  }, [cat, selectedSubcat, sortBy, bands, inStockOnly, stock, auth, allProductsList]);
 
   if (!cat) return <Navigate to="/" replace />;
 
@@ -226,55 +256,145 @@ const Category = () => {
       <CartDrawer />
 
       {/* Breadcrumb + title */}
-      <section id="category-top" className="px-6 md:px-12 pt-10 md:pt-14 pb-6 max-w-[1600px] mx-auto w-full">
-        <nav className="flex items-center gap-2 text-[11px] uppercase tracking-[0.15em] font-body text-muted-foreground mb-6">
+      <section id="category-top" className="px-6 md:px-12 pt-6 md:pt-8 pb-4 max-w-[1600px] mx-auto w-full">
+        <nav className="flex items-center gap-2 text-[11px] uppercase tracking-[0.15em] font-body text-muted-foreground mb-3">
           <Link to="/" className="hover:text-accent transition-colors">Home</Link>
           <Crumb size={12} />
           <Link to="/shop" className="hover:text-accent transition-colors">Shop</Link>
           <Crumb size={12} />
           <span className="text-foreground">{cat.label}</span>
         </nav>
-        <div className="flex items-center gap-4 mb-3">
+        <div className="flex items-center gap-4 mb-2">
           <div className="h-[1px] w-12 bg-accent" />
           <p className="text-accent uppercase tracking-[0.2em] text-xs font-medium font-body">Category</p>
         </div>
-        <h1 className="font-display text-4xl md:text-6xl tracking-tight">{cat.label}</h1>
-        <p className="text-sm text-muted-foreground font-body mt-3">
+        <h1 className="font-display text-3xl md:text-5xl tracking-tight">{cat.label}</h1>
+        <p className="text-xs md:text-sm text-muted-foreground font-body mt-2">
           {filtered.length} product{filtered.length !== 1 ? "s" : ""}
         </p>
-      </section>
 
-
-
-      <section className="bg-clay-light/50 px-6 md:px-12 py-10 md:py-14 border-t border-border">
-        <div className="max-w-[1600px] mx-auto">
-          {/* Toolbar */}
-          <div className="flex items-center justify-between gap-3 mb-6 md:mb-8">
+        {subcategories.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-3 mt-4 border-t border-border/40">
             <button
-              onClick={() => setFiltersOpen(!filtersOpen)}
-              className={`md:hidden flex items-center gap-2 px-4 min-h-[44px] border text-[11px] uppercase tracking-[0.15em] font-body font-medium transition-colors ${
-                activeFilterCount > 0 ? "border-accent text-accent" : "border-border"
+              onClick={() => { setSelectedSubcat("all"); setCurrentPage(1); }}
+              className={`text-[11px] uppercase tracking-[0.08em] font-body font-semibold px-4 py-1.5 rounded-full transition-all whitespace-nowrap border ${
+                selectedSubcat === "all"
+                  ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                  : "bg-background text-foreground/80 border-border hover:border-foreground/40 hover:bg-clay-light/40"
               }`}
             >
-              <SlidersHorizontal size={14} />
-              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+              All {cat.label}
             </button>
-            <div className="hidden md:block" />
-            <div className="flex items-center gap-2 ml-auto">
-              <label htmlFor="sort" className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground font-body font-medium">Sort:</label>
+            {subcategories.map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => { setSelectedSubcat(sub.id); setCurrentPage(1); }}
+                className={`text-[11px] uppercase tracking-[0.08em] font-body font-semibold px-4 py-1.5 rounded-full transition-all whitespace-nowrap border ${
+                  selectedSubcat === sub.id
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                    : "bg-background text-foreground/80 border-border hover:border-foreground/40 hover:bg-clay-light/40"
+                }`}
+              >
+                {sub.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="bg-clay-light/50 px-6 md:px-12 py-6 md:py-8 border-t border-border">
+        <div className="max-w-[1600px] mx-auto">
+          {/* Desktop Filter & Sort Bar */}
+          <div className="hidden md:flex flex-wrap items-center justify-between gap-4 p-4 bg-background border border-border/80 rounded-md mb-8 shadow-xs">
+            <div className="flex flex-wrap items-center gap-6">
+              {/* Price Filter Group */}
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-body font-semibold whitespace-nowrap">Price:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {priceBands.map((b) => (
+                    <button
+                      key={b.id}
+                      onClick={() => toggleBand(b.id)}
+                      aria-pressed={bands.includes(b.id)}
+                      className={`text-[11px] font-body px-3 py-1.5 border transition-all ${
+                        bands.includes(b.id)
+                          ? "bg-primary text-primary-foreground border-primary font-medium"
+                          : "border-border hover:border-foreground/30 text-foreground/80 bg-background"
+                      }`}
+                    >
+                      {b.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="h-4 w-[1px] bg-border hidden xl:block" />
+
+              {/* Availability Filter Group */}
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-body font-semibold whitespace-nowrap">Availability:</span>
+                <button
+                  onClick={() => { setInStockOnly(!inStockOnly); setCurrentPage(1); }}
+                  aria-pressed={inStockOnly}
+                  className={`text-[11px] font-body px-3 py-1.5 border transition-all ${
+                    inStockOnly
+                      ? "bg-primary text-primary-foreground border-primary font-medium"
+                      : "border-border hover:border-foreground/30 text-foreground/80 bg-background"
+                  }`}
+                >
+                  In stock only
+                </button>
+              </div>
+
+              {/* Clear Filters */}
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="text-[11px] uppercase tracking-[0.15em] font-body text-accent hover:underline font-medium"
+                >
+                  Clear filters ({activeFilterCount})
+                </button>
+              )}
+            </div>
+
+            {/* Sort Select */}
+            <div className="flex items-center gap-2.5 ml-auto">
+              <label htmlFor="sort-desktop" className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-body font-semibold whitespace-nowrap">Sort:</label>
               <select
-                id="sort"
+                id="sort-desktop"
                 value={sortBy}
                 onChange={(e) => { setSortBy(e.target.value as SortOption); setCurrentPage(1); }}
-                className="text-[11px] uppercase tracking-[0.15em] px-3 min-h-[44px] border border-border bg-background hover:border-foreground/30 transition-colors font-body font-medium cursor-pointer focus:outline-none focus:border-foreground/40"
+                className="text-[11px] uppercase tracking-[0.15em] px-3 py-1.5 border border-border bg-background hover:border-foreground/30 transition-colors font-body font-medium cursor-pointer focus:outline-none focus:border-foreground/40"
               >
                 {sortOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
           </div>
 
-          {/* Desktop filters */}
-          <div className="hidden md:block mb-10 pb-8 border-b border-border">{filterControls}</div>
+          {/* Mobile Toolbar */}
+          <div className="md:hidden flex items-center justify-between gap-3 mb-6">
+            <button
+              onClick={() => setFiltersOpen(!filtersOpen)}
+              className={`flex items-center gap-2 px-4 py-2 border text-[11px] uppercase tracking-[0.15em] font-body font-medium transition-colors ${
+                activeFilterCount > 0 ? "border-accent text-accent bg-accent/5" : "border-border bg-background"
+              }`}
+            >
+              <SlidersHorizontal size={14} />
+              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            </button>
+
+            <div className="flex items-center gap-2">
+              <label htmlFor="sort-mobile" className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-body font-semibold">Sort:</label>
+              <select
+                id="sort-mobile"
+                value={sortBy}
+                onChange={(e) => { setSortBy(e.target.value as SortOption); setCurrentPage(1); }}
+                className="text-[11px] uppercase tracking-[0.15em] px-3 py-2 border border-border bg-background hover:border-foreground/30 transition-colors font-body font-medium cursor-pointer focus:outline-none focus:border-foreground/40"
+              >
+                {sortOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          </div>
 
           {/* Mobile filter sheet */}
           {filtersOpen && (

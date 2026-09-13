@@ -24,9 +24,9 @@ declare global {
     google?: {
       accounts?: {
         id?: {
-          initialize: (config: any) => void;
-          prompt: (notification?: any) => void;
-          renderButton: (parent: HTMLElement, options: any) => void;
+          initialize: (config: { client_id: string; auto_select?: boolean; callback: (response: { credential?: string }) => void }) => void;
+          prompt: (notification?: unknown) => void;
+          renderButton: (parent: HTMLElement, options: Record<string, unknown>) => void;
         };
       };
     };
@@ -75,7 +75,9 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch {}
+    } catch {
+      /* ignore storage parse error */
+    }
     return [];
   });
 
@@ -112,7 +114,9 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
     setSavedAccounts(updated);
     try {
       localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(updated));
-    } catch {}
+    } catch {
+      /* ignore storage error */
+    }
   };
 
   // Initialize Official Google Identity Services (GIS) OAuth 2.0 SDK
@@ -133,7 +137,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
         window.google.accounts.id.initialize({
           client_id: clientId,
           auto_select: false,
-          callback: async (response: any) => {
+          callback: async (response: { credential?: string }) => {
             if (response?.credential && loginWithGoogleCredential) {
               setLoading(true);
               const user = await loginWithGoogleCredential(response.credential);

@@ -1,13 +1,16 @@
 import React, { useState } from "react";
-import { products, Product } from "@/data/products";
+import { Product } from "@/data/products";
+import { useCatalog } from "@/lib/customCatalog";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { Package, Check, Sparkles, Plus, Trash2 } from "lucide-react";
 
 export const BuildBox: React.FC = () => {
+  const { products } = useCatalog();
   const { addToCart } = useCart();
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const BOX_SIZE = 4;
+
 
   const toggleSelect = (product: Product) => {
     if (selectedProducts.find((p) => p.id === product.id)) {

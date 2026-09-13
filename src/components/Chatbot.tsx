@@ -18,7 +18,7 @@ const FAQ_OPTIONS = [
 const RESPONSES: Record<string, string> = {
   track: "You can track your orders from the **My Orders** page. Go to the menu → My Orders → click on any order to see its status and tracking details.",
   pricing: "All our products come in multiple sizes (250g, 500g, 1 Kg). Prices start as low as ₹149. Visit any product page to see all size options and prices!",
-  delivery: "We deliver across India! Standard delivery takes 3-5 business days. Orders above ₹999 get **free shipping**. Cash on delivery is not available — we accept UPI payments.",
+  delivery: "We deliver across India! Standard delivery takes 7-10 business days. Orders above ₹999 get **free shipping**. Cash on delivery is not available — we accept UPI payments.",
   returns: "We accept returns within 7 days of delivery if the product is unopened and in original packaging. Please contact us via WhatsApp to initiate a return.",
   contact: "📞 Call us: **+91 9652526920**\n💬 WhatsApp: Click the green button at the bottom-left\n⏰ Available: Mon-Sat, 9 AM - 8 PM",
   wholesale: "We offer wholesale pricing for bulk orders! Minimum order: 10 Kg per product. Contact us via WhatsApp or call **+91 9652526920** for a custom quote.",

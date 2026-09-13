@@ -4,11 +4,11 @@ import { MapPin, Truck, Loader2, RotateCcw, BadgeIndianRupee } from "lucide-reac
 // Simple, offline delivery-time estimate based on the first two digits of the
 // Indian PIN code. No API, no cost — good enough to set expectations.
 const ZONES: Array<{ prefixes: string[]; label: string; days: [number, number] }> = [
-  { prefixes: ["50", "51", "52", "53"], label: "Telangana / Andhra Pradesh", days: [1, 2] },
-  { prefixes: ["56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69"], label: "South India", days: [2, 4] },
-  { prefixes: ["40", "41", "42", "43", "44", "45", "46", "47", "48", "49"], label: "West India", days: [3, 5] },
-  { prefixes: ["70", "71", "72", "73", "74", "75", "76", "77", "78", "79"], label: "East & North-East India", days: [4, 6] },
-  { prefixes: ["11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "30", "31", "32", "33", "34", "36", "38", "39"], label: "North & Central India", days: [3, 6] },
+  { prefixes: ["50", "51", "52", "53"], label: "Telangana / Andhra Pradesh", days: [7, 9] },
+  { prefixes: ["56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69"], label: "South India", days: [7, 9] },
+  { prefixes: ["40", "41", "42", "43", "44", "45", "46", "47", "48", "49"], label: "West India", days: [7, 10] },
+  { prefixes: ["70", "71", "72", "73", "74", "75", "76", "77", "78", "79"], label: "East & North-East India", days: [8, 10] },
+  { prefixes: ["11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "30", "31", "32", "33", "34", "36", "38", "39"], label: "North & Central India", days: [7, 10] },
 ];
 
 function formatDate(d: Date) {
@@ -32,7 +32,7 @@ const DeliveryEstimate = () => {
     setChecking(true);
     setTimeout(() => {
       const zone = ZONES.find((z) => z.prefixes.includes(clean.slice(0, 2)));
-      const [min, max] = zone ? zone.days : [4, 7];
+      const [min, max] = zone ? zone.days : [7, 10];
       const from = new Date();
       from.setDate(from.getDate() + min);
       const to = new Date();
