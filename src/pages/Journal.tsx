@@ -212,9 +212,9 @@ const Journal = () => {
   return (
     <div className="min-h-screen bg-background font-body text-foreground">
       <SEOHead
-        title="Farm-to-Store Sourcing Journal & Healthy Organic Snacking"
-        description="Explore House of Nuts Journal: Direct farm sourcing stories from Kashmir & Kerala, 100% organic handpicked quality guides, oil-free micro-roasting, and health benefits."
-        keywords="farm sourcing dry fruits, Kashmir Mamra almonds, organic dry fruits proddatur, healthy dry fruit recipes, house of nuts journal"
+        title="Farm-to-Store Sourcing Journal & Dry Fruit Buying Guides Proddatur"
+        description="Explore House of Nuts Journal (Dry Fruit House): Direct farm sourcing from Kashmir & Kerala, organic Mamra Badam, raw wild honey, pure spices & healthy dry fruit guides."
+        keywords="dryfruit house proddatur, dryfruit proddatur, dryfrit store, organic spices proddatur, raw forest honey proddatur, Kashmir Mamra badam, farm sourcing dry fruits, house of nuts journal"
         canonicalUrl="/journal"
       />
       <Header />
