@@ -45,12 +45,17 @@ export const discountCodes: DiscountCode[] = [
 export function validateDiscount(
   code: string,
   subtotal: number,
-  itemCount: number
+  itemCount: number,
+  isFirstOrder: boolean = true
 ): { valid: boolean; discount?: DiscountCode; error?: string } {
   const upper = code.trim().toUpperCase();
   const found = discountCodes.find((d) => d.code === upper && d.active);
 
   if (!found) return { valid: false, error: "Invalid discount code" };
+
+  if (found.code === "WELCOME10" && !isFirstOrder) {
+    return { valid: false, error: "WELCOME10 is strictly valid on your first order only" };
+  }
 
   if (found.code === "BULK15" && itemCount < 3) {
     return { valid: false, error: "Add at least 3 items to use this code" };

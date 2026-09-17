@@ -20,19 +20,26 @@ import {
   Lock,
   Loader2,
   Sparkles,
+  FileText,
+  Download,
+  Printer,
+  MessageCircle,
 } from "lucide-react";
 import { generateOrderId, saveOrder, placeOrderApi, fetchOrderStatus, type Order } from "@/lib/orders";
 import { createCashfreeOrderSession, triggerCashfreeCheckout } from "@/lib/cashfree";
 import { GoogleLoginModal } from "@/components/auth/GoogleLoginModal";
+import { OrderInvoiceModal } from "@/components/OrderInvoiceModal";
+import { generateBillPdf } from "@/lib/billPdf";
+import { BUSINESS_INFO } from "@/lib/businessInfo";
 import { toast } from "sonner";
 
-const UPI_ID = "863932789@okbizaxis";
-const UPI_NAME = "HouseOfNuts";
+const UPI_ID = BUSINESS_INFO.upiId;
+const UPI_NAME = BUSINESS_INFO.upiName;
 
 type PaymentMethodType = "cashfree" | "upi" | "card" | "cod" | "bank";
 
 const CheckoutPage = () => {
-  const { items, totalPrice, subtotal, appliedDiscount, discountAmount, clearCart } = useCart();
+  const { items, totalPrice, subtotal, shippingFee, isFreeShipping, appliedDiscount, discountAmount, clearCart } = useCart();
   const navigate = useNavigate();
   const { refresh: refreshInventory } = useInventory();
   const { googleUser, isGoogleAuthenticated, logoutGoogle } = useAuth();
@@ -42,6 +49,8 @@ const CheckoutPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [timer, setTimer] = useState(300); // 5 min countdown
   const [orderId, setOrderId] = useState("");
+  const [lastPlacedOrder, setLastPlacedOrder] = useState<Order | null>(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
 
@@ -270,7 +279,20 @@ const CheckoutPage = () => {
       return;
     }
 
+    if (appliedDiscount) {
+      try {
+        const usedPromos = JSON.parse(localStorage.getItem("hon_used_promos") || "[]");
+        if (!usedPromos.includes(appliedDiscount.code)) {
+          usedPromos.push(appliedDiscount.code);
+          localStorage.setItem("hon_used_promos", JSON.stringify(usedPromos));
+        }
+      } catch {
+        // Silent catch for localStorage
+      }
+    }
+
     saveOrder(order);
+    setLastPlacedOrder(order);
     setStep("done");
     clearCart();
     await refreshInventory();
@@ -304,37 +326,180 @@ const CheckoutPage = () => {
   }
 
   if (step === "done") {
+    const activeOrder: Order = lastPlacedOrder || {
+      id: orderId,
+      timestamp: new Date().toISOString(),
+      name: form.name,
+      phone: form.phone,
+      email: form.email,
+      address: form.address,
+      items: [],
+      itemsSummary: "",
+      total: totalPrice,
+      status: selectedMethod === "cod" ? "pending" : "confirmed",
+      paymentStatus: selectedMethod === "cod" ? "pending" : "paid",
+      paymentMethod: selectedMethod,
+    };
+
+    const hasEmail = Boolean(form.email && form.email.trim());
+
+    // Format 100% Free WhatsApp Bill Dispatch Link via wa.me
+    const waText = `Hello House of Nuts! 🥜\nI've placed order *#${activeOrder.id}* for *₹${activeOrder.total}*.\n\n*Customer Details:*\nName: ${activeOrder.name}\nPhone: ${activeOrder.phone}\nAddress: ${activeOrder.address}\n\n*Order Summary:*\n${activeOrder.itemsSummary || (activeOrder.items || []).map((i) => `${i.name} (${i.size}) x${i.quantity}`).join("\n")}\n\nPlease send my order updates & official bill copy to this WhatsApp number!`;
+    const waUrl = `https://wa.me/919652526920?text=${encodeURIComponent(waText)}`;
+
     return (
-      <div className="min-h-[65vh] flex items-center justify-center flex-col gap-6 px-6 text-center max-w-lg mx-auto py-12">
-        <div className="size-20 rounded-full bg-emerald-500/10 border border-emerald-500/30 grid place-items-center text-emerald-600 dark:text-emerald-400 shadow-soft">
-          <CheckCircle size={48} />
-        </div>
-        <div className="space-y-2">
-          <h2 className="font-display text-3xl sm:text-4xl text-foreground">Order Successfully Placed!</h2>
-          <p className="text-muted-foreground font-body text-sm leading-relaxed">
-            Thank you, <span className="font-semibold text-foreground">{form.name}</span>! Order{" "}
-            <span className="font-semibold text-accent font-mono">{orderId}</span> has been confirmed.
-          </p>
-          <p className="text-xs text-muted-foreground font-body">
-            Order updates & delivery tracking have been sent to{" "}
-            <span className="font-semibold text-foreground">{form.email}</span>.
-          </p>
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 space-y-6 animate-in fade-in duration-300">
+        {/* Order Success Header */}
+        <div className="bg-card border border-border/80 p-6 sm:p-8 rounded-3xl text-center space-y-4 shadow-soft font-body">
+          <div className="size-16 sm:size-20 rounded-full bg-emerald-500/10 border border-emerald-500/30 grid place-items-center text-emerald-600 dark:text-emerald-400 mx-auto shadow-xs">
+            <CheckCircle size={44} />
+          </div>
+          <div className="space-y-1.5 font-body">
+            <h2 className="font-display text-2xl sm:text-3xl text-foreground">Order Placed Successfully!</h2>
+            <p className="text-muted-foreground text-xs sm:text-sm font-body">
+              Thank you, <span className="font-semibold text-foreground">{form.name}</span>! Order{" "}
+              <span className="font-semibold text-accent font-mono">#{activeOrder.id}</span> has been confirmed.
+            </p>
+          </div>
+
+          {/* Email / WhatsApp Delivery Status Banner */}
+          <div className="p-3.5 rounded-2xl bg-secondary/80 border border-border/80 text-left text-xs font-body space-y-1 font-normal">
+            {hasEmail ? (
+              <div className="flex items-start gap-2.5 text-emerald-700 dark:text-emerald-400">
+                <Mail size={16} className="shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Tax Invoice dispatched to email!</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    A copy of your official tax invoice has been sent to <span className="font-medium text-foreground font-mono">{form.email}</span> via Google Mailer.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2.5 text-amber-700 dark:text-amber-400">
+                <MessageCircle size={16} className="shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">No Email Provided — Bill Available via WhatsApp & PDF Download</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    You didn't specify an email address. You can send this bill directly to your WhatsApp number for 100% free using the green button below.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 w-full pt-4">
+        {/* Generated Digital Tax Invoice Card */}
+        <div className="bg-card border border-border/80 rounded-3xl p-6 space-y-5 shadow-soft font-body">
+          <div className="flex items-center justify-between pb-3 border-b border-border/70">
+            <div className="flex items-center gap-2">
+              <FileText size={20} className="text-accent" />
+              <h3 className="font-display text-lg text-foreground">Digital Tax Invoice</h3>
+            </div>
+            <span className="text-[11px] font-mono font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              {activeOrder.paymentStatus === "paid" ? "PAID" : "PENDING (COD)"}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-body">
+            <div className="p-3 bg-secondary/50 rounded-xl space-y-1 border border-border/50">
+              <p className="font-semibold text-foreground">{BUSINESS_INFO.name}</p>
+              <p className="text-muted-foreground text-[11px]">{BUSINESS_INFO.tagline}</p>
+              <p className="text-muted-foreground text-[11px]">GSTIN: {BUSINESS_INFO.gstin}</p>
+              <p className="text-muted-foreground text-[11px]">FSSAI: {BUSINESS_INFO.fssai}</p>
+            </div>
+            <div className="p-3 bg-secondary/50 rounded-xl space-y-1 border border-border/50">
+              <p className="font-semibold text-foreground">Billed To:</p>
+              <p className="text-foreground text-[11px] font-medium">{activeOrder.name}</p>
+              <p className="text-muted-foreground text-[11px] font-mono">{activeOrder.phone}</p>
+              {activeOrder.email && <p className="text-muted-foreground text-[11px] truncate">{activeOrder.email}</p>}
+            </div>
+          </div>
+
+          {/* Itemized Table */}
+          {activeOrder.items && activeOrder.items.length > 0 && (
+            <div className="border border-border/70 rounded-xl overflow-hidden text-xs">
+              <table className="w-full text-left">
+                <thead className="bg-secondary/70 border-b border-border/70 text-muted-foreground font-medium uppercase tracking-wider text-[10px]">
+                  <tr>
+                    <th className="p-2.5">Item</th>
+                    <th className="p-2.5 text-center">Qty</th>
+                    <th className="p-2.5 text-right">Price</th>
+                    <th className="p-2.5 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {activeOrder.items.map((it, idx) => (
+                    <tr key={idx}>
+                      <td className="p-2.5 font-medium text-foreground">
+                        {it.name} <span className="text-muted-foreground font-normal">({it.size})</span>
+                      </td>
+                      <td className="p-2.5 text-center tabular-nums">{it.quantity}</td>
+                      <td className="p-2.5 text-right tabular-nums">₹{it.price}</td>
+                      <td className="p-2.5 text-right font-semibold text-foreground tabular-nums">₹{it.price * it.quantity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Financial Totals */}
+          <div className="flex justify-between items-center pt-2 border-t border-border/70 text-sm">
+            <span className="font-display text-base text-foreground">Total Invoice Amount</span>
+            <span className="font-display text-xl font-semibold text-accent tabular-nums">₹{activeOrder.total}</span>
+          </div>
+
+          {/* 3 Action Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 font-body">
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-soft"
+            >
+              <MessageCircle size={15} /> Send to WhatsApp (Free)
+            </a>
+            <button
+              type="button"
+              onClick={() => generateBillPdf(activeOrder as Order)}
+              className="py-3 px-3 bg-secondary hover:bg-accent/15 border border-border text-foreground rounded-2xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Download size={15} className="text-accent" /> Download PDF
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsInvoiceModalOpen(true)}
+              className="py-3 px-3 bg-secondary hover:bg-accent/15 border border-border text-foreground rounded-2xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Printer size={15} className="text-accent" /> View / Print Bill
+            </button>
+          </div>
+        </div>
+
+        {/* Footer Navigation Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-2 font-body">
           <button
             onClick={() => navigate(`/orders`)}
-            className="flex-1 bg-accent text-accent-foreground py-3.5 uppercase tracking-[0.15em] text-xs font-semibold font-body rounded-2xl hover:bg-primary hover:text-primary-foreground transition-colors shadow-soft"
+            className="flex-1 bg-accent text-accent-foreground py-3.5 uppercase tracking-[0.15em] text-xs font-semibold rounded-2xl hover:bg-primary hover:text-primary-foreground transition-colors shadow-soft cursor-pointer"
           >
             Track Order & History
           </button>
           <button
             onClick={() => navigate("/")}
-            className="flex-1 border border-border bg-card text-foreground py-3.5 uppercase tracking-[0.15em] text-xs font-medium font-body rounded-2xl hover:bg-secondary transition-colors"
+            className="flex-1 border border-border bg-card text-foreground py-3.5 uppercase tracking-[0.15em] text-xs font-medium rounded-2xl hover:bg-secondary transition-colors cursor-pointer"
           >
             Continue Shopping
           </button>
         </div>
+
+        {/* Tax Invoice Full Printable Modal */}
+        {lastPlacedOrder && (
+          <OrderInvoiceModal
+            order={lastPlacedOrder}
+            isOpen={isInvoiceModalOpen}
+            onClose={() => setIsInvoiceModalOpen(false)}
+          />
+        )}
       </div>
     );
   }
@@ -440,21 +605,27 @@ const CheckoutPage = () => {
                 <span className="tabular-nums font-semibold text-foreground">₹{item.variant.price * item.quantity}</span>
               </div>
             ))}
-            {appliedDiscount && (
-              <>
-                <div className="border-t border-border/80 pt-2 flex justify-between text-xs text-muted-foreground">
-                  <span>Subtotal</span>
-                  <span className="tabular-nums">₹{subtotal}</span>
-                </div>
-                <div className="flex justify-between text-xs text-accent font-semibold">
+            <div className="border-t border-border/80 pt-2.5 space-y-1.5 text-xs font-body">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Subtotal</span>
+                <span className="tabular-nums font-medium text-foreground">₹{subtotal}</span>
+              </div>
+              {appliedDiscount && (
+                <div className="flex justify-between text-accent font-semibold">
                   <span>Discount ({appliedDiscount.code})</span>
                   <span className="tabular-nums">-₹{discountAmount}</span>
                 </div>
-              </>
-            )}
-            <div className="border-t border-border/80 pt-2 flex justify-between font-display text-lg text-foreground">
-              <span>Total Payable</span>
-              <span className="tabular-nums font-semibold text-accent">₹{totalPrice}</span>
+              )}
+              <div className="flex justify-between text-muted-foreground">
+                <span>Delivery Charge</span>
+                <span className={`tabular-nums font-medium ${isFreeShipping ? "text-emerald-600 font-semibold" : ""}`}>
+                  {isFreeShipping ? "FREE" : `+₹${shippingFee}`}
+                </span>
+              </div>
+              <div className="border-t border-border/80 pt-2 flex justify-between font-display text-lg text-foreground">
+                <span className="font-semibold">Total Payable</span>
+                <span className="tabular-nums font-bold text-accent">₹{totalPrice}</span>
+              </div>
             </div>
           </div>
 

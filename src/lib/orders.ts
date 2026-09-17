@@ -28,6 +28,8 @@ export interface Order {
   cashfreePaymentId?: string;
 }
 
+import { getSecureItem, setSecureItem } from "./secureStorage";
+
 const STORAGE_KEY = "hon-orders";
 
 export function generateOrderId(): string {
@@ -37,11 +39,11 @@ export function generateOrderId(): string {
   return `HON-${dateStr}-${rand}`;
 }
 
-// Local, device-only history for the "My Orders" customer page.
-// Source of truth for the shop is the Google Sheet.
+// Encrypted device-only history for the "My Orders" customer page.
+// Source of truth for the shop is the Google Sheet database.
 export function getOrders(): Order[] {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  return raw ? JSON.parse(raw) : [];
+  const orders = getSecureItem<Order[]>(STORAGE_KEY);
+  return orders || [];
 }
 
 export function getOrder(id: string): Order | undefined {
@@ -51,7 +53,7 @@ export function getOrder(id: string): Order | undefined {
 export function saveOrder(order: Order): void {
   const orders = getOrders();
   orders.unshift(order);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+  setSecureItem(STORAGE_KEY, orders);
 }
 
 export function updateOrderStatus(id: string, status: Order["status"]): void {
@@ -59,7 +61,7 @@ export function updateOrderStatus(id: string, status: Order["status"]): void {
   const idx = orders.findIndex((o) => o.id === id);
   if (idx !== -1) {
     orders[idx].status = status;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+    setSecureItem(STORAGE_KEY, orders);
   }
 }
 
@@ -68,7 +70,7 @@ export function cancelOrder(id: string): boolean {
   const idx = orders.findIndex((o) => o.id === id);
   if (idx !== -1 && (orders[idx].status === "pending" || orders[idx].status === "confirmed")) {
     orders[idx].status = "cancelled";
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+    setSecureItem(STORAGE_KEY, orders);
     return true;
   }
   return false;
@@ -88,7 +90,7 @@ export async function placeOrderApi(order: Order): Promise<PlaceOrderResult> {
   try {
     return await apiPost<PlaceOrderResult>("placeOrder", { order });
   } catch (e) {
-    console.error("placeOrder failed:", e);
+    if (import.meta.env.DEV) console.error("placeOrder failed");
     return { ok: false, error: "network_error" };
   }
 }
@@ -110,13 +112,13 @@ export async function fetchOrderStatus(orderId: string): Promise<{
   error?: string;
 }> {
   try {
-    return await apiGet<{
+    return await apiPost<{
       ok: boolean;
       orderId?: string;
       status?: Order["status"];
       paymentStatus?: Order["paymentStatus"];
       error?: string;
-    }>(`getOrderStatus&orderId=${encodeURIComponent(orderId)}`);
+    }>("getOrderStatus", { orderId });
   } catch {
     return { ok: false, error: "network_error" };
   }

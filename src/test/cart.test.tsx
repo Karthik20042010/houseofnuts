@@ -87,6 +87,7 @@ describe("Shopping Cart Context", () => {
 
     expect(result.current.appliedDiscount?.code).toBe("WELCOME10");
     expect(result.current.discountAmount).toBe(Math.round(subtotal * 0.1));
-    expect(result.current.totalPrice).toBe(subtotal - result.current.discountAmount);
+    expect(result.current.shippingFee).toBe(49);
+    expect(result.current.totalPrice).toBe(subtotal - result.current.discountAmount + result.current.shippingFee);
   });
 });

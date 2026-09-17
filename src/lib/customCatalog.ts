@@ -66,6 +66,10 @@ export const DEFAULT_SUBCATEGORIES: CustomSubcategory[] = [
   // Solar Dried
   { id: "solar-fruits", label: "Solar Dried Natural Fruits", parentCategory: "solar-dried" },
 
+  // Sweets & Laddus
+  { id: "laddus", label: "Laddus & Energy Balls", parentCategory: "sweets" },
+  { id: "dry-fruit-sweets", label: "Dry Fruit Sweets & Katlis", parentCategory: "sweets" },
+
   // Admin & Developer QA Test Subcategories
   { id: "stock-levels-qa", label: "Stock Levels & Thresholds QA", parentCategory: "stock-inventory-test" },
   { id: "order-workflow-qa", label: "Order & Payment Workflow QA", parentCategory: "orders-qa-test" },
@@ -480,6 +484,9 @@ export function getAllProducts(baseProducts: Product[]): Product[] {
   for (const cp of customProducts) {
     if (deletedProductIds.has(cp.id)) continue;
 
+    const baseP = combinedMap.get(cp.id);
+    const inferredSubcat = cp.subcategory || (baseP ? autoInferSubcategory(baseP) : autoInferSubcategory(cp));
+
     const updatedVariants = cp.variants
       .filter((v) => !deletedVariantIds.has(v.id))
       .map((v) => {
@@ -491,7 +498,13 @@ export function getAllProducts(baseProducts: Product[]): Product[] {
       });
 
     if (updatedVariants.length > 0) {
-      combinedMap.set(cp.id, { ...cp, variants: updatedVariants });
+      const mergedProduct: Product = {
+        ...(baseP || {}),
+        ...cp,
+        subcategory: inferredSubcat,
+        variants: updatedVariants,
+      };
+      combinedMap.set(cp.id, mergedProduct);
     }
   }
 

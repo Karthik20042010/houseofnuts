@@ -226,12 +226,57 @@ const StoreInfo = () => {
             )}
           </div>
 
-          {/* Special Contact Form embed on /contact */}
+          {/* Special Contact Form & Map embed on /contact */}
           {targetPath === "/contact" && (
-            <div className="mb-12 p-8 md:p-10 rounded-3xl border border-border bg-card shadow-card">
-              <h2 className="font-display text-3xl mb-2">Send Us a Direct Message</h2>
-              <p className="text-muted-foreground font-body text-sm mb-6">Fill out the form below and our team will get back to you within 24 hours.</p>
-              <ContactMessageForm />
+            <div className="space-y-8 mb-12">
+              <div className="p-8 md:p-10 rounded-3xl border border-border bg-card shadow-card">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold uppercase tracking-wider mb-2">
+                      <MapPin size={13} /> Physical Store Location
+                    </span>
+                    <h2 className="font-display text-3xl">Visit Us in Proddatur</h2>
+                  </div>
+                  <a
+                    href="https://share.google/MXS8ulw5qZr3b2rEa"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-earth inline-flex items-center gap-2 self-start sm:self-auto"
+                  >
+                    <MapPin size={15} /> Open in Google Maps
+                  </a>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4 mb-6 text-xs text-muted-foreground font-body">
+                  <div className="p-4 rounded-xl bg-secondary/50 border border-border/60">
+                    <strong className="block text-foreground text-sm mb-1 font-display">Store Address</strong>
+                    10-155/2, KK Street, Gandhi Road, Proddatur, AP 516360
+                  </div>
+                  <div className="p-4 rounded-xl bg-secondary/50 border border-border/60">
+                    <strong className="block text-foreground text-sm mb-1 font-display">Store Hours</strong>
+                    Monday – Sunday: 9:00 AM – 9:30 PM
+                  </div>
+                </div>
+
+                <div className="rounded-2xl overflow-hidden border border-border h-64 w-full">
+                  <iframe
+                    title="House of Nuts Map"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3856.883713028247!2d78.5524!3d14.7526!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bb370b3b4f62083%3A0x6b77c5e21975e53e!2sProddatur%2C%20Andhra%20Pradesh!5e0!3m2!1sen!2sin!4v1710000000000!5m2!1sen!2sin"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen={false}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              </div>
+
+              <div className="p-8 md:p-10 rounded-3xl border border-border bg-card shadow-card">
+                <h2 className="font-display text-3xl mb-2">Send Us a Direct Message</h2>
+                <p className="text-muted-foreground font-body text-sm mb-6">Fill out the form below and our team will get back to you within 24 hours.</p>
+                <ContactMessageForm />
+              </div>
             </div>
           )}
 

@@ -10,9 +10,11 @@ export interface SEOHeadProps {
   jsonLd?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
-const DEFAULT_TITLE = "House of Nuts — Buy Premium Dry Fruits, Mamra Almonds & Wild Honey Online";
+const DEFAULT_TITLE = "House of Nuts — Premier Dry Fruit House, Spices & Wild Honey Proddatur";
 const DEFAULT_DESCRIPTION =
-  "Shop premium quality dry fruits, Mamra almonds, jumbo cashews, Iranian pistachios, organic spices & raw wild honey online in India & Proddatur. Best prices, 100% natural, direct farm source.";
+  "House of Nuts Proddatur (Dry Fruit House) — Buy 100% natural Mamra almonds (Badam), Iranian pistachios (Pista), jumbo cashews, organic spices, raw wild honey & luxury gift boxes online in Proddatur, AP. Best prices, direct farm source.";
+const DEFAULT_KEYWORDS =
+  "dryfruit house, dry fruit house proddatur, dryfrit proddatur, dryfruit proddatur, dry fruit store near me, dry fruit shop in proddatur, organic spices proddatur, raw forest honey proddatur, wild honey proddatur, dry fruit gift boxes proddatur, luxury hampers, badam, pista, kaju, anjeer, dates, walnuts, House of Nuts Proddatur";
 const DEFAULT_OG_IMAGE =
   "https://houseofnuts.store/images/branding/house-of-nuts-banner.png";
 const SITE_NAME = "House of Nuts";
@@ -46,13 +48,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
     // 2. Meta Description & Keywords
     setMetaTag('meta[name="description"]', "name", "description", description || DEFAULT_DESCRIPTION);
     setMetaTag('meta[name="author"]', "name", "author", SITE_NAME);
-
-    const kwElement = document.querySelector('meta[name="keywords"]');
-    if (keywords) {
-      setMetaTag('meta[name="keywords"]', "name", "keywords", keywords);
-    } else if (kwElement) {
-      kwElement.remove();
-    }
+    setMetaTag('meta[name="keywords"]', "name", "keywords", keywords || DEFAULT_KEYWORDS);
 
     // 3. Canonical URL
     const cleanPath = canonicalUrl ? canonicalUrl : window.location.pathname;
@@ -84,17 +80,67 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
     const JSONLD_SCRIPT_ID = "dynamic-page-jsonld";
     let scriptElement = document.getElementById(JSONLD_SCRIPT_ID) as HTMLScriptElement | null;
     
-    if (jsonLd) {
-      if (!scriptElement) {
-        scriptElement = document.createElement("script");
-        scriptElement.id = JSONLD_SCRIPT_ID;
-        scriptElement.type = "application/ld+json";
-        document.head.appendChild(scriptElement);
-      }
-      scriptElement.textContent = JSON.stringify(jsonLd);
-    } else if (scriptElement) {
-      scriptElement.remove();
+    const defaultJsonLd = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": ["GroceryStore", "LocalBusiness", "Store", "OnlineStore"],
+          "@id": `${BASE_URL}/#store`,
+          "name": SITE_NAME,
+          "alternateName": [
+            "Dry Fruit House Proddatur",
+            "Dryfruit House",
+            "House of Nuts — Premier Dry Fruits, Spices & Honey Shop",
+            "Nut House Proddatur"
+          ],
+          "url": BASE_URL,
+          "logo": `${BASE_URL}/images/branding/house-of-nuts-logo-hd.png`,
+          "description": DEFAULT_DESCRIPTION,
+          "telephone": "+919652526920",
+          "hasMap": "https://share.google/MXS8ulw5qZr3b2rEa",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "10-155/2, KK Street, Gandhi Road",
+            "addressLocality": "Proddatur",
+            "addressRegion": "Andhra Pradesh",
+            "postalCode": "516360",
+            "addressCountry": "IN"
+          },
+          "knowsAbout": [
+            "Dry Fruits",
+            "Dry Fruit House",
+            "Mamra Almonds",
+            "Cashews",
+            "Iranian Pistachios",
+            "Organic Spices",
+            "Kashmiri Saffron",
+            "Raw Wild Forest Honey",
+            "Dry Fruit Gift Boxes",
+            "Festive Hampers",
+            "Corporate Gifting"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": `${BASE_URL}/#website`,
+          "url": BASE_URL,
+          "name": SITE_NAME,
+          "publisher": {
+            "@id": `${BASE_URL}/#store`
+          }
+        }
+      ]
+    };
+
+    const payloadToRender = jsonLd || defaultJsonLd;
+
+    if (!scriptElement) {
+      scriptElement = document.createElement("script");
+      scriptElement.id = JSONLD_SCRIPT_ID;
+      scriptElement.type = "application/ld+json";
+      document.head.appendChild(scriptElement);
     }
+    scriptElement.textContent = JSON.stringify(payloadToRender);
 
     return () => {
       // Clean up dynamic JSON-LD on unmount if needed

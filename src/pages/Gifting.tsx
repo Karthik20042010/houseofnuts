@@ -17,9 +17,9 @@ const occasions = [
 const Gifting = () => (
   <div className="min-h-screen bg-background">
     <SEOHead
-      title="Luxury Dry Fruit Gift Boxes & Corporate Hampers"
-      description="Shop elegant dry fruit gift boxes and custom hampers for weddings, Diwali, celebrations, and corporate events at House of Nuts Proddatur."
-      keywords="dry fruit gift boxes, corporate gifting proddatur, festive hampers proddatur, house of nuts gift hamper, luxury nuts gift box"
+      title="Luxury Dry Fruit Gift Boxes, Hampers & Corporate Gifts Proddatur"
+      description="Shop luxury dry fruit gift boxes, customized hampers & festive packs for weddings, Diwali & corporate gifting at House of Nuts Proddatur (Dry Fruit House)."
+      keywords="dry fruit gift boxes proddatur, dryfruit house gift boxes, dryfrit hampers, corporate gifting proddatur, festive nut hampers, luxury dry fruit gift pack, wedding gift boxes proddatur, custom dry fruit boxes"
       canonicalUrl="/gifting"
     />
     <Header />

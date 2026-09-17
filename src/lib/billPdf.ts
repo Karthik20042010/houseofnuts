@@ -18,6 +18,7 @@ export interface BillPdfData {
   }>;
   subtotal: number;
   discount: number;
+  shippingFee?: number;
   total: number;
   notes?: string | null;
 }
@@ -235,6 +236,11 @@ export function generateBillPdf(data: BillPdfData): Blob {
 
   drawTotalRow("Subtotal", `Rs. ${data.subtotal.toFixed(2)}`);
   if (data.discount > 0) drawTotalRow("Discount", `- Rs. ${data.discount.toFixed(2)}`);
+  if (data.shippingFee !== undefined && data.shippingFee > 0) {
+    drawTotalRow("Delivery Charge", `Rs. ${data.shippingFee.toFixed(2)}`);
+  } else if (data.shippingFee === 0) {
+    drawTotalRow("Delivery Charge", "FREE");
+  }
   drawTotalRow("TOTAL", `Rs. ${data.total.toFixed(2)}`, { bold: true, fill: true });
 
   // ---- Amount in words band

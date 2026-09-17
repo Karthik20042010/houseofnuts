@@ -9,13 +9,15 @@ import { useGridReady } from "@/hooks/useGridReady";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import WholesaleForm from "@/components/WholesaleForm";
 import { useCatalog } from "@/lib/customCatalog";
-import { ChevronLeft, ChevronRight, ArrowRight, Phone, MessageCircle, Instagram } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, Phone, MessageCircle, Instagram, Clock, ShieldCheck, Leaf, Flame, Globe2, CheckCircle2, Award, PackageCheck, Truck, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { isCategoryComingSoon, isCategoryVisibleToUser, isPrivilegedUser } from "@/lib/accessControl";
-import { Clock, ShieldCheck } from "lucide-react";
+
+import { useInventory } from "@/contexts/InventoryContext";
+import { sortProductsWithStockAndComingSoonLast } from "@/lib/inventory";
 
 const heroImage = "/images/branding/cinematic-store-banner.jpg";
-const festiveImage = "https://images.unsplash.com/photo-1548907040-4baa42d10919?w=1440&h=800&fit=crop";
+const festiveImage = "/images/gifting/festive-nut-hamper-banner.png";
 const grandOpeningImage = "/images/branding/grand-opening-banner.jpg";
 const categoryImages: Record<string, string> = {
   nuts: "/images/nuts/almonds.jpg",
@@ -49,6 +51,7 @@ const sortOptions: { value: SortOption; label: string }[] = [
 
 const Index = () => {
   const auth = useAuth();
+  const { stock } = useInventory();
   const { products, categories } = useCatalog();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -67,22 +70,8 @@ const Index = () => {
         ? [...visibleProducts]
         : visibleProducts.filter((p) => p.category === activeCategory || p.subcategory === activeCategory);
 
-    const getMinPrice = (p: typeof products[0]) =>
-      Math.min(...p.variants.map((v) => v.price));
-
-    switch (sortBy) {
-      case "price-asc":
-        return base.sort((a, b) => getMinPrice(a) - getMinPrice(b));
-      case "price-desc":
-        return base.sort((a, b) => getMinPrice(b) - getMinPrice(a));
-      case "name-asc":
-        return base.sort((a, b) => a.name.localeCompare(b.name));
-      case "name-desc":
-        return base.sort((a, b) => b.name.localeCompare(a.name));
-      default:
-        return base;
-    }
-  }, [activeCategory, sortBy, auth]);
+    return sortProductsWithStockAndComingSoonLast(base, stock, auth, sortBy);
+  }, [activeCategory, sortBy, auth, stock, products]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice(
@@ -117,8 +106,9 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       <SEOHead
-        title="Buy Premium Dry Fruits, Badam, Pista & Honey Online in Proddatur"
-        description="Shop 100% natural Mamra almonds (Badam), Iranian pistachios (Pista), jumbo cashews, organic spices & raw wild honey online in Proddatur, Andhra Pradesh. Best prices, direct farm source."
+        title="Premier Dry Fruit House, Spices, Wild Honey & Gift Boxes Proddatur"
+        description="House of Nuts Proddatur (Dry Fruit House) — Shop 100% natural Mamra almonds (Badam), Iranian pistachios (Pista), jumbo cashews, organic spices, raw wild forest honey & luxury gift boxes online in Proddatur, AP."
+        keywords="dryfruit house, dry fruit house proddatur, dryfrit proddatur, dryfruit proddatur, dry fruit store near me, dry fruit shop in proddatur, organic spices proddatur, raw forest honey proddatur, wild honey proddatur, dry fruit gift boxes proddatur, luxury hampers, badam, pista, kaju, anjeer, dates, House of Nuts Proddatur"
         canonicalUrl="/"
         jsonLd={homeJsonLd}
       />
@@ -243,20 +233,45 @@ const Index = () => {
 
 
       {/* Value Propositions / Brand Pillars */}
-      <section className="gradient-earth text-primary-foreground py-14 px-6 md:px-12">
-        <div className="max-w-[1600px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 font-body">
+      <section className="bg-[#3B1A0E] relative overflow-hidden py-14 px-6 md:px-12 border-y border-amber-900/40">
+        {/* Soft background ambient glow */}
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-950/40 via-amber-900/20 to-amber-950/40 pointer-events-none" />
+        <div className="max-w-[1600px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 font-body relative z-10">
           {[
-            ["100% Natural", "No oils, no additives, no shortcuts. Pure farm origin."],
-            ["Small-Batch Roasted", "Roasted fresh to order so every nut snaps with crunch."],
-            ["Responsibly Sourced", "Direct partner farms across Kashmir, Iran & California."],
-            ["Zero Preservatives", "Vacuum-sealed at peak freshness to lock in flavor."],
-          ].map(([title, copy]) => (
+            {
+              title: "100% Natural",
+              copy: "No oils, no additives, no shortcuts. Pure farm origin guaranteed.",
+              icon: Leaf,
+            },
+            {
+              title: "Small-Batch Roasted",
+              copy: "Roasted fresh to order in small batches so every nut snaps with maximum crunch.",
+              icon: Flame,
+            },
+            {
+              title: "Responsibly Sourced",
+              copy: "Direct partner farms across Kashmir, Iran & California for handpicked quality.",
+              icon: Globe2,
+            },
+            {
+              title: "Zero Preservatives",
+              copy: "Vacuum-sealed at peak harvest freshness to lock in natural oil & flavor.",
+              icon: ShieldCheck,
+            },
+          ].map(({ title, copy, icon: Icon }) => (
             <div
               key={title}
-              className="rounded-2xl border border-primary-foreground/10 bg-primary-foreground/5 p-5 transition-colors hover:border-accent/50 hover:bg-primary-foreground/10"
+              className="rounded-2xl border border-amber-500/20 bg-amber-950/40 backdrop-blur-sm p-6 transition-all duration-300 hover:-translate-y-1 hover:border-amber-400/50 hover:bg-amber-900/50 hover:shadow-xl group"
             >
-              <h4 className="text-accent text-sm uppercase tracking-wider font-semibold mb-1.5">{title}</h4>
-              <p className="text-xs text-primary-foreground/75 font-light leading-relaxed">{copy}</p>
+              <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center text-amber-300 mb-4 transition-transform group-hover:scale-110 group-hover:bg-amber-500/25">
+                <Icon size={22} className="text-amber-300" />
+              </div>
+              <h4 className="text-[#FFF5EB] text-sm uppercase tracking-wider font-semibold mb-2 group-hover:text-amber-200 transition-colors">
+                {title}
+              </h4>
+              <p className="text-xs text-[#E6D5C3] font-normal leading-relaxed">
+                {copy}
+              </p>
             </div>
           ))}
         </div>
@@ -435,27 +450,64 @@ const Index = () => {
       </section>
 
       {/* Freshness story */}
-      <section className="cv-auto bg-primary px-6 py-16 text-primary-foreground md:px-12 md:py-24">
-        <div className="mx-auto grid max-w-[1600px] gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16">
-          <div className="overflow-hidden rounded-sm">
+      <section className="cv-auto bg-[#2D130B] relative overflow-hidden px-6 py-16 text-primary-foreground md:px-12 md:py-24 border-y border-amber-900/40">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-600/10 via-transparent to-transparent pointer-events-none" />
+        <div className="mx-auto grid max-w-[1600px] gap-10 lg:grid-cols-12 lg:items-center lg:gap-14 relative z-10">
+          {/* Image side */}
+          <div className="lg:col-span-6 relative overflow-hidden rounded-3xl border border-amber-500/25 shadow-2xl group">
             <img
               src="/images/gifting/dry-fruits-thali.jpg"
-              alt="A freshly roasted assortment of premium nuts and dry fruits"
-              className="h-[300px] w-full object-cover md:h-[440px] rounded-2xl shadow-card"
+              alt="A freshly roasted assortment of premium nuts and dry fruits on traditional brass thali"
+              className="h-[320px] w-full object-cover md:h-[480px] rounded-3xl transition-transform duration-1000 group-hover:scale-105"
               loading="lazy"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#2D130B]/80 via-transparent to-transparent" />
+            <div className="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-[#2D130B]/70 backdrop-blur-md border border-amber-500/30 flex items-center justify-between text-amber-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300">
+                  <Award size={20} />
+                </div>
+                <div>
+                  <h5 className="text-xs font-semibold uppercase tracking-wider font-body text-[#FFF5EB]">Artisanal Harvest</h5>
+                  <p className="text-[11px] text-amber-200/80 font-light">100% Pure & Organically Farm Sourced</p>
+                </div>
+              </div>
+              <span className="text-[10px] uppercase tracking-[0.16em] font-body bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full border border-amber-400/30">
+                Direct Farm
+              </span>
+            </div>
           </div>
-          <div>
-            <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-accent font-body">Farm to your table</p>
-            <h2 className="max-w-[12ch] font-display text-4xl leading-[0.95] md:text-6xl">Freshness you can see, taste and trust.</h2>
-            <p className="mt-6 max-w-xl font-body leading-relaxed text-primary-foreground/75">
-              We choose whole ingredients for their crunch, colour and natural flavour, then pack them carefully so they arrive ready to share.
+
+          {/* Text side */}
+          <div className="lg:col-span-6 flex flex-col justify-center">
+            <span className="w-fit mb-4 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] font-body backdrop-blur-xs">
+              Farm To Your Table
+            </span>
+            <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl leading-[1.02] tracking-tight text-[#FFF8F0] mb-6">
+              Freshness you can see,{" "}
+              <span className="italic text-amber-300 font-light">taste and trust.</span>
+            </h2>
+            <p className="text-sm sm:text-base md:text-lg text-[#E6D5C3] font-light font-body leading-relaxed mb-8 max-w-xl">
+              We hand-select whole ingredients for their natural crunch, rich color, and pristine flavor — vacuum-sealing each batch to preserve farm-fresh purity until it reaches your doorstep.
             </p>
-            <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-6 border-t border-primary-foreground/15 pt-7 sm:grid-cols-4">
-              {["Whole ingredients", "Packed with care", "Small-batch quality", "Delivered fresh"].map((promise) => (
-                <p key={promise} className="text-xs font-medium uppercase tracking-[0.12em] text-primary-foreground/90 font-body">
-                  {promise}
-                </p>
+
+            {/* Promise Feature Grid */}
+            <div className="grid grid-cols-2 gap-4 border-t border-amber-500/20 pt-8">
+              {[
+                { label: "Whole Ingredients", desc: "Unbroken, full-kernel selection", icon: Leaf },
+                { label: "Packed With Care", desc: "Vacuum-sealed eco-friendly boxes", icon: PackageCheck },
+                { label: "Small-Batch Quality", desc: "Fresh slow-roasting on demand", icon: Flame },
+                { label: "Delivered Fresh", desc: "Express delivery across India & Proddatur", icon: Truck },
+              ].map(({ label, desc, icon: Icon }) => (
+                <div key={label} className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-amber-950/40 border border-amber-500/15 hover:border-amber-400/40 transition-colors">
+                  <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-300 shrink-0">
+                    <Icon size={18} />
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-semibold uppercase tracking-wider text-[#FFF5EB] font-body mb-0.5">{label}</h5>
+                    <p className="text-[11px] text-[#D8C4B0] font-light font-body leading-tight">{desc}</p>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -554,6 +606,82 @@ const Index = () => {
       {/* Gamified Play & Win Modal */}
       <NutNinjaGame isOpen={gameOpen} onClose={() => setGameOpen(false)} />
 
+      {/* Store Location & Interactive Google Maps */}
+      <section id="location" className="py-20 px-6 md:px-12 bg-secondary/30 border-t border-border/60">
+        <div className="max-w-[1400px] mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-body font-semibold uppercase tracking-widest">
+              <MapPin size={14} /> Retail Store in Proddatur
+            </div>
+            <h2 className="font-display text-3xl md:text-5xl text-foreground">
+              Visit House of Nuts
+            </h2>
+            <p className="text-muted-foreground font-body leading-relaxed text-sm md:text-base">
+              Experience the finest selection of handpicked Mamra almonds, Iranian pistachios, jumbo cashews, organic spices, and raw forest honey directly at our physical store.
+            </p>
+            
+            <div className="grid sm:grid-cols-2 gap-6 pt-2">
+              <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs">
+                <h3 className="font-display text-lg text-foreground mb-1">Store Address</h3>
+                <p className="text-xs text-muted-foreground font-body leading-relaxed">
+                  10-155/2, KK Street, Gandhi Road<br />
+                  Proddatur, Andhra Pradesh — 516360
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs">
+                <h3 className="font-display text-lg text-foreground mb-1">Opening Hours</h3>
+                <p className="text-xs text-muted-foreground font-body leading-relaxed">
+                  Monday – Sunday<br />
+                  <span className="font-semibold text-accent">9:00 AM – 9:30 PM</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-4 pt-4">
+              <a
+                href="https://share.google/MXS8ulw5qZr3b2rEa"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-earth flex items-center gap-2 shadow-soft hover:scale-[1.02] transition-transform"
+              >
+                <MapPin size={16} /> Open Google Maps Directions
+              </a>
+              <a
+                href="tel:+919652526920"
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-border bg-card text-xs font-body font-semibold uppercase tracking-wider hover:border-accent hover:text-accent transition-colors"
+              >
+                <Phone size={14} className="text-accent" /> Call Store: +91 96525 26920
+              </a>
+            </div>
+          </div>
+
+          <div className="relative rounded-3xl overflow-hidden border border-border/80 shadow-xl h-[380px] md:h-[440px]">
+            <iframe
+              title="House of Nuts Location Map"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3856.883713028247!2d78.5524!3d14.7526!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bb370b3b4f62083%3A0x6b77c5e21975e53e!2sProddatur%2C%20Andhra%20Pradesh!5e0!3m2!1sen!2sin!4v1710000000000!5m2!1sen!2sin"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen={false}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="w-full h-full grayscale-[20%] hover:grayscale-0 transition-all duration-500"
+            />
+            <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-md px-4 py-2 rounded-xl border border-border text-[11px] font-body font-medium shadow-md">
+              <a
+                href="https://share.google/MXS8ulw5qZr3b2rEa"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-accent hover:underline"
+              >
+                <MapPin size={13} /> View on Google Maps
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="contact" className="bg-primary text-primary-foreground py-20 px-6 md:px-12">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="font-display text-4xl md:text-5xl mb-6 text-accent">Wholesale Enquiry</h2>
@@ -592,6 +720,90 @@ const Index = () => {
         </div>
       </section>
 
+      {/* SEO Keyword & Location Authority Section */}
+      <section className="bg-background py-16 px-6 md:px-12 border-t border-border/80 text-foreground">
+        <div className="max-w-[1400px] mx-auto space-y-8">
+          <div className="text-center max-w-3xl mx-auto">
+            <span className="text-accent text-xs font-body font-semibold uppercase tracking-[0.2em]">Proddatur Dry Fruit House</span>
+            <h2 className="font-display text-2xl md:text-4xl text-foreground mt-2">
+              House of Nuts — Best Dry Fruit Store, Spices &amp; Wild Honey in Proddatur
+            </h2>
+            <p className="text-xs md:text-sm text-muted-foreground font-body mt-3 leading-relaxed">
+              Looking for a trusted <strong>dry fruit house</strong> or <strong>dryfruit shop in Proddatur</strong>? House of Nuts brings you 100% natural, farm-fresh harvest dry fruits, stone-ground organic spices, raw wild forest honey, and handcrafted luxury gift hampers directly to your doorstep.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4 text-xs font-body leading-relaxed">
+            <div className="p-5 rounded-2xl bg-card border border-border/70">
+              <h3 className="font-display text-base text-foreground mb-2">Dry Fruits &amp; Nuts (Badam, Pista, Kaju)</h3>
+              <p className="text-muted-foreground">
+                Shop authentic Kashmiri &amp; Iranian Mamra Almonds (Badam), naturally opened Iranian Pistachios (Pista), Jumbo W180/W240 Cashews (Kaju), organic Anjeer (Figs), Akhrot (Walnuts), and Medjool Dates at direct farm rates.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-card border border-border/70">
+              <h3 className="font-display text-base text-foreground mb-2">Organic Spices Proddatur</h3>
+              <p className="text-muted-foreground">
+                Sourced from organic spice gardens — Grade-A Kashmiri Saffron (Kesar), aromatic Green Cardamom (Elaichi), Ceylon Cinnamon (Dalchini), Cloves (Laung), and Black Pepper. Pure, unadulterated &amp; stone-ground.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-card border border-border/70">
+              <h3 className="font-display text-base text-foreground mb-2">Raw Wild Forest Honey</h3>
+              <p className="text-muted-foreground">
+                100% unprocessed, unpasteurized raw forest wild honey collected from natural hives. Packed with enzymes, antioxidants, and pure floral aroma with zero added sugar or artificial preservatives.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-card border border-border/70">
+              <h3 className="font-display text-base text-foreground mb-2">Dry Fruit Gift Boxes &amp; Hampers</h3>
+              <p className="text-muted-foreground">
+                Customized luxury dry fruit gift packs for weddings, Diwali, corporate gifting, and family celebrations in Proddatur. Elegant packaging with custom box builder options and bulk delivery.
+              </p>
+            </div>
+          </div>
+
+          {/* Sub-Category & Sub-Sub Tag Link Index */}
+          <div className="pt-6 border-t border-border/60">
+            <h3 className="font-display text-sm uppercase tracking-[0.18em] text-accent mb-4 text-center">
+              Popular Sub-Categories &amp; Sub-Tag Directory
+            </h3>
+            <div className="flex flex-wrap justify-center gap-2 text-[11px] font-body">
+              {[
+                { label: "Kashmiri Mamra Almonds", path: "/category/almonds" },
+                { label: "Iranian Mamra Badam", path: "/category/almonds" },
+                { label: "California Almonds", path: "/category/almonds" },
+                { label: "Jumbo W180 Cashews", path: "/category/cashews" },
+                { label: "W240 Kaju Whole", path: "/category/cashews" },
+                { label: "Roasted Salted Kaju", path: "/category/cashews" },
+                { label: "Iranian Jumbo Pista", path: "/category/pistachios" },
+                { label: "Salted Roasted Pistachios", path: "/category/pistachios" },
+                { label: "Chilean Akhrot Kernels", path: "/category/walnuts" },
+                { label: "Organic Turkish Anjeer", path: "/category/figs" },
+                { label: "Medjool & Ajwa Dates", path: "/category/dates" },
+                { label: "Golden Long Kishmish", path: "/category/raisins" },
+                { label: "Kashmiri Mongra Saffron", path: "/category/saffron" },
+                { label: "Green Elaichi (Cardamom)", path: "/category/cardamom" },
+                { label: "Organic Whole Spices", path: "/category/whole-spices" },
+                { label: "Raw Forest Wild Honey", path: "/category/raw-honey" },
+                { label: "Royal Wooden Gift Boxes", path: "/category/wooden-boxes" },
+                { label: "Festive Diwali Hampers", path: "/category/festive-hampers" },
+                { label: "Wedding Dry Fruit Boxes", path: "/gifting" },
+                { label: "Proddatur Dry Fruit House", path: "/shop" },
+              ].map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.path}
+                  className="px-3 py-1.5 rounded-full bg-card border border-border/70 text-muted-foreground hover:border-accent hover:text-accent transition-colors"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-primary text-primary-foreground/60 py-12 px-6 border-t border-primary-foreground/10">
         <div className="max-w-[1600px] mx-auto grid md:grid-cols-4 gap-8 text-center md:text-left">
@@ -608,6 +820,14 @@ const Index = () => {
               Gandhi Road, Proddatur<br />
               Andhra Pradesh — 516360
             </p>
+            <a
+              href="https://share.google/MXS8ulw5qZr3b2rEa"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 mt-2 text-accent text-xs hover:underline font-medium"
+            >
+              <MapPin size={13} /> View on Google Maps
+            </a>
           </div>
           <div>
             <h4 className="text-[11px] uppercase tracking-[0.2em] text-accent font-body font-medium mb-3">Contact</h4>

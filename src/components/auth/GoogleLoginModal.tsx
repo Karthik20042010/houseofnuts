@@ -512,7 +512,7 @@ export const GoogleLoginModal: React.FC<GoogleLoginModalProps> = ({
                       type="submit"
                       className="w-full bg-primary text-primary-foreground py-3 uppercase tracking-[0.14em] text-xs font-semibold hover:bg-accent transition-colors flex items-center justify-center gap-2 rounded-2xl shadow-soft cursor-pointer"
                     >
-                      Get Verification OTP <Sparkles size={14} />
+                      Get Verification OTP <ShieldCheck size={14} />
                     </button>
                   </form>
                 ) : (

@@ -1,4 +1,4 @@
-import { ShoppingBag, Menu, X, Package, ChevronDown, User, ShieldCheck, Heart, LogOut, UserCheck } from "lucide-react";
+import { ShoppingBag, Menu, X, Package, ChevronDown, User, ShieldCheck, Heart, LogOut, UserCheck, Sparkles, MapPin } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { isCategoryVisibleToUser } from "@/lib/accessControl";
@@ -49,21 +49,21 @@ const Header = () => {
         onClose={() => setIsLoginModalOpen(false)}
       />
 
-      <nav className="hidden md:flex gap-8 text-xs uppercase tracking-[0.15em] font-medium font-body items-center">
-        <Link to="/shop" className="hover:text-accent transition-colors duration-300">Shop</Link>
-        <Link to="/gifting" className="hover:text-accent transition-colors duration-300">Gifting</Link>
-        <Link to="/journal" className="hover:text-accent transition-colors duration-300">Journal</Link>
+      <nav className="hidden md:flex gap-7 text-xs uppercase tracking-[0.18em] font-medium font-body items-center">
+        <Link to="/shop" className="hover:text-accent transition-colors duration-300 relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-accent hover:after:w-full after:transition-all after:duration-300">Shop</Link>
+        <Link to="/gifting" className="hover:text-accent transition-colors duration-300 relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-accent hover:after:w-full after:transition-all after:duration-300">Gifting</Link>
+        <Link to="/journal" className="hover:text-accent transition-colors duration-300 relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-accent hover:after:w-full after:transition-all after:duration-300">Journal</Link>
         <div className="relative group">
-          <button className="flex items-center gap-1 hover:text-accent transition-colors duration-300">
-            Categories <ChevronDown size={12} />
+          <button className="flex items-center gap-1 hover:text-accent transition-colors duration-300 py-1">
+            Categories <ChevronDown size={12} className="group-hover:rotate-180 transition-transform duration-200" />
           </button>
           <div className="absolute left-0 top-full pt-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-            <div className="bg-background border border-border shadow-lg min-w-[200px] py-2">
+            <div className="bg-background/95 backdrop-blur-xl border border-border shadow-2xl rounded-2xl min-w-[220px] py-2 overflow-hidden">
               {categories.filter((c) => c.id !== "all" && isCategoryVisibleToUser(c.id, auth)).map((c) => (
                 <Link
                   key={c.id}
                   to={`/category/${c.id}`}
-                  className="block px-4 py-2 text-xs uppercase tracking-[0.15em] hover:bg-clay-light hover:text-accent transition-colors"
+                  className="block px-4 py-2.5 text-xs uppercase tracking-[0.15em] hover:bg-clay-light hover:text-accent transition-colors font-medium"
                 >
                   {c.label}
                 </Link>
@@ -71,37 +71,53 @@ const Header = () => {
             </div>
           </div>
         </div>
-        <Link to="/orders" className="hover:text-accent transition-colors duration-300">
-          <span className="flex items-center gap-1.5"><Package size={14} /> Orders</span>
+        <Link to="/orders" className="hover:text-accent transition-colors duration-300 relative py-1">
+          <span className="flex items-center gap-1.5"><Package size={14} className="text-accent" /> Orders</span>
         </Link>
-        <Link to="/track" className="hover:text-accent transition-colors duration-300">Track</Link>
+        <Link to="/track" className="hover:text-accent transition-colors duration-300 relative py-1">Track</Link>
+        <a
+          href="https://share.google/MXS8ulw5qZr3b2rEa"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-accent transition-colors duration-300 relative py-1 flex items-center gap-1 text-accent font-medium"
+        >
+          <MapPin size={13} /> Map Location
+        </a>
         {isHome ? (
-          <button onClick={scrollToContact} className="hover:text-accent transition-colors duration-300">Wholesale</button>
+          <button onClick={scrollToContact} className="hover:text-accent transition-colors duration-300 font-semibold text-accent cursor-pointer">Wholesale</button>
         ) : (
-          <Link to="/#contact" className="hover:text-accent transition-colors duration-300">Wholesale</Link>
+          <Link to="/#contact" className="hover:text-accent transition-colors duration-300 font-semibold text-accent">Wholesale</Link>
         )}
       </nav>
 
-      <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+      <button className="md:hidden p-1 rounded-lg text-foreground hover:bg-secondary transition-colors" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
         {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      <Link to="/" className="font-display text-2xl md:text-4xl font-normal tracking-tight flex-1 text-center md:flex-none hover:text-accent transition-colors">
-        House of Nuts
+      <Link
+        to="/"
+        className="group flex flex-col items-center justify-center flex-1 md:flex-none text-center py-1 transition-all duration-300 select-none"
+      >
+        <span className="font-display text-3xl sm:text-4xl md:text-5xl font-normal tracking-normal text-[#6B2B11] dark:text-amber-100 group-hover:text-[#9A421C] transition-colors duration-300 leading-none">
+          House of Nuts
+        </span>
+        <span className="text-[10px] uppercase tracking-[0.25em] font-body text-accent/90 font-medium mt-1 group-hover:text-accent transition-colors duration-300 hidden sm:block">
+          Artisanal Dry Fruits & Nuts
+        </span>
       </Link>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <SearchBar />
 
         {/* Wishlist Link */}
         <Link
           to="/wishlist"
           title="My Wishlist"
-          className="relative text-muted-foreground hover:text-accent transition-colors p-1"
+          className="relative text-muted-foreground hover:text-accent transition-colors p-1.5 hover:scale-110 active:scale-95 duration-200"
         >
           <Heart size={20} />
           {wishlistCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground size-4 flex items-center justify-center rounded-full text-[10px] font-bold font-mono">
+            <span className="absolute -top-1 -right-1 bg-gradient-to-r from-accent to-amber-600 text-white size-4 flex items-center justify-center rounded-full text-[10px] font-bold font-mono shadow-xs animate-bounce">
               {wishlistCount}
             </span>
           )}
@@ -114,15 +130,17 @@ const Header = () => {
               onClick={handleAccountClick}
               className="flex items-center gap-2 text-xs font-body hover:text-accent transition-colors py-1 cursor-pointer"
             >
-              <div className="size-7 rounded-full bg-accent/10 text-accent grid place-items-center font-bold text-xs shrink-0 overflow-hidden border border-accent/20">
-                {googleUser?.picture ? (
-                  <img src={googleUser.picture} alt="" className="w-full h-full rounded-full object-cover" />
-                ) : (
-                  displayName.charAt(0).toUpperCase()
-                )}
+              <div className="size-8 rounded-full bg-gradient-to-tr from-accent to-amber-400 p-0.5 shadow-xs transition-transform group-hover:scale-105">
+                <div className="w-full h-full rounded-full bg-card grid place-items-center font-bold text-xs text-accent overflow-hidden">
+                  {googleUser?.picture ? (
+                    <img src={googleUser.picture} alt="" className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    displayName.charAt(0).toUpperCase()
+                  )}
+                </div>
               </div>
               <span className="hidden lg:inline font-medium max-w-[120px] truncate">{displayName}</span>
-              <ChevronDown size={12} className="text-muted-foreground group-hover:rotate-180 transition-transform" />
+              <ChevronDown size={12} className="text-muted-foreground group-hover:rotate-180 transition-transform duration-200" />
             </button>
 
             {/* Dropdown Menu */}

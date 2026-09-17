@@ -83,7 +83,7 @@ function requireAuth(): string {
   if (s && s.password && s.password !== "oauth-session-token") {
     return s.password;
   }
-  return "hon_setup_bypass_2026";
+  return "";
 }
 
 export async function adminFetchOrders(): Promise<Order[]> {
