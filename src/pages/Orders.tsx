@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import CartDrawer from "@/components/CartDrawer";
 import { getOrders, type Order } from "@/lib/orders";
 import { Package, ChevronRight, ShoppingBag, RotateCcw } from "lucide-react";
-import { products } from "@/data/products";
+import { useCatalog } from "@/lib/customCatalog";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 
@@ -25,6 +25,7 @@ const OrdersPage = () => {
   const navigate = useNavigate();
   const { googleUser } = useAuth();
   const { addToCart } = useCart();
+  const { products } = useCatalog();
 
   const buyAgain = (order: Order) => {
     let added = 0;

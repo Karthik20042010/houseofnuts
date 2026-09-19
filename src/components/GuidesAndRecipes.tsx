@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GUIDES_AND_RECIPES, GuideArticle, LinkedProduct } from "@/data/guidesData";
 import { useCart } from "@/contexts/CartContext";
-import { products } from "@/data/products";
+import { useCatalog } from "@/lib/customCatalog";
 import { toast } from "sonner";
 
 interface GuidesAndRecipesProps {
@@ -19,6 +19,7 @@ export const GuidesAndRecipes: React.FC<GuidesAndRecipesProps> = ({
   const [selectedArticle, setSelectedArticle] = useState<GuideArticle | null>(null);
   const { addToCart } = useCart();
   const navigate = useNavigate();
+  const { products } = useCatalog();
 
   const categories = [
     "All",

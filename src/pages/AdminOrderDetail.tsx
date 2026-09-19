@@ -18,12 +18,12 @@ import type { Order } from "@/lib/orders";
 import { StatusTimeline } from "@/components/admin/StatusTimeline";
 import { PaymentPill, StatusPill } from "@/components/admin/StatusPill";
 import { toast } from "sonner";
-import { products } from "@/data/products";
-
-const productImage = (productId?: string) =>
-  productId ? products.find((p) => p.id === productId)?.image : undefined;
+import { useCatalog } from "@/lib/customCatalog";
 
 const AdminOrderDetail = () => {
+  const { products } = useCatalog();
+  const productImage = (productId?: string) =>
+    productId ? products.find((p) => p.id === productId)?.image : undefined;
   const { id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
@@ -162,8 +162,8 @@ const AdminOrderDetail = () => {
             <div className="divide-y divide-border">
               {(order.items || []).map((it, i) => (
                 <div key={i} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                  {productImage(it.productId) && (
-                    <img src={productImage(it.productId)} alt={it.name} className="size-12 object-cover rounded-sm" />
+                  {(it.image || productImage(it.productId)) && (
+                    <img src={it.image || productImage(it.productId)} alt={it.name} className="size-12 object-cover rounded-sm" />
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="font-body text-sm truncate">{it.name}</div>

@@ -1,5 +1,7 @@
 import { getOrders } from "./orders";
-import { products } from "@/data/products";
+import { getAllProducts } from "./customCatalog";
+import { products as defaultProducts } from "@/data/products";
+import { apiGet, apiPost } from "./api";
 
 export interface Review {
   id: string;
@@ -13,19 +15,13 @@ export interface Review {
 
 const STORAGE_KEY = "product-reviews";
 
-// Seed reviews commented out as requested
-const seedReviews: Review[] = [
-  // { id: "s1", productId: "_global", name: "Priya S.", rating: 5, text: "Absolutely fresh and premium quality! The taste is amazing.", date: "2 weeks ago" },
-  // { id: "s2", productId: "_global", name: "Rahul M.", rating: 4, text: "Good packaging and fast delivery. Will order again.", date: "1 month ago" },
-  // { id: "s3", productId: "_global", name: "Anita K.", rating: 5, text: "Best quality I've found online. My family loved it!", date: "3 weeks ago" },
-];
-
 /**
- * Check if the given reviewer name has a delivered/confirmed/shipped order
+ * Check if the given reviewer name has a confirmed/delivered order
  * containing the given product.
  */
 export function isVerifiedPurchase(productId: string, reviewerName: string): boolean {
-  const product = products.find((p) => p.id === productId);
+  const allProducts = getAllProducts(defaultProducts);
+  const product = allProducts.find((p) => p.id === productId);
   if (!product) return false;
   const normalizedReviewer = reviewerName.trim().toLowerCase();
   if (!normalizedReviewer) return false;
@@ -48,14 +44,29 @@ export function isVerifiedPurchase(productId: string, reviewerName: string): boo
 export function getReviews(productId: string): Review[] {
   try {
     const all: Review[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    const userReviews = all
+    return all
       .filter((r) => r.productId === productId)
       .map((r) => ({ ...r, verified: r.verified ?? isVerifiedPurchase(productId, r.name) }));
-    const globalSeeds = seedReviews.map((r) => ({ ...r, productId, verified: false }));
-    return [...userReviews, ...globalSeeds];
   } catch {
-    return seedReviews.map((r) => ({ ...r, productId, verified: false }));
+    return [];
   }
+}
+
+export async function fetchServerReviews(productId?: string): Promise<Review[]> {
+  try {
+    const res = await apiGet<{ ok: boolean; reviews?: Review[] }>("getReviews", productId ? { productId } : {});
+    if (res.ok && Array.isArray(res.reviews)) {
+      const local: Review[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      const localMap = new Map(local.map((r) => [r.id, r]));
+      res.reviews.forEach((r) => localMap.set(r.id, r));
+      const merged = Array.from(localMap.values());
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      return res.reviews;
+    }
+  } catch {
+    // Fall back to local reviews
+  }
+  return productId ? getReviews(productId) : [];
 }
 
 export function addReview(review: Omit<Review, "id" | "date" | "verified">): Review {
@@ -70,6 +81,11 @@ export function addReview(review: Omit<Review, "id" | "date" | "verified">): Rev
     const all: Review[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     all.unshift(newReview);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+
+    // Submit to server for permanent storage & moderation
+    apiPost("submitReview", { review: newReview }).catch(() => {
+      // Background sync fallback
+    });
   } catch {
     // ignore
   }
@@ -80,5 +96,5 @@ export function getAverageRating(productId: string): { avg: number; count: numbe
   const reviews = getReviews(productId);
   if (reviews.length === 0) return { avg: 0, count: 0 };
   const sum = reviews.reduce((s, r) => s + r.rating, 0);
-  return { avg: sum / reviews.length, count: reviews.length };
+  return { avg: Number((sum / reviews.length).toFixed(1)), count: reviews.length };
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense, lazy } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import SEOHead from "@/components/SEOHead";
@@ -32,8 +32,8 @@ const categoryImages: Record<string, string> = {
 
 import PromoBanner from "@/components/PromoBanner";
 import CategoryStrip from "@/components/CategoryStrip";
-import BuildBox from "@/components/BuildBox";
-import NutNinjaGame from "@/components/NutNinjaGame";
+const BuildBox = lazy(() => import("@/components/BuildBox"));
+const NutNinjaGame = lazy(() => import("@/components/NutNinjaGame"));
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 
 const ITEMS_PER_PAGE = 8;
@@ -553,10 +553,16 @@ const Index = () => {
       </section>
 
       {/* Interactive Custom Box Builder */}
-      <BuildBox />
+      <Suspense fallback={<div className="py-12 min-h-[300px]" />}>
+        <BuildBox />
+      </Suspense>
 
       {/* Gamified Play & Win Modal */}
-      <NutNinjaGame isOpen={gameOpen} onClose={() => setGameOpen(false)} />
+      {gameOpen && (
+        <Suspense fallback={null}>
+          <NutNinjaGame isOpen={gameOpen} onClose={() => setGameOpen(false)} />
+        </Suspense>
+      )}
 
       {/* SEO Recipes & Buying Guides Section */}
       <GuidesAndRecipes maxItems={3} showSearchAndFilters={false} />

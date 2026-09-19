@@ -18,6 +18,7 @@ export interface Product {
   images?: string[];
   variants: ProductVariant[];
   badge?: string;
+  status?: "draft" | "active" | "archived";
 }
 
 export const categories = [

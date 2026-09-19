@@ -151,8 +151,6 @@ export function touchSession(
         durationSeconds: 0,
         pageViews: isPageView ? 1 : 0,
         userType: isMember ? "member" : "guest",
-        userEmail,
-        userName,
         location: locInfo.location,
         device: detectDevice(),
         browser: detectBrowser(),
@@ -170,8 +168,6 @@ export function touchSession(
     current.lastPath = path || current.lastPath;
     if (isPageView) current.pageViews += 1;
     if (isMember) current.userType = "member";
-    if (userEmail) current.userEmail = userEmail;
-    if (userName) current.userName = userName;
 
     writeSessions([current, ...sessions.filter((s) => s.id !== current!.id)]);
     return current;
@@ -260,13 +256,6 @@ function detectLocationFromTimezone(): { country: string; city: string; location
 
   const loc = { country, city, location: city === country ? country : `${city}, ${country}` };
   localStorage.setItem(STORAGE_KEY_LOC, JSON.stringify(loc));
-
-  // Asynchronously query multiple IP services for real city & region accuracy
-  fetchRealIpLocation().then((freshLoc) => {
-    if (freshLoc) {
-      localStorage.setItem(STORAGE_KEY_LOC, JSON.stringify(freshLoc));
-    }
-  });
 
   return loc;
 }
@@ -372,7 +361,6 @@ export function trackPageView(path: string, title?: string, userEmail?: string):
       title: title || document.title || "House of Nuts Storefront",
       timestamp: new Date().toISOString(),
       userType: isMember ? "member" : "guest",
-      userEmail: userEmail || undefined,
       location: locInfo.location,
       country: locInfo.country,
       city: locInfo.city,
@@ -671,4 +659,25 @@ export function exportAnalyticsLogsToCsv(): void {
   ].join("\n");
 
   downloadCsv(`houseofnuts-analytics-logs-${new Date().toISOString().slice(0, 10)}.csv`, csvRows);
+}
+
+export const CONSENT_KEY = "hon_analytics_consent";
+
+export function hasAnalyticsConsent(): boolean {
+  return localStorage.getItem(CONSENT_KEY) === "granted";
+}
+
+export function setAnalyticsConsent(granted: boolean): void {
+  localStorage.setItem(CONSENT_KEY, granted ? "granted" : "denied");
+  if (!granted) {
+    clearAnalyticsData();
+  }
+}
+
+export function clearAnalyticsData(): void {
+  localStorage.removeItem(STORAGE_KEY_LOGS);
+  localStorage.removeItem(STORAGE_KEY_HITS);
+  localStorage.removeItem(STORAGE_KEY_LOC);
+  localStorage.removeItem(STORAGE_KEY_SESSIONS);
+  sessionStorage.removeItem(SESSION_ID_KEY);
 }

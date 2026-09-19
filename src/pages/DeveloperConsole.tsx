@@ -436,4 +436,6 @@ function OtpTelemetryConsolePanel() {
       </div>
     </div>
   );
-}
+};
+
+export default DeveloperConsole;

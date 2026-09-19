@@ -76,6 +76,7 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
         <button
           type="button"
           onClick={() => setQuickViewOpen(true)}
+          aria-label={`Quick view ${product.name}`}
           className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 min-h-[36px] px-3 bg-background/95 text-foreground text-[10px] uppercase tracking-[0.14em] font-semibold font-body rounded-full shadow-soft transition-all duration-200 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 focus:opacity-100 focus:translate-y-0"
         >
           <span className="flex items-center gap-1.5"><Eye size={13} /> Quick view</span>
@@ -102,6 +103,7 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
         <button
           type="button"
           onClick={() => toggleWishlist(product)}
+          aria-label={inWishlist ? `Remove ${product.name} from Wishlist` : `Add ${product.name} to Wishlist`}
           title={inWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
           className={`absolute top-2 right-2 size-8 rounded-full grid place-items-center z-20 transition-all shadow-xs ${
             inWishlist
@@ -186,7 +188,9 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
               </>
             )}
           </div>
-          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-body shrink-0 whitespace-nowrap">Free Delivery</span>
+          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-body shrink-0 whitespace-nowrap">
+            {variant.price >= 999 ? "Free Delivery" : "Free Delivery ₹999+"}
+          </span>
         </div>
 
 
@@ -202,6 +206,7 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
             <button
               onClick={handleAdd}
               disabled={oos}
+              aria-label={`Add ${product.name} (${variant.size}) to basket`}
               className={`flex items-center justify-center gap-1.5 min-h-[40px] px-2 text-[10px] uppercase tracking-wider font-semibold transition-all duration-300 font-body rounded-full disabled:opacity-50 ${
                 justAdded
                   ? "bg-status-delivered text-status-delivered-foreground"
@@ -215,6 +220,7 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
             <button
               onClick={handleBuyNow}
               disabled={oos}
+              aria-label={`Buy ${product.name} (${variant.size}) now`}
               className="btn-warm flex items-center justify-center gap-1.5 !px-2 !min-h-[40px] !text-[10px] disabled:opacity-50"
             >
               <Zap size={12} className="fill-accent-foreground" />

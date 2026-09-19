@@ -76,7 +76,7 @@ describe("Admin User Flow & Full Administrative Access Control", () => {
   it("should accept both object options and positional arguments for adminUploadImage", async () => {
     sessionStorage.setItem(
       "hon-admin-session",
-      JSON.stringify({ password: "hon_setup_bypass_2026", role: "admin", loggedInAt: Date.now() })
+      JSON.stringify({ token: "mock_test_token_12345", role: "admin", loggedInAt: Date.now() })
     );
 
     // Mock fetch for apiPost

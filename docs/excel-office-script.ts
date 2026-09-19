@@ -18,8 +18,8 @@ function main(workbook: ExcelScript.Workbook) {
       headers: ["key", "value"],
       defaultRows: [
         ["adminPassword", "AdminSecret123"],
-        ["ownerEmail", "owner@houseofnuts.in"],
-        ["siteUrl", "https://houseofnuts.in"],
+        ["ownerEmail", "houseofnutsproddatur@gmail.com"],
+        ["siteUrl", "https://houseofnuts.store"],
       ],
     },
     {

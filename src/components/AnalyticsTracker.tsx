@@ -5,19 +5,19 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function AnalyticsTracker() {
   const location = useLocation();
-  const { googleUser } = useAuth();
+  const { isGoogleAuthenticated } = useAuth();
 
   useEffect(() => {
-    // Only track visitor/pageview analytics silently in the background
-    trackPageView(location.pathname, document.title, googleUser?.email);
-    touchSession(location.pathname, true, googleUser?.email, googleUser?.name);
-  }, [location.pathname, googleUser]);
+    // Only track privacy-preserving pseudonymous pageview/session telemetry without PII
+    trackPageView(location.pathname, document.title, isGoogleAuthenticated);
+    touchSession(location.pathname, true, isGoogleAuthenticated);
+  }, [location.pathname, isGoogleAuthenticated]);
 
   // Heartbeat so time-on-site is measured while the visitor stays on a page
   useEffect(() => {
     const beat = () => {
       if (document.visibilityState === "visible") {
-        touchSession(window.location.pathname, false, googleUser?.email, googleUser?.name);
+        touchSession(window.location.pathname, false, isGoogleAuthenticated);
       }
     };
     const timer = window.setInterval(beat, 15000);
@@ -28,7 +28,7 @@ export function AnalyticsTracker() {
       window.removeEventListener("visibilitychange", beat);
       window.removeEventListener("beforeunload", beat);
     };
-  }, [googleUser]);
+  }, [isGoogleAuthenticated]);
 
   return null; // Silent background component with 0 visual output on storefront
 }

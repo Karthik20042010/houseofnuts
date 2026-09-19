@@ -1395,6 +1395,7 @@ export const AdminInventory = () => {
                               </span>
                               <input
                                 type="number"
+                                aria-label={`Selling rate for ${v.size}`}
                                 value={currentPrice}
                                 onChange={(e) => setRateVal(v.id, "price", Number(e.target.value))}
                                 className="w-full pl-6 pr-2 py-1 border border-border rounded bg-background text-xs font-bold tabular-nums text-foreground focus:outline-none focus:border-accent"
@@ -1412,6 +1413,7 @@ export const AdminInventory = () => {
                               </span>
                               <input
                                 type="number"
+                                aria-label={`Original MRP for ${v.size}`}
                                 value={currentMrp}
                                 onChange={(e) => setRateVal(v.id, "mrp", Number(e.target.value))}
                                 className="w-full pl-6 pr-2 py-1 border border-border rounded bg-background text-xs font-semibold tabular-nums text-muted-foreground focus:outline-none focus:border-accent"
@@ -1428,6 +1430,7 @@ export const AdminInventory = () => {
                           <div className="flex items-center gap-1.5">
                             <button
                               type="button"
+                              aria-label={`Decrease stock for ${v.size}`}
                               onClick={() => setStockVal(v.id, Math.max(0, (untracked ? 0 : stockVal) - 1))}
                               disabled={untracked}
                               className="p-1.5 border border-border rounded-lg hover:bg-secondary disabled:opacity-40"
@@ -1437,6 +1440,7 @@ export const AdminInventory = () => {
                             <input
                               type="number"
                               min={0}
+                              aria-label={`Stock count for ${v.size}`}
                               disabled={untracked}
                               value={untracked ? "" : stockVal}
                               onChange={(e) => setStockVal(v.id, e.target.value === "" ? 0 : Number(e.target.value))}
@@ -1445,6 +1449,7 @@ export const AdminInventory = () => {
                             />
                             <button
                               type="button"
+                              aria-label={`Increase stock for ${v.size}`}
                               onClick={() => setStockVal(v.id, (untracked ? 0 : stockVal) + 1)}
                               disabled={untracked}
                               className="p-1.5 border border-border rounded-lg hover:bg-secondary disabled:opacity-40"
@@ -1453,6 +1458,7 @@ export const AdminInventory = () => {
                             </button>
                             <button
                               type="button"
+                              aria-label={`Toggle unlimited stock for ${v.size}`}
                               onClick={() => setStockVal(v.id, untracked ? 0 : UNTRACKED)}
                               title={untracked ? "Enable tracked stock counter" : "Set to unlimited stock (∞)"}
                               className={`p-1.5 border rounded-lg transition-colors ${

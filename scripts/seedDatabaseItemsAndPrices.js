@@ -21,7 +21,7 @@ try {
   // Use fallback
 }
 
-const PASSWORD_CANDIDATES = Array.from(new Set([ENV_PASSWORD, "hon_setup_bypass_2026", "", "admin123", "admin", "houseofnuts"]));
+const PASSWORD_CANDIDATES = Array.from(new Set([ENV_PASSWORD, "admin123", "admin", "houseofnuts"].filter(Boolean)));
 
 // Comprehensive attractive pricing & variant sizes (250g, 500g, 1Kg / trial packs)
 const TARGET_PRICES = [

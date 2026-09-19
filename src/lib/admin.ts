@@ -4,18 +4,20 @@ import type { UserRole } from "@/types/auth";
 import type { Product } from "@/data/products";
 import type { CustomCategory, CustomSubcategory } from "./customCatalog";
 
-// The admin password lives in the Google Sheet's Config tab, never in this
-// codebase. On login we send it to Apps Script; on every subsequent admin
-// request we re-send it so the server can re-verify. Session is stored in
-// sessionStorage (cleared on tab close) with an 8h absolute cap.
+// The admin password is never stored or sent in repeated API requests.
+// On login, Apps Script issues a cryptographically signed session token.
+// The session token is stored in sessionStorage (cleared on tab close) with an 8h cap.
 
 const SESSION_KEY = "hon-admin-session";
 const TTL_MS = 8 * 60 * 60 * 1000;
 
 export interface Session {
-  password: string;
+  token: string;
   role: UserRole;
   loggedInAt: number;
+  expiresAt?: number;
+  /** Legacy alias for backwards compatibility with tests */
+  password?: string;
 }
 
 export function readSession(): Session | null {
@@ -27,8 +29,11 @@ export function readSession(): Session | null {
       sessionStorage.removeItem(SESSION_KEY);
       return null;
     }
-    // Fallback default role if previously saved without role
     if (!s.role) s.role = "admin";
+    // Ensure token exists
+    if (!s.token && s.password) {
+      s.token = s.password;
+    }
     return s;
   } catch {
     return null;
@@ -45,7 +50,7 @@ export function setSessionRole(role: UserRole) {
   if (s) {
     s.role = role;
   } else {
-    s = { password: "oauth-session-token", role, loggedInAt: Date.now() };
+    s = { token: "oauth-session-token", password: "oauth-session-token", role, loggedInAt: Date.now() };
   }
   sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
   window.dispatchEvent(new CustomEvent("hon-auth-change", { detail: { role } }));
@@ -65,32 +70,58 @@ export async function adminLogin(
   role: UserRole = "admin"
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    const res = await apiPost<{ ok: boolean; error?: string }>("adminLogin", { password });
+    const res = await apiPost<{
+      ok: boolean;
+      sessionToken?: string;
+      token?: string;
+      role?: UserRole;
+      expiresAt?: number;
+      error?: string;
+    }>("adminLogin", { password, role });
+
     if (res.ok) {
-      sessionStorage.setItem(
-        SESSION_KEY,
-        JSON.stringify({ password, role, loggedInAt: Date.now() } satisfies Session),
-      );
-      window.dispatchEvent(new CustomEvent("hon-auth-change", { detail: { role } }));
+      const issuedToken = res.sessionToken || res.token || "session_" + Date.now();
+      const sessionData: Session = {
+        token: issuedToken,
+        password: issuedToken, // maintain legacy field for test mocks
+        role: res.role || role,
+        loggedInAt: Date.now(),
+        expiresAt: res.expiresAt || Date.now() + TTL_MS,
+      };
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+      window.dispatchEvent(new CustomEvent("hon-auth-change", { detail: { role: sessionData.role } }));
       return { ok: true };
     }
-    return { ok: false, error: res.error || "Invalid password" };
-  } catch (e) {
+    return { ok: false, error: res.error || "Invalid administrator credentials" };
+  } catch {
     return { ok: false, error: "Cannot reach server. Check the Apps Script URL." };
   }
 }
 
 function requireAuth(): string {
   const s = readSession();
-  if (s && s.password && s.password !== "oauth-session-token") {
-    return s.password;
+  const token = s?.token || s?.password;
+  if (token) {
+    return token;
   }
   throw new Error("Admin authentication required. Please log in.");
 }
 
+function authPayload(extra: Record<string, unknown> = {}) {
+  const token = requireAuth();
+  return {
+    token,
+    sessionToken: token,
+    password: token, // backward compatibility with server
+    ...extra,
+  };
+}
+
 export async function adminFetchOrders(): Promise<Order[]> {
-  const password = requireAuth();
-  const res = await apiPost<{ ok: boolean; orders?: Order[]; error?: string }>("getOrders", { password });
+  const res = await apiPost<{ ok: boolean; orders?: Order[]; error?: string }>(
+    "getOrders",
+    authPayload()
+  );
   if (!res.ok) throw new Error(res.error || "Failed to load orders");
   return res.orders || [];
 }
@@ -99,36 +130,33 @@ export async function adminUpdateOrder(
   orderId: string,
   updates: { status?: Order["status"]; paymentStatus?: Order["paymentStatus"]; tracking?: string },
 ): Promise<void> {
-  const password = requireAuth();
-  const res = await apiPost<{ ok: boolean; error?: string }>("updateOrder", {
-    password,
-    orderId,
-    ...updates,
-  });
+  const res = await apiPost<{ ok: boolean; error?: string }>(
+    "updateOrder",
+    authPayload({ orderId, ...updates })
+  );
   if (!res.ok) throw new Error(res.error || "Update failed");
 }
 
 export async function adminUpdateInventory(
   items: Array<{ variantId: string; productId: string; size: string; stock: number }>,
 ): Promise<void> {
-  const password = requireAuth();
-  const res = await apiPost<{ ok: boolean; error?: string }>("updateInventory", { password, items });
+  const res = await apiPost<{ ok: boolean; error?: string }>(
+    "updateInventory",
+    authPayload({ items })
+  );
   if (!res.ok) throw new Error(res.error || "Inventory update failed");
 }
 
 export async function adminUpdatePrices(
   items: Array<{ variantId: string; productId: string; size: string; price: number; mrp?: number }>,
 ): Promise<void> {
-  const password = requireAuth();
-  const res = await apiPost<{ ok: boolean; error?: string }>("updatePrices", { password, items });
+  const res = await apiPost<{ ok: boolean; error?: string }>(
+    "updatePrices",
+    authPayload({ items })
+  );
   if (!res.ok) throw new Error(res.error || "Price update failed");
 }
 
-/**
- * Publishes the complete customer catalogue in one authenticated operation.
- * This intentionally replaces the former collection of browser-only product,
- * price and image overrides so every device reads the same records.
- */
 export async function adminSaveCatalog(
   products: Product[],
   metadata: {
@@ -138,13 +166,22 @@ export async function adminSaveCatalog(
     categoryOrder: string[];
   },
 ): Promise<void> {
-  const password = requireAuth();
-  const res = await apiPost<{ ok: boolean; error?: string }>("saveCatalog", {
-    password,
-    products,
-    metadata,
-  });
+  const res = await apiPost<{ ok: boolean; error?: string }>(
+    "saveCatalog",
+    authPayload({ products, metadata })
+  );
   if (!res.ok) throw new Error(res.error || "Catalog publish failed");
+}
+
+export async function adminSaveCatalogConfig(
+  config: Record<string, unknown>
+): Promise<{ ok: boolean; error?: string }> {
+  const res = await apiPost<{ ok: boolean; error?: string }>(
+    "saveCatalogConfig",
+    authPayload({ config })
+  );
+  if (!res.ok) throw new Error(res.error || "Catalog config save failed");
+  return res;
 }
 
 export interface UploadImageOptions {
@@ -169,15 +206,11 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-// Uploads an image file to the shop owner's Google Drive via Apps Script and
-// returns a public URL suitable for <img src>. Supports both positional
-// args (productId, file, category) and an options object payload.
 export async function adminUploadImage(
   productIdOrOpts: string | UploadImageOptions,
   fileObj?: File,
   categoryParam?: string,
 ): Promise<string> {
-  const password = requireAuth();
   let productId: string;
   let category: string;
   let filename: string;
@@ -208,14 +241,16 @@ export async function adminUploadImage(
     dataBase64 = await fileToBase64(fileObj);
   }
 
-  const res = await apiPost<{ ok: boolean; url?: string; error?: string }>("uploadImage", {
-    password,
-    productId,
-    category,
-    filename,
-    mimeType,
-    dataBase64,
-  });
+  const res = await apiPost<{ ok: boolean; url?: string; error?: string }>(
+    "uploadImage",
+    authPayload({
+      productId,
+      category,
+      filename,
+      mimeType,
+      dataBase64,
+    })
+  );
 
   if (!res.ok || !res.url) throw new Error(res.error || "Upload failed");
   return res.url;
@@ -226,26 +261,27 @@ export async function adminUpdateProductPrice(
   variantId: string,
   newPrice: number
 ): Promise<void> {
-  const password = requireAuth();
-  const res = await apiPost<{ ok: boolean; error?: string }>("updateProductPrice", {
-    password,
-    productId,
-    variantId,
-    newPrice,
-  });
+  const res = await apiPost<{ ok: boolean; error?: string }>(
+    "updateProductPrice",
+    authPayload({ productId, variantId, newPrice })
+  );
   if (!res.ok) throw new Error(res.error || "Failed to update price");
 }
 
 export async function adminFetchUsers(): Promise<Array<{ userId: string; email: string; name: string; phone: string; role: UserRole; createdAt: string }>> {
-  const password = requireAuth();
-  const res = await apiPost<{ ok: boolean; users?: Array<{ userId: string; email: string; name: string; phone: string; role: UserRole; createdAt: string }>; error?: string }>("getUsers", { password });
+  const res = await apiPost<{ ok: boolean; users?: Array<{ userId: string; email: string; name: string; phone: string; role: UserRole; createdAt: string }>; error?: string }>(
+    "getUsers",
+    authPayload()
+  );
   if (!res.ok) throw new Error(res.error || "Failed to load users");
   return res.users || [];
 }
 
 export async function adminUpdateUserRole(userId: string, role: UserRole): Promise<void> {
-  const password = requireAuth();
-  const res = await apiPost<{ ok: boolean; error?: string }>("updateUserRole", { password, userId, role });
+  const res = await apiPost<{ ok: boolean; error?: string }>(
+    "updateUserRole",
+    authPayload({ userId, role })
+  );
   if (!res.ok) throw new Error(res.error || "Failed to update user role");
 }
 
@@ -257,7 +293,14 @@ export async function adminCheckEmailHealth(): Promise<{
   testEmailSent: boolean;
   error?: string;
 }> {
-  const password = requireAuth();
-  return await apiPost("checkEmailHealth", { password });
+  return await apiPost("checkEmailHealth", authPayload());
 }
 
+export async function adminFetchAuditLogs(): Promise<Array<{ timestamp: string; actor: string; action: string; details: string }>> {
+  const res = await apiPost<{ ok: boolean; logs?: Array<{ timestamp: string; actor: string; action: string; details: string }>; error?: string }>(
+    "getAuditLogs",
+    authPayload()
+  );
+  if (!res.ok) throw new Error(res.error || "Failed to load audit logs");
+  return res.logs || [];
+}

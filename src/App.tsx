@@ -14,7 +14,9 @@ import ScrollToTop from "./components/ScrollToTop.tsx";
 import AnalyticsTracker from "./components/AnalyticsTracker.tsx";
 import MobileTabBar from "./components/MobileTabBar.tsx";
 import WhatsAppButton from "./components/WhatsAppButton.tsx";
-import Chatbot from "./components/Chatbot.tsx";
+import ErrorBoundary from "./components/ErrorBoundary.tsx";
+
+const Chatbot = lazy(() => import("./components/Chatbot.tsx"));
 
 const Checkout = lazy(() => import("./pages/Checkout.tsx"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail.tsx"));
@@ -62,8 +64,9 @@ const App = () => (
                 <ScrollToTop />
                 <AnalyticsTracker />
                 <div className="pb-14 md:pb-0">
-                  <Suspense fallback={<RouteFallback />}>
-                    <Routes>
+                  <ErrorBoundary>
+                    <Suspense fallback={<RouteFallback />}>
+                      <Routes>
                       {/* Public Customer Routes */}
                       <Route path="/" element={<Index />} />
                       <Route path="/checkout" element={<Checkout />} />
@@ -166,12 +169,15 @@ const App = () => (
                       </Route>
                       <Route path="*" element={<NotFound />} />
                     </Routes>
-                  </Suspense>
+                    </Suspense>
+                  </ErrorBoundary>
                 </div>
                 <MobileTabBar />
               </BrowserRouter>
               {/* <WhatsAppButton /> */}
-              <Chatbot />
+              <Suspense fallback={null}>
+                <Chatbot />
+              </Suspense>
             </CartProvider>
           </InventoryProvider>
         </WishlistProvider>

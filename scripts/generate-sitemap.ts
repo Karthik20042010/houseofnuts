@@ -1,7 +1,7 @@
 // Runs before `vite dev` and `vite build` (predev/prebuild hooks); writes public/sitemap.xml.
-import { writeFileSync } from "fs";
+import { writeFileSync, existsSync, readFileSync } from "fs";
 import { resolve } from "path";
-import { products, categories } from "../src/data/products";
+import { products as defaultProducts, categories as defaultCategories } from "../src/data/products";
 
 const BASE_URL = "https://houseofnuts.store";
 
@@ -32,15 +32,72 @@ const staticEntries: SitemapEntry[] = [
   { path: "/terms", changefreq: "yearly", priority: "0.3" },
 ];
 
-const categoryEntries: SitemapEntry[] = categories
-  .filter((c) => !EXCLUDED_CATEGORIES.has(c.id))
-  .map((c) => ({ path: `/category/${c.id}`, changefreq: "weekly", priority: "0.8" }));
+function getApiUrl(): string | null {
+  if (process.env.VITE_APPS_SCRIPT_URL) {
+    return process.env.VITE_APPS_SCRIPT_URL.trim();
+  }
+  const envPath = resolve("./.env");
+  if (existsSync(envPath)) {
+    try {
+      const envText = readFileSync(envPath, "utf-8");
+      const match = envText.match(/VITE_APPS_SCRIPT_URL=(.+)/);
+      if (match && match[1]) {
+        return match[1].trim().replace(/^["']|["']$/g, "");
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return null;
+}
 
-const productEntries: SitemapEntry[] = products
-  .filter((p) => !EXCLUDED_CATEGORIES.has(p.category))
-  .map((p) => ({ path: `/product/${p.id}`, changefreq: "weekly", priority: "0.7" }));
+async function fetchDynamicProductsAndCategories(): Promise<{
+  products: { id: string; category?: string }[];
+  categories: { id: string }[];
+}> {
+  const apiUrl = getApiUrl();
+  if (!apiUrl) {
+    return { products: defaultProducts, categories: defaultCategories };
+  }
 
-const entries: SitemapEntry[] = [...staticEntries, ...categoryEntries, ...productEntries];
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+    const url = new URL(apiUrl);
+    url.searchParams.set("action", "getProducts");
+
+    const res = await fetch(url.toString(), {
+      signal: controller.signal,
+      redirect: "follow",
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = (await res.json()) as { ok?: boolean; products?: any[] };
+      if (data?.ok && Array.isArray(data.products) && data.products.length > 0) {
+        const prodMap = new Map<string, { id: string; category?: string }>();
+        for (const p of defaultProducts) {
+          if (p?.id) prodMap.set(p.id, { id: p.id, category: p.category });
+        }
+        for (const p of data.products) {
+          if (p?.id && p?.name) {
+            prodMap.set(p.id, { id: p.id, category: p.category });
+          }
+        }
+        console.log(`[sitemap] Fetched ${data.products.length} live products from backend`);
+        return {
+          products: Array.from(prodMap.values()),
+          categories: defaultCategories,
+        };
+      }
+    }
+  } catch (err: any) {
+    console.log(`[sitemap] Could not fetch live products (${err?.message || "timeout"}), using default catalog.`);
+  }
+
+  return { products: defaultProducts, categories: defaultCategories };
+}
 
 function generateSitemap(list: SitemapEntry[]) {
   const urls = list.map((e) =>
@@ -63,5 +120,24 @@ function generateSitemap(list: SitemapEntry[]) {
   ].join("\n");
 }
 
-writeFileSync(resolve("public/sitemap.xml"), generateSitemap(entries));
-console.log(`sitemap.xml written (${entries.length} entries)`);
+async function main() {
+  const { products, categories } = await fetchDynamicProductsAndCategories();
+
+  const categoryEntries: SitemapEntry[] = categories
+    .filter((c) => !EXCLUDED_CATEGORIES.has(c.id))
+    .map((c) => ({ path: `/category/${c.id}`, changefreq: "weekly", priority: "0.8" }));
+
+  const productEntries: SitemapEntry[] = products
+    .filter((p) => p.category ? !EXCLUDED_CATEGORIES.has(p.category) : true)
+    .map((p) => ({ path: `/product/${p.id}`, changefreq: "weekly", priority: "0.7" }));
+
+  const entries: SitemapEntry[] = [...staticEntries, ...categoryEntries, ...productEntries];
+
+  writeFileSync(resolve("public/sitemap.xml"), generateSitemap(entries));
+  console.log(`sitemap.xml written (${entries.length} entries)`);
+}
+
+main().catch((err) => {
+  console.error("Failed to generate sitemap:", err);
+  process.exit(1);
+});

@@ -90,12 +90,30 @@ let isFetchingRemote = false;
  * Do not show (or re-publish) two cards for the same SKU or the same sellable
  * item. Later rows win: Sheets appends the most recently saved record last.
  */
+/**
+ * De-duplicates products strictly by immutable product ID.
+ * Distinct products with their own unique IDs and SKUs are never heuristically merged.
+ */
 export function dedupeCatalogProducts(products: Product[]): Product[] {
   const byId = new Map<string, Product>();
   for (const product of products) {
     if (!product?.id || !product?.name || !Array.isArray(product.variants) || product.variants.length === 0) continue;
+
+    // Filter duplicate variants within the same product by SKU
+    const seenVariantIds = new Set<string>();
+    const uniqueVariants = product.variants.filter((v) => {
+      if (!v?.id || seenVariantIds.has(v.id)) return false;
+      seenVariantIds.add(v.id);
+      return true;
+    });
+    if (uniqueVariants.length === 0) continue;
+
     if (byId.has(product.id)) byId.delete(product.id);
-    byId.set(product.id, product);
+    byId.set(product.id, {
+      ...product,
+      variants: uniqueVariants,
+      status: product.status || "active",
+    });
   }
 
   const bySellableIdentity = new Map<string, Product>();
@@ -106,6 +124,28 @@ export function dedupeCatalogProducts(products: Product[]): Product[] {
     bySellableIdentity.set(identity, product);
   }
   return Array.from(bySellableIdentity.values());
+}
+
+/**
+ * Returns potential duplicates (products sharing display names under different IDs)
+ * so staff can review, merge or archive them intentionally.
+ */
+export function findPotentialDuplicates(products: Product[]): Array<{ original: Product; duplicate: Product; reason: string }> {
+  const potential: Array<{ original: Product; duplicate: Product; reason: string }> = [];
+  const nameMap = new Map<string, Product>();
+  for (const p of products) {
+    const key = p.name.trim().toLowerCase();
+    if (nameMap.has(key)) {
+      potential.push({
+        original: nameMap.get(key)!,
+        duplicate: p,
+        reason: `Shared product name "${p.name}" with distinct IDs (${nameMap.get(key)!.id} vs ${p.id})`,
+      });
+    } else {
+      nameMap.set(key, p);
+    }
+  }
+  return potential;
 }
 
 export async function fetchRemoteCatalogConfig(): Promise<boolean> {
@@ -273,7 +313,15 @@ export function syncCatalogConfigToRemote() {
       imageOverrides: JSON.parse(localStorage.getItem("hon-product-image-overrides-v1") || "{}"),
       galleryOverrides: JSON.parse(localStorage.getItem("hon-product-gallery-overrides-v1") || "{}"),
     };
-    apiPost("saveCatalogConfig", { config }).catch((err) => {
+    const rawSession = sessionStorage.getItem("hon-admin-session");
+    let token = "";
+    if (rawSession) {
+      try {
+        const parsed = JSON.parse(rawSession);
+        token = parsed.token || parsed.password || "";
+      } catch {}
+    }
+    apiPost("saveCatalogConfig", { token, sessionToken: token, password: token, config }).catch((err) => {
       console.debug("Remote catalog config save using local cache fallback:", err);
     });
   } catch {

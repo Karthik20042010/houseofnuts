@@ -110,6 +110,17 @@ const StoreInfo = () => {
       heading.toLowerCase().includes(searchQuery.toLowerCase()) ||
       body.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const faqJsonLd = pathname === "/faq"
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": page.sections.map(([question, answer]) => ({
+          "@type": "Question",
+          "name": question,
+          "acceptedAnswer": { "@type": "Answer", "text": answer },
+        })),
+      }
+    : undefined;
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,6 +129,7 @@ const StoreInfo = () => {
         description={`${page.intro} — House of Nuts Proddatur, Gandhi Road, Proddatur, Andhra Pradesh.`}
         keywords={`house of nuts proddatur, house of nuts contact, dry fruits store proddatur, ${pathname.replace('/', '')} house of nuts`}
         canonicalUrl={pathname}
+        jsonLd={faqJsonLd}
       />
       <Header />
       <CartDrawer />

@@ -7,6 +7,7 @@ export interface OrderItem {
   productId: string;
   price: number;
   quantity: number;
+  image?: string;
 }
 
 export interface Order {
@@ -99,4 +100,20 @@ export async function submitToGoogleSheet(order: Order): Promise<void> {
 export async function sendOwnerEmailNotification(order: Order): Promise<void> {
   // Email is now sent from Apps Script on placeOrder. Nothing to do here.
   void order;
+}
+
+export async function createPaymentSessionApi(order: Order): Promise<{ ok: boolean; paymentSessionId?: string; error?: string }> {
+  try {
+    return await apiPost<{ ok: boolean; paymentSessionId?: string; error?: string }>("createPaymentSession", { order });
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+export async function verifyPaymentApi(orderId: string): Promise<{ ok: boolean; paymentStatus?: string; error?: string }> {
+  try {
+    return await apiPost<{ ok: boolean; paymentStatus?: string; error?: string }>("verifyPayment", { orderId });
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
 }

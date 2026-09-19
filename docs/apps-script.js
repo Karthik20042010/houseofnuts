@@ -106,30 +106,38 @@ function doPost(e) {
 
     // Public actions
     if (action === "placeOrder") return json(placeOrder(body.order));
-    if (action === "adminLogin") return json({ ok: checkPassword(body.password) });
+    if (action === "adminLogin") return json(handleAdminLogin(body));
+    if (action === "createPaymentSession") return json(createPaymentSession(body));
+    if (action === "verifyPayment") return json(verifyPayment(body));
     if (action === "getProducts") return json({ ok: true, products: readProducts() });
     if (action === "getPrices") return json({ ok: true, prices: readPricesMap() });
     if (action === "getInventory") return json({ ok: true, stock: getInventoryMap() });
     if (action === "getProductSpecs") return json({ ok: true, specs: readProductSpecsMap() });
     if (action === "getCatalogConfig") return json(getCatalogConfig());
+    if (action === "getReviews") return json({ ok: true, reviews: readApprovedReviews(body.productId) });
+    if (action === "submitReview") return json(submitCustomerReview(body));
     if (action === "registerGoogleUser") return json(registerGoogleUser(body));
     if (action === "submitMessage") return json(addMessage(body));
     if (action === "wholesaleEnquiry") return json(addMessage({ type: "wholesale", name: body.name, phone: body.phone, email: body.email, subject: (body.business || "") + " · " + (body.city || ""), message: (body.interest || "") + " / " + (body.quantity || "") + " — " + (body.message || "") }));
+    if (action === "healthCheck") return json(runHealthCheck());
+    if (action === "logIncident") return json(logIncident(body));
 
     // Protected actions requiring Admin / Staff / Developer Auth
-    if (action === "saveCatalogConfig") return json(saveCatalogConfig(body));
-    if (action === "saveCatalog") { requireAuth(body.password); return json(saveCatalog(body)); }
-    if (action === "getOrders") { requireAuth(body.password); return json({ ok: true, orders: readOrders() }); }
-    if (action === "updateOrder") { requireAuth(body.password); return json(updateOrder(body)); }
-    if (action === "updateInventory") { requireAuth(body.password); return json(setInventory(body.items || [])); }
-    if (action === "updatePrices") { requireAuth(body.password); return json(updatePrices(body.items || [])); }
-    if (action === "updateProductPrice") { requireAuth(body.password); return json(setSinglePrice(body.variantId, body.price)); }
-    if (action === "getUsers") { requireAuth(body.password); return json({ ok: true, users: readUsers() }); }
-    if (action === "updateUserRole") { requireAuth(body.password); return json(updateUserRole(body.userId, body.role)); }
-    if (action === "uploadImage") { requireAuth(body.password); return json(uploadImage(body)); }
-    if (action === "getMessages") { requireAuth(body.password); return json({ ok: true, messages: readMessages() }); }
-    if (action === "updateMessage") { requireAuth(body.password); return json(updateMessage(body)); }
-    if (action === "checkEmailHealth") { requireAuth(body.password); return json(checkEmailHealth()); }
+    if (action === "saveCatalogConfig") { requireAuth(body, ["admin", "developer"]); return json(saveCatalogConfig(body)); }
+    if (action === "saveCatalog") { requireAuth(body, ["admin"]); return json(saveCatalog(body)); }
+    if (action === "getOrders") { requireAuth(body, ["admin", "staff"]); return json({ ok: true, orders: readOrders() }); }
+    if (action === "updateOrder") { requireAuth(body, ["admin", "staff"]); return json(updateOrder(body)); }
+    if (action === "updateInventory") { requireAuth(body, ["admin", "staff"]); return json(setInventory(body.items || [])); }
+    if (action === "updatePrices") { requireAuth(body, ["admin"]); return json(updatePrices(body.items || [])); }
+    if (action === "updateProductPrice") { requireAuth(body, ["admin"]); return json(setSinglePrice(body.variantId, body.price)); }
+    if (action === "getUsers") { requireAuth(body, ["admin"]); return json({ ok: true, users: readUsers() }); }
+    if (action === "updateUserRole") { requireAuth(body, ["admin"]); return json(updateUserRole(body.userId, body.role)); }
+    if (action === "uploadImage") { requireAuth(body, ["admin", "developer"]); return json(uploadImage(body)); }
+    if (action === "getMessages") { requireAuth(body, ["admin", "staff"]); return json({ ok: true, messages: readMessages() }); }
+    if (action === "updateMessage") { requireAuth(body, ["admin", "staff"]); return json(updateMessage(body)); }
+    if (action === "checkEmailHealth") { requireAuth(body, ["admin", "developer"]); return json(checkEmailHealth()); }
+    if (action === "moderateReview") { requireAuth(body, ["admin"]); return json(moderateReview(body)); }
+    if (action === "getAuditLogs") { requireAuth(body, ["admin", "developer"]); return json(getAuditLogs()); }
 
     return json({ ok: false, error: "unknown action: " + action });
   } catch (err) {
@@ -236,15 +244,97 @@ function saveCatalogConfig(body) {
   return { ok: true };
 }
 
+function getSessionSecret() {
+  var props = PropertiesService.getScriptProperties();
+  var secret = props.getProperty("HON_SESSION_SECRET");
+  if (!secret) {
+    secret = "HON_SEC_" + Utilities.getUuid() + "_" + Date.now();
+    try { props.setProperty("HON_SESSION_SECRET", secret); } catch (e) {}
+  }
+  return secret;
+}
+
+function createSessionToken(role, userId) {
+  var secret = getSessionSecret();
+  var exp = Date.now() + (8 * 60 * 60 * 1000); // 8 hours valid
+  var payload = JSON.stringify({ userId: userId || "admin", role: role || "admin", exp: exp });
+  var payloadB64 = Utilities.base64Encode(payload);
+  var sigBytes = Utilities.computeHmacSha256Signature(payloadB64, secret);
+  var sigB64 = Utilities.base64Encode(sigBytes);
+  var token = payloadB64 + "." + sigB64;
+  return { token: token, role: role, expiresAt: exp };
+}
+
+function verifySessionToken(token, allowedRoles) {
+  if (!token || typeof token !== "string") return null;
+  var parts = token.split(".");
+  if (parts.length !== 2) return null;
+  var payloadB64 = parts[0];
+  var sigB64 = parts[1];
+  var secret = getSessionSecret();
+  var expectedSigBytes = Utilities.computeHmacSha256Signature(payloadB64, secret);
+  var expectedSigB64 = Utilities.base64Encode(expectedSigBytes);
+  if (sigB64 !== expectedSigB64) return null;
+
+  try {
+    var payloadStr = Utilities.newBlob(Utilities.base64Decode(payloadB64)).getDataAsString();
+    var session = JSON.parse(payloadStr);
+    if (session.exp && Date.now() > session.exp) return null;
+    if (allowedRoles && allowedRoles.length > 0) {
+      if (allowedRoles.indexOf(session.role) === -1) {
+        throw new Error("Insufficient role privileges for " + session.role);
+      }
+    }
+    return session;
+  } catch (e) {
+    if (String(e).indexOf("Insufficient role privileges") !== -1) throw e;
+    return null;
+  }
+}
+
 function checkPassword(pw) {
   var cfg = getConfig();
-  if (!cfg.adminPassword || String(cfg.adminPassword).trim() === "") return true;
-  if (pw === "hon_setup_bypass_2026") return true;
+  if (!cfg.adminPassword || String(cfg.adminPassword).trim() === "") return false;
   return !!pw && String(pw).trim() === String(cfg.adminPassword).trim();
 }
 
-function requireAuth(pw) {
-  if (!checkPassword(pw)) throw new Error("Unauthorized access. Invalid admin password.");
+function handleAdminLogin(body) {
+  var pw = body && body.password;
+  if (!pw || !checkPassword(pw)) {
+    return { ok: false, error: "Invalid administrator password." };
+  }
+  var role = (body && body.role) || "admin";
+  var session = createSessionToken(role, "admin");
+  logAuditEvent("ADMIN_LOGIN", "Successful login with role " + role, "admin");
+  return {
+    ok: true,
+    sessionToken: session.token,
+    role: session.role,
+    expiresAt: session.expiresAt
+  };
+}
+
+function requireAuth(authInput, allowedRoles) {
+  var token = null;
+  var pw = null;
+  if (typeof authInput === "string") {
+    token = authInput;
+    pw = authInput;
+  } else if (authInput && typeof authInput === "object") {
+    token = authInput.sessionToken || authInput.token || authInput.password;
+    pw = authInput.password;
+  }
+
+  if (token && token.indexOf(".") !== -1) {
+    var session = verifySessionToken(token, allowedRoles);
+    if (session) return session;
+  }
+
+  if (pw && checkPassword(pw)) {
+    return { role: "admin", userId: "admin" };
+  }
+
+  throw new Error("Unauthorized access. Invalid or expired session token.");
 }
 
 // -------- Sheet 2: Users Tab --------
@@ -296,16 +386,15 @@ function registerGoogleUser(body) {
   var verifiedName = "";
   var verifiedPicture = "";
 
-  // 1. If raw Google ID Token is supplied, verify token signature & issuer via Google Token Info API
-  if (body.idToken) {
+  if (body && body.idToken) {
     try {
       var tokenUrl = "https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(body.idToken);
       var resp = UrlFetchApp.fetch(tokenUrl, { muteHttpExceptions: true });
       if (resp.getResponseCode() === 200) {
         var tokenInfo = JSON.parse(resp.getContentText());
-        if (tokenInfo && tokenInfo.email && tokenInfo.email_verified === "true") {
-          verifiedEmail = tokenInfo.email;
-          verifiedName = tokenInfo.name || tokenInfo.email.split("@")[0];
+        if (tokenInfo && tokenInfo.email && (tokenInfo.email_verified === "true" || tokenInfo.email_verified === true)) {
+          verifiedEmail = String(tokenInfo.email).trim().toLowerCase();
+          verifiedName = String(tokenInfo.name || tokenInfo.email.split("@")[0]).trim();
           verifiedPicture = tokenInfo.picture || "";
         }
       }
@@ -314,53 +403,38 @@ function registerGoogleUser(body) {
     }
   }
 
-  // Fallback to validated body email if token info endpoint was not reachable in local dev
   if (!verifiedEmail) {
-    if (!body.email || !isValidEmail(body.email)) {
-      return { ok: false, error: "Invalid or missing verified email" };
-    }
-    verifiedEmail = String(body.email).trim().toLowerCase();
-    verifiedName = String(body.name || verifiedEmail.split("@")[0]).trim();
+    return { ok: false, error: "Valid, verified Google OAuth ID token is required." };
   }
 
   var sh = ensureUsersSheet();
   var values = sh.getDataRange().getValues();
   var existingRow = -1;
   for (var i = 1; i < values.length; i++) {
-    if (String(values[i][1]).toLowerCase() === verifiedEmail.toLowerCase()) {
+    if (String(values[i][1]).toLowerCase().trim() === verifiedEmail) {
       existingRow = i + 1;
       break;
     }
   }
 
-  var deriveDefaultServerRole = function (emailStr) {
-    var lower = String(emailStr || "").toLowerCase().trim();
-    var cfg = getConfig();
-    if (cfg.ownerEmail && lower === String(cfg.ownerEmail).toLowerCase().trim()) return "admin";
-    if (lower.indexOf("developer") !== -1 || lower.indexOf("j04") !== -1) return "developer";
-    if (lower.indexOf("admin") !== -1 || lower.indexOf("houseofnutsproddatur") !== -1 || lower.indexOf("houseofnuts.proddatur") !== -1 || lower.indexOf("houseofnuts") !== -1) return "admin";
-    if (lower.indexOf("staff") !== -1) return "staff";
-    return "user";
-  };
+  var cfg = getConfig();
+  var isOwner = cfg.ownerEmail && verifiedEmail === String(cfg.ownerEmail).toLowerCase().trim();
+  var adminEmails = (cfg.adminEmails || "").toLowerCase().split(",").map(function(e){ return e.trim(); }).filter(Boolean);
+  var isAllowlistedAdmin = adminEmails.indexOf(verifiedEmail) !== -1;
 
   if (existingRow > 0) {
     if (verifiedName) sh.getRange(existingRow, 3).setValue(verifiedName);
-    var storedRole = String(values[existingRow - 1][4] || "").trim().toLowerCase();
-    var validRoles = ["admin", "developer", "staff", "user"];
-    var defaultRole = deriveDefaultServerRole(verifiedEmail);
-    var finalRole = (storedRole && validRoles.indexOf(storedRole) !== -1) ? storedRole : defaultRole;
-
-    // Ensure default role is saved into sheet column 5 if it was blank
-    if (!storedRole) {
+    var storedRole = String(values[existingRow - 1][4] || "user").trim().toLowerCase();
+    var finalRole = (isOwner || isAllowlistedAdmin) ? "admin" : storedRole;
+    if (finalRole !== storedRole) {
       sh.getRange(existingRow, 5).setValue(finalRole);
     }
-
     return { ok: true, userId: values[existingRow - 1][0], email: verifiedEmail, name: verifiedName, role: finalRole, updated: true };
   } else {
     var uId = body.userId || ("usr_" + Math.random().toString(36).substring(2, 9));
-    var initialRole = deriveDefaultServerRole(verifiedEmail);
-    sh.appendRow([uId, verifiedEmail, verifiedName, body.phone || "", initialRole, "google_oauth_verified", new Date().toISOString()]);
-    return { ok: true, userId: uId, email: verifiedEmail, name: verifiedName, role: initialRole, created: true };
+    var assignedRole = (isOwner || isAllowlistedAdmin) ? "admin" : "user";
+    sh.appendRow([uId, verifiedEmail, verifiedName, body.phone || "", assignedRole, "google_oauth_verified", new Date().toISOString()]);
+    return { ok: true, userId: uId, email: verifiedEmail, name: verifiedName, role: assignedRole, created: true };
   }
 }
 
@@ -370,20 +444,14 @@ function ensureProductsSheet() {
   var sh = SpreadsheetApp.getActive().getSheetByName("Products");
   if (!sh) {
     sh = SpreadsheetApp.getActive().insertSheet("Products");
-    sh.appendRow(["productId", "name", "category", "subcategory", "localName", "description", "image", "imagesJson", "badge"]);
-  } else if (sh.getLastColumn() < 9) {
-    sh.getRange(1, 1, 1, 9).setValues([["productId", "name", "category", "subcategory", "localName", "description", "image", "imagesJson", "badge"]]);
-    // Legacy six-column rows used description,image,badge. Move them into
-    // the expanded schema before future writes.
-    var legacy = sh.getDataRange().getValues();
-    for (var i = 1; i < legacy.length; i++) {
-      sh.getRange(i + 1, 6, 1, 4).setValues([[legacy[i][3] || "", legacy[i][4] || "", "", legacy[i][5] || ""]]);
-    }
+    sh.appendRow(["productId", "name", "category", "subcategory", "localName", "description", "image", "imagesJson", "badge", "status"]);
+  } else if (sh.getLastColumn() < 10) {
+    sh.getRange(1, 10).setValue("status");
   }
   return sh;
 }
 
-function readProducts() {
+function readProducts(includeArchived) {
   var sh = ensureProductsSheet();
   var values = sh.getDataRange().getValues();
   var priceMap = readPricesMap();
@@ -393,6 +461,10 @@ function readProducts() {
     var r = values[i];
     var pId = String(r[0]);
     if (!pId) continue;
+    var status = String(r[9] || "active").toLowerCase().trim();
+    if (!includeArchived && (status === "archived" || status === "draft")) {
+      continue;
+    }
     var variants = priceMap[pId] || [];
 
     out.push({
@@ -405,6 +477,7 @@ function readProducts() {
       image: String(r[6] || ""),
       images: safeJsonArray(r[7]),
       badge: String(r[8] || ""),
+      status: status,
       variants: variants
     });
   }
@@ -418,36 +491,85 @@ function safeJsonArray(value) {
 // Rebuild the catalog master from one validated snapshot. Products and prices
 // change together, which prevents shop/inventory/image records drifting apart.
 function saveCatalog(body) {
-  var products = dedupeCatalogProducts((body && body.products) || []);
-  if (!Array.isArray(products)) return { ok: false, error: "products must be an array" };
-  var productRows = [];
-  var priceRows = [];
-  products.forEach(function (p) {
-    if (!p || !p.id || !p.name || !Array.isArray(p.variants) || p.variants.length === 0) return;
-    productRows.push([String(p.id), String(p.name), String(p.category || "nuts"), String(p.subcategory || ""), String(p.localName || ""), String(p.description || ""), String(p.image || ""), JSON.stringify(Array.isArray(p.images) ? p.images.slice(0, 10) : []), String(p.badge || "")]);
-    p.variants.forEach(function (v) {
-      if (!v || !v.id) return;
-      priceRows.push([String(v.id), String(p.id), String(v.size || ""), Number(v.price) || 0, Number(v.mrp) || 0]);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    var rawProducts = (body && body.products) || [];
+    if (!Array.isArray(rawProducts)) return { ok: false, error: "products must be an array" };
+
+    // Unique SKU / Variant ID & Product ID validation
+    var seenVariantIds = {};
+    var seenProductIds = {};
+    var duplicateSkus = [];
+    var duplicateProductIds = [];
+
+    rawProducts.forEach(function (p) {
+      if (!p || !p.id) return;
+      if (seenProductIds[p.id]) duplicateProductIds.push(p.id);
+      seenProductIds[p.id] = true;
+
+      (p.variants || []).forEach(function (v) {
+        if (!v || !v.id) return;
+        if (seenVariantIds[v.id]) duplicateSkus.push(v.id);
+        seenVariantIds[v.id] = true;
+      });
     });
-  });
-  if (productRows.length === 0) return { ok: false, error: "catalog must contain at least one product" };
 
-  var prodSh = ensureProductsSheet();
-  var priceSh = ensurePricesSheet();
-  if (prodSh.getLastRow() > 1) prodSh.getRange(2, 1, prodSh.getLastRow() - 1, prodSh.getLastColumn()).clearContent();
-  if (priceSh.getLastRow() > 1) priceSh.getRange(2, 1, priceSh.getLastRow() - 1, priceSh.getLastColumn()).clearContent();
-  prodSh.getRange(2, 1, productRows.length, 9).setValues(productRows);
-  if (priceRows.length) priceSh.getRange(2, 1, priceRows.length, 5).setValues(priceRows);
+    if (duplicateSkus.length > 0) {
+      return { ok: false, error: "Duplicate SKU / variant IDs rejected: " + duplicateSkus.join(", ") + ". Each variant must have an immutable unique SKU." };
+    }
+    if (duplicateProductIds.length > 0) {
+      return { ok: false, error: "Duplicate product IDs rejected: " + duplicateProductIds.join(", ") };
+    }
 
-  var meta = (body && body.metadata) || {};
-  saveCatalogConfig({ config: {
-    catalogVersion: 2,
-    productOrder: Array.isArray(meta.productOrder) ? meta.productOrder : [],
-    categoryOrder: Array.isArray(meta.categoryOrder) ? meta.categoryOrder : [],
-    customCategories: Array.isArray(meta.categories) ? meta.categories : [],
-    customSubcategories: Array.isArray(meta.subcategories) ? meta.subcategories : []
-  }});
-  return { ok: true, productCount: productRows.length, variantCount: priceRows.length };
+    var products = dedupeCatalogProducts(rawProducts);
+    var productRows = [];
+    var priceRows = [];
+    products.forEach(function (p) {
+      if (!p || !p.id || !p.name || !Array.isArray(p.variants) || p.variants.length === 0) return;
+      productRows.push([
+        String(p.id),
+        String(p.name),
+        String(p.category || "nuts"),
+        String(p.subcategory || ""),
+        String(p.localName || ""),
+        String(p.description || ""),
+        String(p.image || ""),
+        JSON.stringify(Array.isArray(p.images) ? p.images.slice(0, 10) : []),
+        String(p.badge || ""),
+        String(p.status || "active")
+      ]);
+      p.variants.forEach(function (v) {
+        if (!v || !v.id) return;
+        priceRows.push([String(v.id), String(p.id), String(v.size || ""), Number(v.price) || 0, Number(v.mrp) || 0]);
+      });
+    });
+    if (productRows.length === 0) return { ok: false, error: "catalog must contain at least one product" };
+
+    var prodSh = ensureProductsSheet();
+    var priceSh = ensurePricesSheet();
+    if (prodSh.getLastRow() > 1) prodSh.getRange(2, 1, prodSh.getLastRow() - 1, prodSh.getLastColumn()).clearContent();
+    if (priceSh.getLastRow() > 1) priceSh.getRange(2, 1, priceSh.getLastRow() - 1, priceSh.getLastColumn()).clearContent();
+    prodSh.getRange(2, 1, productRows.length, 10).setValues(productRows);
+    if (priceRows.length) priceSh.getRange(2, 1, priceRows.length, 5).setValues(priceRows);
+
+    var meta = (body && body.metadata) || {};
+    var revision = Date.now();
+    saveCatalogConfig({ config: {
+      catalogVersion: 2,
+      catalogRevision: revision,
+      productOrder: Array.isArray(meta.productOrder) ? meta.productOrder : [],
+      categoryOrder: Array.isArray(meta.categoryOrder) ? meta.categoryOrder : [],
+      customCategories: Array.isArray(meta.categories) ? meta.categories : [],
+      customSubcategories: Array.isArray(meta.subcategories) ? meta.subcategories : []
+    }});
+
+    logAuditEvent("CATALOG_PUBLISH", "Catalog published with " + productRows.length + " products, " + priceRows.length + " variants. Revision: " + revision, body.actor || "admin");
+
+    return { ok: true, productCount: productRows.length, variantCount: priceRows.length, catalogRevision: revision };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // Product ID catches exact duplicates; the second key catches accidental
@@ -456,16 +578,11 @@ function saveCatalog(body) {
 function dedupeCatalogProducts(products) {
   var byId = {};
   (products || []).forEach(function (p) {
-    if (p && p.id && p.name && Array.isArray(p.variants) && p.variants.length) byId[String(p.id)] = p;
+    if (p && p.id && p.name && Array.isArray(p.variants) && p.variants.length) {
+      byId[String(p.id)] = p;
+    }
   });
-  var byIdentity = {};
-  Object.keys(byId).forEach(function (id) {
-    var p = byId[id];
-    var sizes = p.variants.map(function (v) { return String(v.size || "").trim().toLowerCase(); }).sort().join("|");
-    var key = [String(p.category || ""), String(p.name || "").trim().toLowerCase(), String(p.localName || "").trim().toLowerCase(), sizes].join("|");
-    byIdentity[key] = p;
-  });
-  return Object.keys(byIdentity).map(function (key) { return byIdentity[key]; });
+  return Object.keys(byId).map(function (k) { return byId[k]; });
 }
 
 // -------- Sheet 4: Prices Tab --------
@@ -1120,4 +1237,270 @@ function uploadImage(body) {
     subfolder: catName,
     usedFallback: usedFallback
   };
+}
+
+// -------- Audit Logging --------
+
+function ensureAuditLogsSheet() {
+  var sh = SpreadsheetApp.getActive().getSheetByName("AuditLogs");
+  if (!sh) {
+    sh = SpreadsheetApp.getActive().insertSheet("AuditLogs");
+    sh.appendRow(["timestamp", "actor", "action", "details"]);
+  }
+  return sh;
+}
+
+function logAuditEvent(action, details, actor) {
+  try {
+    var sh = ensureAuditLogsSheet();
+    sh.appendRow([new Date().toISOString(), actor || "system", action, details]);
+  } catch (e) {
+    Logger.log("Failed to log audit event: " + e);
+  }
+}
+
+function getAuditLogs() {
+  var sh = ensureAuditLogsSheet();
+  var values = sh.getDataRange().getValues();
+  if (values.length < 2) return { ok: true, logs: [] };
+  var logs = [];
+  for (var i = values.length - 1; i >= 1 && logs.length < 100; i--) {
+    logs.push({
+      timestamp: values[i][0],
+      actor: values[i][1],
+      action: values[i][2],
+      details: values[i][3]
+    });
+  }
+  return { ok: true, logs: logs };
+}
+
+// -------- Payment Gateway & Verification --------
+
+function createPaymentSession(body) {
+  var props = PropertiesService.getScriptProperties();
+  var cfg = getConfig();
+  var appId = props.getProperty("CASHFREE_APP_ID") || cfg.cashfreeAppId || "";
+  var secretKey = props.getProperty("CASHFREE_SECRET_KEY") || cfg.cashfreeSecretKey || "";
+  if (!appId || !secretKey) {
+    return { ok: false, error: "Payment gateway credentials not configured in Script Properties." };
+  }
+  var order = body && body.order;
+  if (!order || !order.id || !order.total) return { ok: false, error: "Invalid order data for payment" };
+
+  try {
+    var url = "https://api.cashfree.com/pg/orders";
+    var payload = {
+      order_id: String(order.id),
+      order_amount: Number(order.total),
+      order_currency: "INR",
+      customer_details: {
+        customer_id: "cust_" + String(order.phone || "user").replace(/[^a-zA-Z0-9]/g, "").slice(0, 16),
+        customer_phone: String(order.phone || "9999999999").replace(/[^0-9]/g, "").slice(-10),
+        customer_name: String(order.name || "Guest"),
+        customer_email: String(order.email || "order@houseofnuts.store")
+      },
+      order_meta: {
+        return_url: (cfg.siteUrl || "https://houseofnuts.store") + "/orders/" + order.id + "?cf_id={order_id}"
+      }
+    };
+    var resp = UrlFetchApp.fetch(url, {
+      method: "post",
+      contentType: "application/json",
+      headers: {
+        "x-client-id": appId,
+        "x-client-secret": secretKey,
+        "x-api-version": "2023-08-01"
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    var data = JSON.parse(resp.getContentText());
+    if (resp.getResponseCode() === 200 && data.payment_session_id) {
+      return { ok: true, paymentSessionId: data.payment_session_id, orderId: order.id };
+    } else {
+      return { ok: false, error: data.message || "Failed to create payment session" };
+    }
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+function verifyPayment(body) {
+  var props = PropertiesService.getScriptProperties();
+  var cfg = getConfig();
+  var appId = props.getProperty("CASHFREE_APP_ID") || cfg.cashfreeAppId || "";
+  var secretKey = props.getProperty("CASHFREE_SECRET_KEY") || cfg.cashfreeSecretKey || "";
+  if (!appId || !secretKey) {
+    return { ok: false, error: "Payment gateway credentials not configured in Script Properties." };
+  }
+  var orderId = body && body.orderId;
+  if (!orderId) return { ok: false, error: "Missing order ID" };
+
+  try {
+    var url = "https://api.cashfree.com/pg/orders/" + encodeURIComponent(orderId) + "/payments";
+    var resp = UrlFetchApp.fetch(url, {
+      method: "get",
+      headers: {
+        "x-client-id": appId,
+        "x-client-secret": secretKey,
+        "x-api-version": "2023-08-01"
+      },
+      muteHttpExceptions: true
+    });
+    var payments = JSON.parse(resp.getContentText());
+    if (Array.isArray(payments) && payments.some(function(p){ return p.payment_status === "SUCCESS"; })) {
+      updateOrderPaymentStatus(orderId, "paid");
+      logAuditEvent("PAYMENT_VERIFIED", "Cashfree payment verified for order " + orderId, "cashfree_gateway");
+      return { ok: true, paymentStatus: "paid" };
+    }
+    return { ok: false, paymentStatus: "pending", message: "Payment not completed or verified" };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+function updateOrderPaymentStatus(orderId, newStatus) {
+  var sh = ensureOrdersSheet();
+  var values = sh.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][1]) === String(orderId)) {
+      sh.getRange(i + 1, 11).setValue(newStatus);
+      if (newStatus === "paid") {
+        sh.getRange(i + 1, 10).setValue("confirmed");
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+// -------- Reviews Tab & Moderation --------
+
+function ensureReviewsSheet() {
+  var sh = SpreadsheetApp.getActive().getSheetByName("Reviews");
+  if (!sh) {
+    sh = SpreadsheetApp.getActive().insertSheet("Reviews");
+    sh.appendRow(["reviewId", "productId", "customerName", "rating", "text", "date", "status", "verifiedPurchase"]);
+  }
+  return sh;
+}
+
+function readApprovedReviews(productId) {
+  var sh = ensureReviewsSheet();
+  var values = sh.getDataRange().getValues();
+  if (values.length < 2) return [];
+  var out = [];
+  for (var i = 1; i < values.length; i++) {
+    var r = values[i];
+    if (!r[0]) continue;
+    var status = String(r[6] || "approved").toLowerCase().trim();
+    if (status !== "approved") continue;
+    var pId = String(r[1] || "");
+    if (!productId || pId === productId || pId === "_global") {
+      out.push({
+        id: String(r[0]),
+        productId: pId,
+        name: String(r[2] || ""),
+        rating: Number(r[3]) || 5,
+        text: String(r[4] || ""),
+        date: String(r[5] || ""),
+        verified: r[7] === true || String(r[7]).toLowerCase() === "true"
+      });
+    }
+  }
+  return out;
+}
+
+function submitCustomerReview(body) {
+  var rev = body && body.review;
+  if (!rev || !rev.productId || !rev.rating || !rev.text) {
+    return { ok: false, error: "Invalid review content" };
+  }
+  var sh = ensureReviewsSheet();
+  var rId = "rev_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6);
+  var rating = Math.min(5, Math.max(1, Math.round(Number(rev.rating) || 5)));
+  var verified = false;
+
+  if (rev.orderId) {
+    var ordSh = ensureOrdersSheet();
+    var ordValues = ordSh.getDataRange().getValues();
+    for (var i = 1; i < ordValues.length; i++) {
+      if (String(ordValues[i][1]).trim() === String(rev.orderId).trim()) {
+        var ordItems = String(ordValues[i][7] || "") + " " + String(ordValues[i][11] || "");
+        if (ordItems.indexOf(String(rev.productId)) !== -1 || ordItems.toLowerCase().indexOf(String(rev.productName || "").toLowerCase()) !== -1) {
+          verified = true;
+        }
+        break;
+      }
+    }
+  }
+
+  var status = verified ? "approved" : "pending";
+  sh.appendRow([
+    rId,
+    String(rev.productId),
+    String(rev.name || "Customer").slice(0, 60),
+    rating,
+    String(rev.text).slice(0, 1000),
+    new Date().toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }),
+    status,
+    verified
+  ]);
+  return { ok: true, reviewId: rId, status: status, verified: verified };
+}
+
+function moderateReview(body) {
+  var reviewId = body && body.reviewId;
+  var newStatus = String((body && body.status) || "").toLowerCase().trim();
+  if (!reviewId || (newStatus !== "approved" && newStatus !== "rejected")) {
+    return { ok: false, error: "Invalid review moderation parameters" };
+  }
+  var sh = ensureReviewsSheet();
+  var values = sh.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(reviewId)) {
+      sh.getRange(i + 1, 7).setValue(newStatus);
+      logAuditEvent("MODERATE_REVIEW", "Review " + reviewId + " status set to " + newStatus, body.actor || "admin");
+      return { ok: true, status: newStatus };
+    }
+  }
+  return { ok: false, error: "Review not found" };
+}
+
+
+// -------- Operational Monitoring & Health Check --------
+
+function runHealthCheck() {
+  try {
+    var ss = SpreadsheetApp.getActive();
+    var sheets = ["Products", "Prices", "Inventory", "Orders", "Users", "Config", "AuditLogs", "Reviews"];
+    var status = {};
+    sheets.forEach(function (name) {
+      var s = ss.getSheetByName(name);
+      status[name] = s ? { exists: true, rows: s.getLastRow() } : { exists: false, rows: 0 };
+    });
+    return {
+      ok: true,
+      timestamp: new Date().toISOString(),
+      service: "House of Nuts Apps Script Backend",
+      version: "2.1.0",
+      sheets: status,
+      healthy: Boolean(status.Products.exists && status.Prices.exists && status.Inventory.exists && status.Orders.exists)
+    };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+
+function logIncident(body) {
+  try {
+    var context = String((body && body.context) || "Client Error").slice(0, 100);
+    var details = String((body && body.details) || "").slice(0, 1000);
+    var actor = String((body && body.actor) || "storefront_visitor").slice(0, 100);
+    logAuditEvent("INCIDENT_" + context, details, actor);
+    return { ok: true, logged: true };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
 }

@@ -13,7 +13,9 @@ import DeliveryEstimate from "@/components/DeliveryEstimate";
 import { ArrowLeft, ShoppingBag, Star, Truck, Shield, Leaf, Heart, Share2, Zap, Check, Clock, Sparkles, ChevronLeft, ChevronRight, ShieldCheck, MapPin, Award, CheckCircle2 } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import ReviewsSection from "@/components/ReviewsSection";
-import { getAverageRating } from "@/lib/reviews";
+import { fetchServerReviews, getAverageRating } from "@/lib/reviews";
+import { useInventory } from "@/contexts/InventoryContext";
+import { isOutOfStock, isLowStock, stockOf, isInventoryUnavailable } from "@/lib/inventory";
 import { getProductImageSrc, getProductGallery } from "@/lib/productImages";
 import { getProductSpecification } from "@/lib/productDetails";
 import { fetchProductSpecsFromDB } from "@/lib/api";
@@ -38,6 +40,18 @@ const ProductDetail = () => {
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
 
   const product = products.find((p) => p.id === id);
+  const { stock, isOffline } = useInventory();
+  const [serverReviews, setServerReviews] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (product?.id) {
+      fetchServerReviews(product.id).then((revs) => {
+        if (Array.isArray(revs)) {
+          setServerReviews(revs.filter((r) => r.verified || r.status === "approved"));
+        }
+      });
+    }
+  }, [product?.id]);
 
   // Smooth auto scroll to top when item is opened & track recently viewed
   useEffect(() => {
@@ -62,6 +76,10 @@ const ProductDetail = () => {
 
   const isComingSoon = isCategoryComingSoon(product.category, auth);
   const variant = product.variants[selectedVariant];
+  const oos = isOutOfStock(stock, variant?.id || "");
+  const low = isLowStock(stock, variant?.id || "");
+  const remaining = stockOf(stock, variant?.id || "");
+  const invUnavailable = isInventoryUnavailable(stock);
   const relatedProducts = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
   const { avg: avgRating, count: reviewCount } = getAverageRating(product.id);
   const wishlisted = isInWishlist(product.id);
@@ -113,12 +131,12 @@ const ProductDetail = () => {
   };
 
   const handleAdd = () => {
-    if (isComingSoon) return;
+    if (isComingSoon || oos || !product || !variant) return;
     for (let i = 0; i < quantity; i++) addToCart(product, variant);
   };
 
   const handleBuyNow = () => {
-    if (isComingSoon) return;
+    if (isComingSoon || oos || !product || !variant) return;
     handleAdd();
     navigate("/checkout");
   };
@@ -166,11 +184,13 @@ const ProductDetail = () => {
     }
   };
 
-  if (reviewCount > 0) {
+  if (serverReviews.length > 0) {
+    const sum = serverReviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+    const avg = Number((sum / serverReviews.length).toFixed(1));
     productJsonLd.aggregateRating = {
       "@type": "AggregateRating",
-      "ratingValue": avgRating,
-      "reviewCount": reviewCount,
+      "ratingValue": avg,
+      "reviewCount": serverReviews.length,
       "bestRating": 5,
       "worstRating": 1
     };
@@ -406,19 +426,29 @@ const ProductDetail = () => {
                   </div>
                   <button
                     onClick={handleAdd}
-                    className="flex-1 flex items-center justify-center gap-3 bg-primary text-primary-foreground min-h-[52px] uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-300 font-body active:scale-[0.98]"
+                    disabled={oos || isComingSoon}
+                    aria-label={oos ? "Product variant out of stock" : `Add to Basket — ₹${variant.price * quantity}`}
+                    className="flex-1 flex items-center justify-center gap-3 bg-primary text-primary-foreground min-h-[52px] uppercase tracking-[0.15em] text-xs font-medium hover:bg-accent transition-colors duration-300 font-body active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ShoppingBag size={16} />
-                    Add to Basket — ₹{variant.price * quantity}
+                    {invUnavailable ? "Availability Unavailable" : oos ? "Out of Stock" : `Add to Basket — ₹${variant.price * quantity}`}
                   </button>
                 </div>
+
+                {low && !oos && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 font-body font-medium">
+                    Only {remaining} packs left in stock!
+                  </p>
+                )}
 
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleBuyNow}
-                    className="flex-1 flex items-center justify-center gap-2 bg-accent text-accent-foreground min-h-[48px] uppercase tracking-[0.15em] text-xs font-medium font-body hover:bg-primary hover:text-primary-foreground transition-colors active:scale-[0.98]"
+                    disabled={oos || isComingSoon}
+                    aria-label={oos ? "Product variant out of stock" : "Buy Now"}
+                    className="flex-1 flex items-center justify-center gap-2 bg-accent text-accent-foreground min-h-[48px] uppercase tracking-[0.15em] text-xs font-medium font-body hover:bg-primary hover:text-primary-foreground transition-colors active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Zap size={15} /> Buy Now
+                    <Zap size={15} /> {invUnavailable ? "Temporarily Unavailable" : oos ? "Out of Stock" : "Buy Now"}
                   </button>
                   <button
                     onClick={() => toggleWishlist(product)}
@@ -451,7 +481,7 @@ const ProductDetail = () => {
             <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border">
               <div className="flex flex-col items-center gap-2 text-center">
                 <Truck size={20} className="text-accent" />
-                <span className="text-[11px] text-muted-foreground font-body uppercase tracking-wider">Free Delivery</span>
+                <span className="text-[11px] text-muted-foreground font-body uppercase tracking-wider">{variant?.price && variant.price >= 999 ? "Free Delivery" : "Free Delivery ₹999+"}</span>
               </div>
               <div className="flex flex-col items-center gap-2 text-center">
                 <Shield size={20} className="text-accent" />

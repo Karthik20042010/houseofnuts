@@ -3,7 +3,8 @@ import { useCart } from "@/contexts/CartContext";
 import { useInventory } from "@/contexts/InventoryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle, Clock, Smartphone, Mail, ShieldCheck, LogOut } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, Smartphone, Mail, ShieldCheck, LogOut, FileText, AlertCircle } from "lucide-react";
+import { isOutOfStock, isInventoryUnavailable } from "@/lib/inventory";
 import { generateOrderId, saveOrder, placeOrderApi, type Order } from "@/lib/orders";
 import { GoogleLoginModal } from "@/components/auth/GoogleLoginModal";
 import { toast } from "sonner";
@@ -14,7 +15,7 @@ const UPI_NAME = "HouseOfNuts";
 const CheckoutPage = () => {
   const { items, totalPrice, subtotal, appliedDiscount, discountAmount, clearCart } = useCart();
   const navigate = useNavigate();
-  const { refresh: refreshInventory } = useInventory();
+  const { refresh: refreshInventory, stock, isOffline } = useInventory();
   const { googleUser, isGoogleAuthenticated, logoutGoogle } = useAuth();
 
   const [step, setStep] = useState<"details" | "payment" | "done">("details");
@@ -22,20 +23,19 @@ const CheckoutPage = () => {
   const [timer, setTimer] = useState(300); // 5 min countdown
   const [orderId, setOrderId] = useState("");
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
+  const [utrNumber, setUtrNumber] = useState("");
   const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", notes: "" });
 
-  // Require Google Mail login on checkout load
+  // Optional: Autofill details if customer is logged in with Google
   useEffect(() => {
-    if (!isGoogleAuthenticated) {
-      setIsGoogleModalOpen(true);
-    } else if (googleUser) {
+    if (googleUser) {
       setForm((prev) => ({
         ...prev,
-        email: googleUser.email,
+        email: prev.email || googleUser.email,
         name: prev.name || googleUser.name,
       }));
     }
-  }, [isGoogleAuthenticated, googleUser]);
+  }, [googleUser]);
 
   // Countdown timer for payment step
   useEffect(() => {
@@ -50,8 +50,13 @@ const CheckoutPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isGoogleAuthenticated) {
-      setIsGoogleModalOpen(true);
+    if (isInventoryUnavailable(stock)) {
+      toast.error("Live stock availability is temporarily unavailable. Please retry in a few moments.");
+      return;
+    }
+    const outOfStockItem = items.find((it) => isOutOfStock(stock, it.variant.id));
+    if (outOfStockItem) {
+      toast.error(`"${outOfStockItem.product.name} (${outOfStockItem.variant.size})" is currently out of stock. Please remove it from your basket.`);
       return;
     }
     setOrderId(generateOrderId());
@@ -64,9 +69,16 @@ const CheckoutPage = () => {
   };
 
   const handlePaymentDone = useCallback(async () => {
+    const trimmedUtr = utrNumber.trim();
+    if (!trimmedUtr || trimmedUtr.length < 6) {
+      toast.error("Please enter the UPI Transaction / UTR reference number from your payment app before completing the order.");
+      return;
+    }
+
     setSubmitting(true);
 
     const noteParts = [];
+    noteParts.push(`[UTR/Ref: ${trimmedUtr}]`);
     if (appliedDiscount) noteParts.push(`[Promo: ${appliedDiscount.code} (-₹${discountAmount})]`);
     if (form.notes.trim()) noteParts.push(form.notes.trim());
 
@@ -85,12 +97,11 @@ const CheckoutPage = () => {
         productId: i.product.id,
         price: i.variant.price,
         quantity: i.quantity,
+        image: i.product.image || (i.product.images && i.product.images[0]) || "",
       })),
       itemsSummary: items.map((i) => `${i.product.name} (${i.variant.size}) x${i.quantity}`).join(", "),
       total: totalPrice,
       status: "pending",
-      // A UPI deep link cannot prove a payment was completed. The backend/store
-      // must verify it before this order is marked paid.
       paymentStatus: "pending",
     };
 
@@ -116,7 +127,7 @@ const CheckoutPage = () => {
     await refreshInventory();
     setStep("done");
     setSubmitting(false);
-  }, [orderId, form, items, totalPrice, clearCart, refreshInventory, appliedDiscount, discountAmount]);
+  }, [orderId, form, items, totalPrice, clearCart, refreshInventory, appliedDiscount, discountAmount, utrNumber]);
 
   if (items.length === 0 && step !== "done") {
     return (
@@ -136,7 +147,8 @@ const CheckoutPage = () => {
         <h2 className="font-display text-4xl">Order Received!</h2>
         <p className="text-muted-foreground font-body max-w-md">
           Thank you, {form.name}! Order <span className="font-medium text-foreground">{orderId}</span> has been placed.
-          We’ll verify your payment and send order updates & tracking to <span className="font-semibold text-foreground">{form.email}</span>.
+          We have recorded your UPI Transaction Reference <span className="font-mono font-medium text-foreground">{utrNumber}</span>.
+          Our team will verify the payment against bank records and send tracking confirmation to <span className="font-semibold text-foreground">{form.email}</span>.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
           <button onClick={() => navigate(`/orders/${orderId}`)} className="bg-accent text-accent-foreground px-8 py-3 uppercase tracking-[0.15em] text-xs font-medium font-body">
@@ -152,7 +164,7 @@ const CheckoutPage = () => {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">
-      {/* Google Login Modal Popup */}
+      {/* Optional Google Login Modal Popup */}
       <GoogleLoginModal
         isOpen={isGoogleModalOpen}
         onClose={() => setIsGoogleModalOpen(false)}
@@ -196,7 +208,7 @@ const CheckoutPage = () => {
           <div className="flex items-center justify-between mb-6">
             <h1 className="font-display text-4xl">Checkout</h1>
 
-            {/* Google Mail User Status Badge */}
+            {/* Optional Google Mail Autofill */}
             {isGoogleAuthenticated && googleUser ? (
               <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-sm text-xs font-body">
                 <ShieldCheck size={14} />
@@ -216,7 +228,7 @@ const CheckoutPage = () => {
                 onClick={() => setIsGoogleModalOpen(true)}
                 className="flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
               >
-                <Mail size={14} /> Sign in with Google Mail
+                <Mail size={14} /> Autofill with Google
               </button>
             )}
           </div>
@@ -241,25 +253,33 @@ const CheckoutPage = () => {
                 </div>
               </>
             )}
+            <div className="flex justify-between text-xs font-body text-emerald-700 dark:text-emerald-400">
+              <span>Delivery</span>
+              <span>{totalPrice >= 999 ? "FREE" : "Standard (Free on ₹999+)"}</span>
+            </div>
             <div className="border-t border-border pt-3 flex justify-between font-display text-lg">
               <span>Total</span>
               <span className="tabular-nums">₹{totalPrice}</span>
             </div>
           </div>
 
+          {isInventoryUnavailable(stock) && (
+            <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-800 dark:text-amber-300 text-xs font-body flex items-center gap-2">
+              <AlertCircle size={16} className="shrink-0" />
+              <span>Live inventory verification is currently offline. Orders cannot be placed until stock connection is re-established.</span>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Hidden Honeypot Field against automated spam submissions */}
             <input type="text" name="hp_field" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
 
             <div>
               <label className="block text-xs uppercase tracking-[0.15em] font-body text-muted-foreground mb-2 flex items-center justify-between">
-                <span>Notification & Delivery Email *</span>
+                <span>Email Address *</span>
                 {isGoogleAuthenticated && googleUser && form.email === googleUser.email ? (
                   <span className="text-emerald-600 dark:text-emerald-400 text-[10px] flex items-center gap-1 font-medium">
-                    <ShieldCheck size={12} /> Verified Google Account
+                    <ShieldCheck size={12} /> Google Account
                   </span>
-                ) : isGoogleAuthenticated ? (
-                  <span className="text-amber-600 dark:text-amber-400 text-[10px]">Custom Delivery Recipient</span>
                 ) : null}
               </label>
               <input
@@ -332,9 +352,10 @@ const CheckoutPage = () => {
 
             <button
               type="submit"
-              className="w-full bg-primary text-primary-foreground py-4 uppercase tracking-[0.15em] text-xs font-medium font-body hover:bg-accent transition-colors"
+              disabled={isInventoryUnavailable(stock)}
+              className="w-full bg-primary text-primary-foreground py-4 uppercase tracking-[0.15em] text-xs font-medium font-body hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Proceed to UPI Payment (₹{totalPrice})
+              {isInventoryUnavailable(stock) ? "Live Inventory Unavailable — Retry Shortly" : `Proceed to UPI Payment (₹${totalPrice})`}
             </button>
           </form>
         </>
@@ -394,14 +415,33 @@ const CheckoutPage = () => {
             </button>
           </div>
 
+          {/* UTR / Transaction Reference ID Input for Payment Verification */}
+          <div className="bg-card border border-border p-5 rounded-md space-y-3">
+            <div className="flex items-center gap-2 text-foreground font-display font-medium text-sm">
+              <FileText size={16} className="text-accent" />
+              <span>Step 2: Enter UPI Reference / UTR Number</span>
+            </div>
+            <p className="text-xs text-muted-foreground font-body">
+              Once you have completed the payment in your UPI app, please enter the 12-digit UPI Reference / UTR number from the payment receipt to confirm your order:
+            </p>
+            <input
+              type="text"
+              required
+              value={utrNumber}
+              onChange={(e) => setUtrNumber(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
+              placeholder="e.g. 423918273645 (12 digits)"
+              className="w-full border border-border bg-background px-4 py-3 font-mono text-sm tracking-wider focus:outline-none focus:border-accent transition-colors"
+            />
+          </div>
+
           {/* Action buttons */}
           <div className="border-t border-border pt-6 space-y-3">
             <button
               onClick={handlePaymentDone}
-              disabled={submitting}
+              disabled={submitting || !utrNumber.trim()}
               className="w-full bg-primary text-primary-foreground py-4 uppercase tracking-[0.15em] text-xs font-medium font-body hover:bg-accent transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {submitting ? "Confirming Order..." : "I've Completed Payment"}
+              {submitting ? "Verifying & Placing Order..." : "Submit Order with Payment Reference"}
             </button>
           </div>
         </div>

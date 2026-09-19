@@ -23,7 +23,19 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment & credentials
 *.env
+**/.env*
+*.env.*
 env
 .env.example
 xcels
+
+# AI Agent folders
+.agent
+.agents
+.claude
+.cursor
+.gemini
+.kiro
+.opencode
