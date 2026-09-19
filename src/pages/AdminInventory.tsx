@@ -30,12 +30,15 @@ import {
   ArrowRight,
   RotateCcw,
 } from "lucide-react";
-import { adminUpdateInventory, adminUpdatePrices, adminUploadImage } from "@/lib/admin";
+import { adminSaveCatalog, adminUpdateInventory, adminUpdatePrices, adminUploadImage } from "@/lib/admin";
 import { fetchInventory, StockMap } from "@/lib/inventory";
 import { products as baseProducts, Product, ProductVariant } from "@/data/products";
 import {
   getAllProducts,
   getCustomCategories,
+  getCustomSubcategories,
+  getProductDisplayOrder,
+  getCategoryDisplayOrder,
   addCustomCategory,
   getSubcategoriesForCategory,
   addCustomSubcategory,
@@ -47,7 +50,7 @@ import {
   savePriceOverrides,
   saveProductDisplayOrder,
   saveCategoryDisplayOrder,
-  syncCatalogConfigToRemote,
+  setPublishedCatalog,
   PriceOverride,
 } from "@/lib/customCatalog";
 import {
@@ -151,6 +154,19 @@ export const AdminInventory = () => {
     setInitialPrices({ ...initialRates });
   };
 
+  // One explicit, awaited publish is used for every catalog mutation.  A
+  // success message therefore means the shared database—not just this
+  // browser—has accepted the change.
+  const publishCatalog = async (productsToPublish = getAllProducts(baseProducts)) => {
+    await adminSaveCatalog(productsToPublish, {
+      categories: getCustomCategories(),
+      subcategories: getCustomSubcategories(),
+      productOrder: getProductDisplayOrder(),
+      categoryOrder: getCategoryDisplayOrder(),
+    });
+    setPublishedCatalog(productsToPublish);
+  };
+
   const loadData = async (forceNetwork = false, showSpinner = true) => {
     if (showSpinner) setLoading(true);
     refreshCatalogLocal();
@@ -200,7 +216,7 @@ export const AdminInventory = () => {
   }, [allProds]);
 
   // Multi-Product Image Mapping Handler
-  const handleApplyMultiProductMapping = () => {
+  const handleApplyMultiProductMapping = async () => {
     if (selectedMediaUrls.length === 0) {
       toast.error("Please select at least one photo from the store gallery.");
       return;
@@ -233,6 +249,7 @@ export const AdminInventory = () => {
     }
 
     if (updatedCount > 0) {
+      await publishCatalog(getAllProducts(baseProducts));
       toast.success(`Mapped ${selectedMediaUrls.length} photo(s) to ${updatedCount} product(s)!`);
     } else if (editingImageProduct) {
       toast.success(`Attached ${selectedMediaUrls.length} photo(s) to ${editingImageProduct.name}!`);
@@ -439,12 +456,20 @@ export const AdminInventory = () => {
       }
 
       // 3. Dispatch Catalog Config Overrides to Config tab
-      syncCatalogConfigToRemote();
+      const publishedProducts = allProds.map((product) => ({
+        ...product,
+        variants: product.variants.map((variant) => ({
+          ...variant,
+          price: pricesMap[variant.id]?.price ?? variant.price,
+          mrp: pricesMap[variant.id]?.mrp ?? variant.mrp,
+        })),
+      }));
+      await publishCatalog(publishedProducts);
 
       sessionStorage.removeItem("hon-inventory");
       setInitialStock({ ...stock });
 
-      toast.success(`Saved rate & stock updates to Google Sheets DB!`);
+      toast.success(`Saved rates, stock and catalog to the shared database.`);
     } catch (e) {
       toast.error((e as Error).message || "Failed to save inventory & price updates to DB");
     } finally {
@@ -466,29 +491,18 @@ export const AdminInventory = () => {
     return false;
   };
 
-  // Helper for Uploading an Image File to Drive / Data URL
+  // A product photo must be in shared storage.  Keeping a data URL as a
+  // fallback made it look successful only in the staff member's browser.
   const processImageFileUpload = async (
     file: File,
     category: string,
     targetProductId?: string
   ): Promise<string> => {
-    try {
-      const pid = targetProductId || file.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      const driveUrl = await adminUploadImage({
-        productId: pid,
-        file,
-        category,
-      });
-      if (driveUrl) {
-        toast.success("Image uploaded to Google Drive subfolder!");
-        return driveUrl;
-      }
-    } catch (err) {
-      console.warn("Drive image upload failed, using local preview fallback:", err);
-      toast.warning("Drive upload offline or failed. Using local preview.");
-    }
-
-    return await fileToDataUrl(file);
+    const pid = targetProductId || file.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const driveUrl = await adminUploadImage({ productId: pid, file, category });
+    if (!driveUrl) throw new Error("The image server did not return a public URL.");
+    toast.success("Image uploaded to shared storage.");
+    return driveUrl;
   };
 
   // Multiple Image File Selection for New Product Creation
@@ -583,7 +597,7 @@ export const AdminInventory = () => {
   };
 
   // Save Image Gallery Changes for an Existing Product
-  const handleSaveProductGallery = () => {
+  const handleSaveProductGallery = async () => {
     if (!editingImageProduct) return;
     if (editingProductImages.length === 0) {
       toast.error("Product must have at least one primary cover image.");
@@ -599,19 +613,27 @@ export const AdminInventory = () => {
       images: editingProductImages,
     });
 
+    try {
+      await publishCatalog(getAllProducts(baseProducts));
+    } catch (error) {
+      toast.error((error as Error).message || "Images were uploaded but could not be published.");
+      return;
+    }
+
     toast.success(`Saved updated image gallery for ${editingImageProduct.name}!`);
     setEditingImageProduct(null);
     refreshCatalogLocal();
   };
 
   // Handle Add New Parent Category
-  const handleAddCategorySubmit = (e: React.FormEvent) => {
+  const handleAddCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatLabel.trim()) {
       toast.error("Please enter a category name.");
       return;
     }
     const created = addCustomCategory(newCatLabel);
+    await publishCatalog(getAllProducts(baseProducts));
     toast.success(`Category "${created.label}" created successfully!`);
     setSelectedParentCategory(created.id);
     setNewCatLabel("");
@@ -620,13 +642,14 @@ export const AdminInventory = () => {
   };
 
   // Handle Add New Subcategory
-  const handleAddSubcategorySubmit = (e: React.FormEvent) => {
+  const handleAddSubcategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSubcatLabel.trim()) {
       toast.error("Please enter a subcategory name.");
       return;
     }
     const created = addCustomSubcategory(newSubcatParent, newSubcatLabel);
+    await publishCatalog(getAllProducts(baseProducts));
     toast.success(`Subcategory "${created.label}" added!`);
     setSelectedParentCategory(newSubcatParent);
     setSelectedSubcategory(created.id);
@@ -648,7 +671,7 @@ export const AdminInventory = () => {
   };
 
   // Handle Add New Product / Item
-  const handleAddProductSubmit = (e: React.FormEvent) => {
+  const handleAddProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProdName.trim()) {
       toast.error("Please enter a product name.");
@@ -704,10 +727,10 @@ export const AdminInventory = () => {
     });
     setStock(newStockMap);
     if (inventoryPayload.length > 0) {
-      adminUpdateInventory(inventoryPayload).catch((e) => {
-        console.debug("Remote inventory sync fallback:", e);
-      });
+      await adminUpdateInventory(inventoryPayload);
     }
+
+    await publishCatalog(getAllProducts(baseProducts));
 
     toast.success(`Product "${createdProd.name}" created & published to inventory!`);
     setIsAddProductOpen(false);
@@ -727,7 +750,7 @@ export const AdminInventory = () => {
   };
 
   // Handle Adding a new Variant to an existing product
-  const handleAddVariantToProduct = (product: Product) => {
+  const handleAddVariantToProduct = async (product: Product) => {
     if (!variantSize.trim() || variantPrice <= 0) {
       toast.error("Please provide valid size and price rate.");
       return;
@@ -747,22 +770,26 @@ export const AdminInventory = () => {
     });
 
     setStock((prev) => ({ ...prev, [vId]: variantStock }));
+    await adminUpdateInventory([{ variantId: vId, productId: product.id, size: newVariantObj.size, stock: variantStock }]);
+    await publishCatalog(getAllProducts(baseProducts));
     toast.success(`Added new variant (${variantSize}) rate to ${product.name}!`);
     setAddingVariantForProductId(null);
     refreshCatalogLocal();
   };
 
-  const handleDeleteProduct = (product: Product) => {
+  const handleDeleteProduct = async (product: Product) => {
     if (window.confirm(`Are you sure you want to delete "${product.name}" from your catalog?`)) {
       deleteCustomProduct(product.id);
+      await publishCatalog(getAllProducts(baseProducts));
       refreshCatalogLocal();
       toast.success(`Deleted product "${product.name}"`);
     }
   };
 
-  const handleDeleteVariant = (product: Product, variantId: string, variantSize: string) => {
+  const handleDeleteVariant = async (product: Product, variantId: string, variantSize: string) => {
     if (window.confirm(`Are you sure you want to delete the ${variantSize} variant from "${product.name}"?`)) {
       deleteVariantFromProduct(product.id, variantId);
+      await publishCatalog(getAllProducts(baseProducts));
       refreshCatalogLocal();
       toast.success(`Deleted ${variantSize} variant from ${product.name}`);
     }

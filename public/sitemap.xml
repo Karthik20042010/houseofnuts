@@ -126,7 +126,17 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://houseofnuts.store/product/walnuts</loc>
+    <loc>https://houseofnuts.store/product/standard-walnuts</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://houseofnuts.store/product/chilean-walnuts</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://houseofnuts.store/product/kashmiri-walnuts</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>

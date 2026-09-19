@@ -51,7 +51,7 @@ function setupDatabase() {
     ];
 
     defaultCatalog.forEach(function (p) {
-      prodSh.appendRow([p.id, p.name, p.category, p.description, p.image, p.badge]);
+      prodSh.appendRow([p.id, p.name, p.category, "", "", p.description, p.image, "", p.badge]);
       p.variants.forEach(function (v) {
         priceSh.appendRow([v.id, p.id, v.size, v.price, v.mrp || Math.round(v.price * 1.25)]);
         invSh.appendRow([v.id, p.id, v.size, 50, 5]);
@@ -118,6 +118,7 @@ function doPost(e) {
 
     // Protected actions requiring Admin / Staff / Developer Auth
     if (action === "saveCatalogConfig") return json(saveCatalogConfig(body));
+    if (action === "saveCatalog") { requireAuth(body.password); return json(saveCatalog(body)); }
     if (action === "getOrders") { requireAuth(body.password); return json({ ok: true, orders: readOrders() }); }
     if (action === "updateOrder") { requireAuth(body.password); return json(updateOrder(body)); }
     if (action === "updateInventory") { requireAuth(body.password); return json(setInventory(body.items || [])); }
@@ -369,7 +370,15 @@ function ensureProductsSheet() {
   var sh = SpreadsheetApp.getActive().getSheetByName("Products");
   if (!sh) {
     sh = SpreadsheetApp.getActive().insertSheet("Products");
-    sh.appendRow(["productId", "name", "category", "description", "image", "badge"]);
+    sh.appendRow(["productId", "name", "category", "subcategory", "localName", "description", "image", "imagesJson", "badge"]);
+  } else if (sh.getLastColumn() < 9) {
+    sh.getRange(1, 1, 1, 9).setValues([["productId", "name", "category", "subcategory", "localName", "description", "image", "imagesJson", "badge"]]);
+    // Legacy six-column rows used description,image,badge. Move them into
+    // the expanded schema before future writes.
+    var legacy = sh.getDataRange().getValues();
+    for (var i = 1; i < legacy.length; i++) {
+      sh.getRange(i + 1, 6, 1, 4).setValues([[legacy[i][3] || "", legacy[i][4] || "", "", legacy[i][5] || ""]]);
+    }
   }
   return sh;
 }
@@ -390,13 +399,55 @@ function readProducts() {
       id: pId,
       name: String(r[1] || ""),
       category: String(r[2] || "nuts"),
-      description: String(r[3] || ""),
-      image: String(r[4] || ""),
-      badge: String(r[5] || ""),
+      subcategory: String(r[3] || ""),
+      localName: String(r[4] || ""),
+      description: String(r[5] || ""),
+      image: String(r[6] || ""),
+      images: safeJsonArray(r[7]),
+      badge: String(r[8] || ""),
       variants: variants
     });
   }
   return out;
+}
+
+function safeJsonArray(value) {
+  try { var parsed = JSON.parse(String(value || "[]")); return Array.isArray(parsed) ? parsed : []; } catch (e) { return []; }
+}
+
+// Rebuild the catalog master from one validated snapshot. Products and prices
+// change together, which prevents shop/inventory/image records drifting apart.
+function saveCatalog(body) {
+  var products = (body && body.products) || [];
+  if (!Array.isArray(products)) return { ok: false, error: "products must be an array" };
+  var productRows = [];
+  var priceRows = [];
+  products.forEach(function (p) {
+    if (!p || !p.id || !p.name || !Array.isArray(p.variants) || p.variants.length === 0) return;
+    productRows.push([String(p.id), String(p.name), String(p.category || "nuts"), String(p.subcategory || ""), String(p.localName || ""), String(p.description || ""), String(p.image || ""), JSON.stringify(Array.isArray(p.images) ? p.images.slice(0, 10) : []), String(p.badge || "")]);
+    p.variants.forEach(function (v) {
+      if (!v || !v.id) return;
+      priceRows.push([String(v.id), String(p.id), String(v.size || ""), Number(v.price) || 0, Number(v.mrp) || 0]);
+    });
+  });
+  if (productRows.length === 0) return { ok: false, error: "catalog must contain at least one product" };
+
+  var prodSh = ensureProductsSheet();
+  var priceSh = ensurePricesSheet();
+  if (prodSh.getLastRow() > 1) prodSh.getRange(2, 1, prodSh.getLastRow() - 1, prodSh.getLastColumn()).clearContent();
+  if (priceSh.getLastRow() > 1) priceSh.getRange(2, 1, priceSh.getLastRow() - 1, priceSh.getLastColumn()).clearContent();
+  prodSh.getRange(2, 1, productRows.length, 9).setValues(productRows);
+  if (priceRows.length) priceSh.getRange(2, 1, priceRows.length, 5).setValues(priceRows);
+
+  var meta = (body && body.metadata) || {};
+  saveCatalogConfig({ config: {
+    catalogVersion: 2,
+    productOrder: Array.isArray(meta.productOrder) ? meta.productOrder : [],
+    categoryOrder: Array.isArray(meta.categoryOrder) ? meta.categoryOrder : [],
+    customCategories: Array.isArray(meta.categories) ? meta.categories : [],
+    customSubcategories: Array.isArray(meta.subcategories) ? meta.subcategories : []
+  }});
+  return { ok: true, productCount: productRows.length, variantCount: priceRows.length };
 }
 
 // -------- Sheet 4: Prices Tab --------
@@ -405,7 +456,9 @@ function ensurePricesSheet() {
   var sh = SpreadsheetApp.getActive().getSheetByName("Prices");
   if (!sh) {
     sh = SpreadsheetApp.getActive().insertSheet("Prices");
-    sh.appendRow(["variantId", "productId", "size", "price", "discountPrice"]);
+    sh.appendRow(["variantId", "productId", "size", "price", "mrp"]);
+  } else if (String(sh.getRange(1, 5).getValue()).toLowerCase() === "discountprice") {
+    sh.getRange(1, 5).setValue("mrp");
   }
   return sh;
 }
@@ -424,7 +477,7 @@ function readPricesMap() {
       id: vId,
       size: String(r[2] || ""),
       price: Number(r[3]) || 0,
-      discountPrice: Number(r[4]) || 0
+      mrp: Number(r[4]) || 0
     });
   }
   return map;
@@ -499,7 +552,7 @@ function updatePrices(items) {
     if (row) {
       sh.getRange(row, 4).setValue(Number(it.price) || 0);
     } else {
-      sh.appendRow([vId, it.productId || "", it.size || "", Number(it.price) || 0, Number(it.discountPrice) || 0]);
+      sh.appendRow([vId, it.productId || "", it.size || "", Number(it.price) || 0, Number(it.mrp) || 0]);
     }
   });
   return { ok: true };

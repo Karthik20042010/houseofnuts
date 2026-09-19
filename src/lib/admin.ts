@@ -1,6 +1,8 @@
 import { apiPost } from "./api";
 import type { Order } from "./orders";
 import type { UserRole } from "@/types/auth";
+import type { Product } from "@/data/products";
+import type { CustomCategory, CustomSubcategory } from "./customCatalog";
 
 // The admin password lives in the Google Sheet's Config tab, never in this
 // codebase. On login we send it to Apps Script; on every subsequent admin
@@ -120,6 +122,29 @@ export async function adminUpdatePrices(
   const password = requireAuth();
   const res = await apiPost<{ ok: boolean; error?: string }>("updatePrices", { password, items });
   if (!res.ok) throw new Error(res.error || "Price update failed");
+}
+
+/**
+ * Publishes the complete customer catalogue in one authenticated operation.
+ * This intentionally replaces the former collection of browser-only product,
+ * price and image overrides so every device reads the same records.
+ */
+export async function adminSaveCatalog(
+  products: Product[],
+  metadata: {
+    categories: CustomCategory[];
+    subcategories: CustomSubcategory[];
+    productOrder: string[];
+    categoryOrder: string[];
+  },
+): Promise<void> {
+  const password = requireAuth();
+  const res = await apiPost<{ ok: boolean; error?: string }>("saveCatalog", {
+    password,
+    products,
+    metadata,
+  });
+  if (!res.ok) throw new Error(res.error || "Catalog publish failed");
 }
 
 export interface UploadImageOptions {

@@ -17,8 +17,8 @@ The system automatically initializes and manages **8 dedicated sheet tabs**:
 
 1. **`Config`**: Store settings (`adminPassword`, `ownerEmail`, `siteUrl`).
 2. **`Users`**: User accounts, contact details, authentication & roles (`admin`, `developer`, `staff`, `user`).
-3. **`Products`**: Product catalog (Names, Categories, Descriptions, Badges, Images).
-4. **`Prices`**: Price Master (Product ID, Variant ID, Size, Price, Discount Price).
+3. **`Products`**: The single catalog master (names, categories, descriptions, cover image and image gallery).
+4. **`Prices`**: Variant price master (Product ID, Variant ID, Size, selling price and MRP).
 5. **`Inventory`**: Stock Master (Variant ID, Product ID, Size, Available Stock, Reorder Level).
 6. **`Orders`**: Customer Orders (Timestamp, Order ID, Customer Info, Items, Total, Status, Payment).
 7. **`Messages`**: Customer messages & wholesale enquiries.
@@ -42,6 +42,12 @@ In your Google Sheet's `Config` tab:
 **Deploy ➜ Manage deployments ➜ Edit (Pencil) ➜ Version: New version ➜ Deploy.**
 
 *The first time Apps Script runs, approve permissions for MailApp (email sending) and Google Sheets.*
+
+### First catalog migration (one time)
+
+After deploying both the website and the Apps Script update, sign in and open **Admin → Inventory**, then click **Save changes** once. This publishes the existing storefront catalog into `Products` and `Prices` as one shared source of truth. From then on, staff can add products/categories, adjust prices and stock, or replace photos in Inventory without a website deployment. Do not maintain product names, prices or image URLs manually in another sheet tab after this migration.
+
+An image upload is only reported as successful when it has a shared Google Drive URL; a failed upload is never kept as a browser-only preview.
 
 ## 5. Email & Notification Architecture
 

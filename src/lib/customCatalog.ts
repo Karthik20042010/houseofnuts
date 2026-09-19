@@ -78,6 +78,10 @@ const CUSTOM_SUBCATEGORIES_KEY = "hon_custom_subcategories_v1";
 const CUSTOM_PRICE_OVERRIDES_KEY = "hon_custom_price_overrides_v1";
 const CUSTOM_CATEGORY_ORDER_KEY = "hon_category_display_order_v1";
 const CUSTOM_PRODUCT_ORDER_KEY = "hon_product_display_order_v1";
+// A published catalog is the sole source of truth for customers.  The old
+// local keys are retained only while an existing installation is being
+// migrated; they must never override a published database catalog.
+const REMOTE_CATALOG_KEY = "hon_remote_catalog_v2";
 
 let isFetchingRemote = false;
 
@@ -141,6 +145,7 @@ export async function fetchRemoteCatalogConfig(): Promise<boolean> {
         priceOverrides?: Record<string, PriceOverride>;
         imageOverrides?: Record<string, string>;
         galleryOverrides?: Record<string, string[]>;
+        catalogVersion?: number;
       };
     }>("getCatalogConfig");
 
@@ -155,6 +160,17 @@ export async function fetchRemoteCatalogConfig(): Promise<boolean> {
         imageOverrides,
         galleryOverrides,
       } = res.config;
+
+      // Version 2 is written only by the new saveCatalog endpoint.  Until
+      // then, old Sheets installations keep their current catalogue visible
+      // and can be safely migrated from the Inventory page.
+      if (res.config.catalogVersion === 2) {
+        const productsResponse = await apiGet<{ ok: boolean; products?: Product[] }>("getProducts");
+        if (productsResponse.ok && Array.isArray(productsResponse.products)) {
+          localStorage.setItem(REMOTE_CATALOG_KEY, JSON.stringify(productsResponse.products));
+          hasChanges = true;
+        }
+      }
 
       if (productOrder) {
         localStorage.setItem(CUSTOM_PRODUCT_ORDER_KEY, JSON.stringify(productOrder));
@@ -443,6 +459,18 @@ export function getDeletedVariantIds(): string[] {
 }
 
 export function getAllProducts(baseProducts: Product[]): Product[] {
+  // Once the catalog is published, do not merge it with the build-time list.
+  // Doing so was the direct cause of products being visible in the shop but
+  // absent (or different) in inventory.
+  try {
+    const rawRemote = localStorage.getItem(REMOTE_CATALOG_KEY);
+    if (rawRemote) {
+      const remote = JSON.parse(rawRemote) as Product[];
+      if (Array.isArray(remote)) return remote;
+    }
+  } catch {
+    localStorage.removeItem(REMOTE_CATALOG_KEY);
+  }
   let customProducts: Product[] = [];
   try {
     const raw = localStorage.getItem(CUSTOM_PRODUCTS_KEY);
@@ -514,6 +542,7 @@ export function getAllProducts(baseProducts: Product[]): Product[] {
 
 export function deleteCustomProduct(productId: string): boolean {
   try {
+    localStorage.removeItem(REMOTE_CATALOG_KEY);
     const deletedProds = getDeletedProductIds();
     if (!deletedProds.includes(productId)) {
       deletedProds.push(productId);
@@ -537,6 +566,7 @@ export function deleteCustomProduct(productId: string): boolean {
 
 export function restoreAllDeletedBaseProducts(): boolean {
   try {
+    localStorage.removeItem(REMOTE_CATALOG_KEY);
     localStorage.removeItem(CUSTOM_DELETED_PRODUCTS_KEY);
     localStorage.removeItem(CUSTOM_DELETED_VARIANTS_KEY);
     window.dispatchEvent(new CustomEvent("hon-catalog-update"));
@@ -549,6 +579,7 @@ export function restoreAllDeletedBaseProducts(): boolean {
 
 export function deleteVariantFromProduct(productId: string, variantId: string): boolean {
   try {
+    localStorage.removeItem(REMOTE_CATALOG_KEY);
     const deletedVars = getDeletedVariantIds();
     if (!deletedVars.includes(variantId)) {
       deletedVars.push(variantId);
@@ -578,6 +609,7 @@ export function addCustomProduct(newProduct: Omit<Product, "id"> & { id?: string
 
   // Un-delete product if re-created
   try {
+    localStorage.removeItem(REMOTE_CATALOG_KEY);
     const deleted = getDeletedProductIds().filter((d) => d !== id);
     localStorage.setItem(CUSTOM_DELETED_PRODUCTS_KEY, JSON.stringify(deleted));
   } catch {}
@@ -608,6 +640,21 @@ export function addCustomProduct(newProduct: Omit<Product, "id"> & { id?: string
   }
 
   return fullProduct;
+}
+
+export function getCustomSubcategories(): CustomSubcategory[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_SUBCATEGORIES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Replace the browser cache only after the database confirms a publish. */
+export function setPublishedCatalog(products: Product[]) {
+  localStorage.setItem(REMOTE_CATALOG_KEY, JSON.stringify(products));
+  window.dispatchEvent(new CustomEvent("hon-catalog-update"));
 }
 
 export function addVariantToProduct(productId: string, variant: ProductVariant): boolean {
