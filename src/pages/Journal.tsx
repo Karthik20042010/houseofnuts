@@ -1,51 +1,62 @@
-import { Link } from "react-router-dom";
+import React from "react";
 import Header from "@/components/Header";
 import SEOHead from "@/components/SEOHead";
 import CartDrawer from "@/components/CartDrawer";
+import PromoBanner from "@/components/PromoBanner";
+import { GuidesAndRecipes } from "@/components/GuidesAndRecipes";
+import { GUIDES_AND_RECIPES } from "@/data/guidesData";
 
-const articles = [
-  ["Almond benefits & everyday ways to enjoy them", "Nutritious snacking", "/images/nuts/almonds.jpg"],
-  ["How to store dry fruits and nuts for longer freshness", "Storage guide", "/images/dry-fruits/anjeer.jpg"],
-  ["A practical guide to choosing dry fruits online", "Buying guide", "/images/dry-fruits/dates.jpg"],
-  ["High-protein dry fruits for your daily snack bowl", "Nutrition", "/images/nuts/walnuts.jpg"],
-  ["Kaju katli: a simple festive recipe", "Recipe", "/images/nuts/cashew-whole.jpeg"],
-  ["Gurbandi, Mamra or California almonds?", "Buying guide", "/images/nuts/mamra-almonds.jpg"],
-] as const;
+const Journal = () => {
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "House of Nuts Culinary Recipes & Dry Fruit Buying Guides",
+    "url": "https://houseofnuts.store/journal",
+    "numberOfItems": GUIDES_AND_RECIPES.length,
+    "itemListElement": GUIDES_AND_RECIPES.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "url": `https://houseofnuts.store${item.seoMetaData.canonicalUrl}`,
+      "name": item.title
+    }))
+  };
 
-const Journal = () => (
-  <div className="min-h-screen bg-background">
-    <SEOHead
-      title="Dry Fruits Journal & Healthy Snacking Guides"
-      description="Discover recipes, dry fruit storage guides, nutritional benefits of Mamra almonds, cashews, pistachios, and buying tips from House of Nuts Proddatur."
-      keywords="dry fruits guide, almond benefits, how to store dry fruits, mamra vs california almonds proddatur, house of nuts journal"
-      canonicalUrl="/journal"
-    />
-    <Header />
-    <CartDrawer />
-    <main>
-      <section className="border-b border-border px-6 py-16 md:px-12 md:py-24">
-        <div className="mx-auto max-w-[1400px]">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent font-body">Beyond the bowl</p>
-          <h1 className="mt-4 max-w-[12ch] font-display text-5xl leading-[0.92] md:text-7xl">Ideas for better snacking.</h1>
-          <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground font-body">Recipes, storage advice and simple product guides to help you enjoy every handful. Health information is general and not medical advice.</p>
-        </div>
-      </section>
-      <section className="px-6 py-16 md:px-12 md:py-20">
-        <div className="mx-auto grid max-w-[1400px] gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {articles.map(([title, category, image]) => (
-            <article key={title} className="group overflow-hidden border border-border bg-card">
-              <img src={image} alt={title} className="aspect-[4/3] w-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-              <div className="p-6">
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-accent font-body">{category}</p>
-                <h2 className="mt-3 font-display text-2xl leading-tight">{title}</h2>
-                <Link to="/shop" className="mt-6 inline-block text-xs font-semibold uppercase tracking-[0.14em] hover:text-accent font-body">Shop the ingredients →</Link>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-    </main>
-  </div>
-);
+  return (
+    <div className="min-h-screen bg-background">
+      <SEOHead
+        title="Dry Fruits Buying Guides & Traditional Recipes Proddatur"
+        description="Discover authentic Kashmiri Kesar Badam Milk recipes, Mamra vs California almond buying guides, raw wild honey health benefits, and luxury dry fruit gifting tips at House of Nuts Proddatur."
+        keywords="kesar badam milk recipe, dry fruits buying guide proddatur, mamra badam vs california almonds, raw wild forest honey benefits, luxury dry fruit gift hampers proddatur, house of nuts journal"
+        canonicalUrl="/journal"
+        jsonLd={collectionJsonLd}
+      />
+      <PromoBanner />
+      <Header />
+      <CartDrawer />
+
+      <main>
+        {/* Page Header Banner */}
+        <section className="relative overflow-hidden bg-gradient-to-br from-primary/95 via-primary to-earth text-primary-foreground py-16 sm:py-24 px-6 md:px-12">
+          <div className="max-w-[1500px] mx-auto relative z-10">
+            <span className="inline-block rounded-full bg-gold/90 text-earth px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] font-body mb-4">
+              Knowledge & Culinary Hub
+            </span>
+            <h1 className="font-display text-4xl sm:text-6xl md:text-7xl leading-[1.02] tracking-tight max-w-4xl mb-6">
+              Dry Fruit Recipes & <br />
+              <span className="italic text-gold">Master Buying Guides</span>
+            </h1>
+            <p className="max-w-2xl text-base sm:text-lg font-light text-primary-foreground/90 font-body leading-relaxed">
+              Explore authentic traditional recipes, storage advice, and comprehensive buyer guides to get maximum nutrition and taste from every handful.
+            </p>
+          </div>
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
+        </section>
+
+        {/* Guides & Recipes Component with Search and Category Filters */}
+        <GuidesAndRecipes showSearchAndFilters={true} />
+      </main>
+    </div>
+  );
+};
 
 export default Journal;

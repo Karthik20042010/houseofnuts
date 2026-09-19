@@ -13,6 +13,7 @@ import { ChevronLeft, ChevronRight, ArrowRight, Phone, MessageCircle, Instagram 
 import { useAuth } from "@/contexts/AuthContext";
 import { isCategoryComingSoon, isCategoryVisibleToUser, isPrivilegedUser } from "@/lib/accessControl";
 import { Clock, ShieldCheck } from "lucide-react";
+import { GuidesAndRecipes } from "@/components/GuidesAndRecipes";
 
 const heroImage = "/images/branding/cinematic-store-banner.jpg";
 const festiveImage = "https://images.unsplash.com/photo-1548907040-4baa42d10919?w=1440&h=800&fit=crop";
@@ -553,6 +554,9 @@ const Index = () => {
 
       {/* Gamified Play & Win Modal */}
       <NutNinjaGame isOpen={gameOpen} onClose={() => setGameOpen(false)} />
+
+      {/* SEO Recipes & Buying Guides Section */}
+      <GuidesAndRecipes maxItems={3} showSearchAndFilters={false} />
 
       <section id="contact" className="bg-primary text-primary-foreground py-20 px-6 md:px-12">
         <div className="max-w-4xl mx-auto text-center">
