@@ -369,48 +369,11 @@ function ProductRow({ product }: { product: Product }) {
     setUploading(true);
     const t = toast.loading(`Uploading ${file.name} to Drive…`);
     try {
-      let publicUrl: string;
-      try {
-        publicUrl = await adminUploadImage(product.id, file, product.category);
-        toast.success(`Saved to Drive · ${product.name}`, { id: t });
-      } catch (err) {
-        console.warn("Drive upload failed, storing local preview fallback:", err);
-        publicUrl = await fileToDataUrl(file);
-        toast.success(`Image saved & updated · ${product.name}`, { id: t });
-      }
+      const publicUrl = await adminUploadImage(product.id, file, product.category);
       setProductImage(product.id, publicUrl);
+      toast.success(`Saved to Drive · ${product.name}`, { id: t });
     } catch (e) {
-      toast.error((e as Error).message || "Could not save image", { id: t });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const onSyncBase64ToDrive = async () => {
-    if (!currentSrc.startsWith("data:image/")) return;
-    setUploading(true);
-    const t = toast.loading(`Syncing base64 image to Google Drive…`);
-    try {
-      const commaIdx = currentSrc.indexOf(",");
-      const dataBase64 = commaIdx >= 0 ? currentSrc.slice(commaIdx + 1) : currentSrc;
-      const mimeMatch = currentSrc.match(/^data:(image\/[a-zA-Z0-9+-]+);base64,/);
-      const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
-      const ext = mimeType.split("/")[1] || "jpg";
-      const filename = `${product.id}.${ext}`;
-
-      const driveUrl = await adminUploadImage({
-        productId: product.id,
-        category: product.category,
-        filename,
-        mimeType,
-        dataBase64,
-      });
-
-      setProductImage(product.id, driveUrl);
-      setUrl("");
-      toast.success(`Image uploaded to Drive & published!`, { id: t });
-    } catch (e) {
-      toast.error((e as Error).message || "Drive sync failed", { id: t });
+      toast.error((e as Error).message || "Drive upload failed", { id: t });
     } finally {
       setUploading(false);
     }
@@ -426,7 +389,7 @@ function ProductRow({ product }: { product: Product }) {
         />
         {isOverridden && (
           <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-[9px] uppercase tracking-wider font-body px-1.5 py-0.5 rounded-sm">
-            {currentSrc.startsWith("data:image/") ? "Local Base64" : "Custom"}
+            Custom
           </span>
         )}
       </div>
@@ -484,24 +447,22 @@ function ProductRow({ product }: { product: Product }) {
                 e.target.value = "";
               }}
             />
-            {currentSrc.startsWith("data:image/") && (
-              <button
-                onClick={onSyncBase64ToDrive}
-                disabled={uploading}
-                className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
-                title="Upload local base64 data to Google Drive & publish URL"
-              >
-                <Cloud size={13} /> Sync to Drive
-              </button>
-            )}
             <button
               onClick={() => driveRef.current?.click()}
               disabled={uploading}
-              className="flex items-center gap-1.5 px-3.5 py-2 text-[11px] uppercase tracking-[0.15em] font-body bg-accent text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50 font-medium"
-              title="Upload file directly to Google Drive & publish public link"
+              className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body bg-accent text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50"
+              title="Upload to Google Drive & publish a public link"
             >
               {uploading ? <Loader2 size={13} className="animate-spin" /> : <Cloud size={13} />}
-              {uploading ? "Uploading..." : "Upload Image"}
+              {uploading ? "Uploading" : "Drive"}
+            </button>
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.15em] font-body border border-border hover:border-foreground/40 transition-colors disabled:opacity-50"
+              title="Preview locally on this browser only"
+            >
+              <Upload size={13} /> Local
             </button>
             <button
               onClick={onReset}

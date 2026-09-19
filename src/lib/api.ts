@@ -1,10 +1,7 @@
 import { checkRateLimit } from "./rateLimiter";
 import { obfuscatePayload } from "./encryption";
 
-export const API_URL =
-  (import.meta.env.APPS_SCRIPT_URL as string) ||
-  (import.meta.env.VITE_APPS_SCRIPT_URL as string) ||
-  "https://script.google.com/macros/s/AKfycbzOt0eUwPlTbge4ZdzfvkJd3sxmDwG-2J9vqt3JAjV79agTJV9ZGgX4YRzFVpSa2P0/exec";
+export const API_URL = (import.meta.env.VITE_APPS_SCRIPT_URL as string) || "";
 
 // Sensitive actions subjected to rate limiting
 const SENSITIVE_ACTIONS: Record<string, { max: number; windowMs: number }> = {
@@ -47,8 +44,22 @@ export async function apiGet<T = unknown>(
   action: string,
   params: Record<string, string> = {},
 ): Promise<T> {
-  // Always route via apiPost (text/plain payload) to avoid Google Apps Script GET 302 redirect CORS blocks in browser console
-  return apiPost<T>(action, params);
+  try {
+    const url = new URL(API_URL);
+    url.searchParams.set("action", action);
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+    const res = await fetch(url.toString(), { redirect: "follow" });
+    if (!res.ok) throw new Error(`API error: Status ${res.status}`);
+    return (await res.json()) as T;
+  } catch (err) {
+    // Google Apps Script GET redirects can trigger browser CORS policy blocks on localhost.
+    // Fall back seamlessly to POST with text/plain header which avoids preflight CORS blocks.
+    try {
+      return await apiPost<T>(action, params);
+    } catch {
+      throw err;
+    }
+  }
 }
 
 export async function fetchProductSpecsFromDB(): Promise<Record<string, ProductSpecification>> {

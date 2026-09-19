@@ -32,10 +32,6 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics.tsx"));
 const AdminOrders = lazy(() => import("./pages/AdminOrders.tsx"));
 const AdminOrderDetail = lazy(() => import("./pages/AdminOrderDetail.tsx"));
-const AdminBills = lazy(() => import("./pages/admin/AdminBills.tsx"));
-const AdminBillNew = lazy(() => import("./pages/admin/AdminBillNew.tsx"));
-const AdminBillView = lazy(() => import("./pages/admin/AdminBillView.tsx"));
-const AdminCustomers = lazy(() => import("./pages/admin/AdminCustomers.tsx"));
 const AdminInventory = lazy(() => import("./pages/AdminInventory.tsx"));
 const AdminMessages = lazy(() => import("./pages/AdminMessages.tsx"));
 const AdminImages = lazy(() => import("./pages/AdminImages.tsx"));
@@ -83,18 +79,9 @@ const App = () => (
                       <Route path="/journal" element={<Journal />} />
                       <Route path="/faq" element={<StoreInfo />} />
                       <Route path="/shipping" element={<StoreInfo />} />
-                      <Route path="/shipping_policy" element={<StoreInfo />} />
-                      <Route path="/shipping-policy" element={<StoreInfo />} />
                       <Route path="/returns" element={<StoreInfo />} />
-                      <Route path="/return_policy" element={<StoreInfo />} />
-                      <Route path="/return-policy" element={<StoreInfo />} />
                       <Route path="/privacy" element={<StoreInfo />} />
-                      <Route path="/privacy_policy" element={<StoreInfo />} />
                       <Route path="/terms" element={<StoreInfo />} />
-                      <Route path="/T&C" element={<StoreInfo />} />
-                      <Route path="/terms_and_conditions" element={<StoreInfo />} />
-                      <Route path="/refund_policy" element={<StoreInfo />} />
-                      <Route path="/refund-policy" element={<StoreInfo />} />
                       <Route path="/contact" element={<StoreInfo />} />
 
                       {/* Authentication Login Routes */}
@@ -132,38 +119,6 @@ const App = () => (
                           element={
                             <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
                               <AdminOrderDetail />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/admin/bills"
-                          element={
-                            <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
-                              <AdminBills />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/admin/bills/new"
-                          element={
-                            <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
-                              <AdminBillNew />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/admin/bills/:id"
-                          element={
-                            <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
-                              <AdminBillView />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/admin/customers"
-                          element={
-                            <ProtectedRoute allowedRoles={["admin", "developer", "staff"]}>
-                              <AdminCustomers />
                             </ProtectedRoute>
                           }
                         />

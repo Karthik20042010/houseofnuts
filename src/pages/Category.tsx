@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useLocation, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, ChevronRight as Crumb, SlidersHorizontal, X, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronRight as Crumb, SlidersHorizontal, X } from "lucide-react";
 import Header from "@/components/Header";
 import SEOHead from "@/components/SEOHead";
 import CartDrawer from "@/components/CartDrawer";
@@ -11,12 +11,11 @@ import PromoBanner from "@/components/PromoBanner";
 import { categories as defaultCategories, products as defaultProducts, Product } from "@/data/products";
 import { getAllProducts, getCustomCategories, getSubcategoriesForCategory, useCatalog } from "@/lib/customCatalog";
 import { useInventory } from "@/contexts/InventoryContext";
-import { isOutOfStock, sortProductsWithStockAndComingSoonLast } from "@/lib/inventory";
+import { isOutOfStock } from "@/lib/inventory";
 import { useAuth } from "@/contexts/AuthContext";
-import { isCategoryVisibleToUser, isCategoryComingSoon } from "@/lib/accessControl";
+import { isCategoryVisibleToUser } from "@/lib/accessControl";
 
 import CategoryStrip from "@/components/CategoryStrip";
-import BuildBox from "@/components/BuildBox";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -105,8 +104,6 @@ const Category = () => {
         if (selectedSubcat === "chia-flax") return nameLower.includes("chia") || nameLower.includes("flax") || nameLower.includes("haleem");
         if (selectedSubcat === "sunflower-pumpkin") return nameLower.includes("sunflower") || nameLower.includes("pumpkin") || nameLower.includes("watermelon");
         if (selectedSubcat === "solar-fruits") return nameLower.includes("amla") || nameLower.includes("mango") || nameLower.includes("pineapple") || nameLower.includes("kiwi");
-        if (selectedSubcat === "laddus") return nameLower.includes("laddu") || localLower.includes("laddu") || nameLower.includes("ball") || idLower.includes("laddu");
-        if (selectedSubcat === "dry-fruit-sweets") return nameLower.includes("barfi") || nameLower.includes("katli") || nameLower.includes("halwa") || nameLower.includes("sweets") || idLower.includes("barfi") || idLower.includes("katli");
 
         return false;
       });
@@ -124,7 +121,13 @@ const Category = () => {
       base = base.filter((p) => p.variants.some((v) => !isOutOfStock(stock, v.id)));
     }
 
-    return sortProductsWithStockAndComingSoonLast(base, stock, auth, sortBy);
+    switch (sortBy) {
+      case "price-asc": return base.sort((a, b) => minPriceOf(a) - minPriceOf(b));
+      case "price-desc": return base.sort((a, b) => minPriceOf(b) - minPriceOf(a));
+      case "name-asc": return base.sort((a, b) => a.name.localeCompare(b.name));
+      case "name-desc": return base.sort((a, b) => b.name.localeCompare(a.name));
+      default: return base;
+    }
   }, [cat, selectedSubcat, sortBy, bands, inStockOnly, stock, auth, allProductsList]);
 
   if (!cat) return <Navigate to="/" replace />;
@@ -242,9 +245,8 @@ const Category = () => {
   return (
     <div className="min-h-screen">
       <SEOHead
-        title={cat ? `${cat.label} Collection | Dry Fruit House Proddatur` : "Shop Premium Dry Fruits, Spices & Honey Proddatur"}
-        description={`Explore our handpicked collection of ${cat?.label || 'dry fruits, organic spices & raw wild honey'} at House of Nuts Proddatur (Dry Fruit House). 100% natural, farm-fresh harvest.`}
-        keywords={`${cat?.label?.toLowerCase() || 'dry fruits'}, ${cat?.label?.toLowerCase()} proddatur, buy ${cat?.label?.toLowerCase()} online, dryfruit house proddatur, dryfrit proddatur, organic spices proddatur, raw forest honey proddatur, dry fruit gift boxes proddatur, house of nuts`}
+        title={cat ? `${cat.label} Collection` : "Shop Premium Dry Fruits & Nuts"}
+        description={`Explore our handpicked collection of ${cat?.label || 'dry fruits'} at House of Nuts Proddatur. 100% natural, farm-fresh harvest delivered fast.`}
         canonicalUrl={effectiveSlug === "all" ? "/shop" : `/category/${effectiveSlug}`}
         jsonLd={[breadcrumbJsonLd, collectionJsonLd]}
       />
@@ -271,25 +273,6 @@ const Category = () => {
           {filtered.length} product{filtered.length !== 1 ? "s" : ""}
         </p>
 
-        {isCategoryComingSoon(cat.id, auth) && (
-          <div className="mt-4 p-5 rounded-sm bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-body animate-in fade-in duration-300">
-            <div className="flex items-center gap-3">
-              <div className="size-10 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 grid place-items-center flex-shrink-0">
-                <Clock size={20} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-display font-bold text-base text-foreground">Launching Soon!</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-semibold uppercase tracking-wider">Coming Soon</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Our artisanal {cat.label} collection (Protein Bars, Sprouted Nut Powders & Active Spreads) is currently in small-batch formulation. Pre-order notifications opening soon!
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {subcategories.length > 0 && (
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-3 mt-4 border-t border-border/40">
             <button
@@ -300,7 +283,7 @@ const Category = () => {
                   : "bg-background text-foreground/80 border-border hover:border-foreground/40 hover:bg-clay-light/40"
               }`}
             >
-              {cat.id === "all" || cat.label.toLowerCase().includes("all") ? "All Products" : `All ${cat.label}`}
+              All {cat.label}
             </button>
             {subcategories.map((sub) => (
               <button
@@ -318,13 +301,6 @@ const Category = () => {
           </div>
         )}
       </section>
-
-      {/* Interactive Customization Studio for Mixes and Gifting */}
-      {(cat.id === "mixes" || cat.id === "trail-mixes" || cat.id === "gifting") && (
-        <div className="mb-6">
-          <BuildBox defaultTab={cat.id === "gifting" ? "gift-box" : "trail-mix"} />
-        </div>
-      )}
 
       <section className="bg-clay-light/50 px-6 md:px-12 py-6 md:py-8 border-t border-border">
         <div className="max-w-[1600px] mx-auto">

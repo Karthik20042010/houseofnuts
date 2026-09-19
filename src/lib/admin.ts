@@ -80,10 +80,10 @@ export async function adminLogin(
 
 function requireAuth(): string {
   const s = readSession();
-  if (s && s.password) {
+  if (s && s.password && s.password !== "oauth-session-token") {
     return s.password;
   }
-  return "";
+  throw new Error("Admin authentication required. Please log in.");
 }
 
 export async function adminFetchOrders(): Promise<Order[]> {

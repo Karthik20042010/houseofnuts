@@ -1,6 +1,6 @@
 import { UserRole } from "@/types/auth";
 
-export const RESTRICTED_COMING_SOON_CATEGORIES = ["spices", "honey", "protein", "stuffed-dates"];
+export const RESTRICTED_COMING_SOON_CATEGORIES = ["spices", "honey"];
 
 export const ADMIN_ONLY_TEST_CATEGORIES = [
   "stock-inventory-test",

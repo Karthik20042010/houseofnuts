@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { X, Plus, Minus, Trash2, Tag, Check, Truck } from "lucide-react";
+import { X, Plus, Minus, Trash2, Tag, Check, Truck, Sparkles } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 import { getProductImageSrc } from "@/lib/productImages";
 
+const FREE_SHIPPING_THRESHOLD = 999;
+
 const CartDrawer = () => {
   const {
     items, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity,
-    subtotal, shippingFee, isFreeShipping, totalPrice, totalItems, appliedDiscount, discountAmount,
-    applyDiscount, removeDiscount, freeShippingThreshold,
+    subtotal, totalPrice, totalItems, appliedDiscount, discountAmount,
+    applyDiscount, removeDiscount,
   } = useCart();
   const navigate = useNavigate();
   const [promoInput, setPromoInput] = useState("");
@@ -27,9 +29,8 @@ const CartDrawer = () => {
     }
   };
 
-  const targetThreshold = freeShippingThreshold || 1500;
-  const amountLeftForFreeShipping = Math.max(0, targetThreshold - subtotal);
-  const freeShippingProgress = Math.min(100, Math.round((subtotal / targetThreshold) * 100));
+  const amountLeftForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+  const freeShippingProgress = Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100));
 
   if (!isCartOpen) return null;
 
@@ -110,7 +111,7 @@ const CartDrawer = () => {
               {discountAmount > 0 && (
                 <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 p-2.5 rounded-sm text-xs font-body flex items-center justify-between">
                   <span className="flex items-center gap-1.5 font-medium">
-                    <Tag size={14} /> Total Order Savings
+                    <Sparkles size={14} /> Total Order Savings
                   </span>
                   <span className="font-bold tabular-nums">You save ₹{discountAmount}</span>
                 </div>
@@ -155,26 +156,22 @@ const CartDrawer = () => {
               )}
 
               {/* Totals */}
-              <div className="space-y-2 border-t border-border/60 pt-3">
-                <div className="flex justify-between text-sm font-body text-muted-foreground">
-                  <span>Subtotal</span>
-                  <span className="tabular-nums font-medium text-foreground">₹{subtotal}</span>
-                </div>
+              <div className="space-y-2">
                 {appliedDiscount && (
-                  <div className="flex justify-between text-sm font-body text-accent">
-                    <span>Discount ({appliedDiscount.code})</span>
-                    <span className="tabular-nums">-₹{discountAmount}</span>
-                  </div>
+                  <>
+                    <div className="flex justify-between text-sm font-body text-muted-foreground">
+                      <span>Subtotal</span>
+                      <span className="tabular-nums">₹{subtotal}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-body text-accent">
+                      <span>Discount ({appliedDiscount.code})</span>
+                      <span className="tabular-nums">-₹{discountAmount}</span>
+                    </div>
+                  </>
                 )}
-                <div className="flex justify-between text-sm font-body text-muted-foreground">
-                  <span>Delivery Charge</span>
-                  <span className={`tabular-nums font-medium ${isFreeShipping ? "text-emerald-600 font-semibold" : ""}`}>
-                    {isFreeShipping ? "FREE" : `+₹${shippingFee}`}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center pt-2 border-t border-border/80">
-                  <span className="text-foreground font-body text-sm uppercase tracking-[0.1em] font-semibold">Total Payable</span>
-                  <span className="font-display text-3xl font-bold text-primary">₹{totalPrice}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground font-body text-sm uppercase tracking-[0.1em]">Total Payable</span>
+                  <span className="font-display text-3xl font-bold">₹{totalPrice}</span>
                 </div>
               </div>
 

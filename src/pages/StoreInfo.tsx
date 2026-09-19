@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { MessageCircle, Search, Phone, MapPin, Mail, HelpCircle, ShieldCheck, Truck, RefreshCw, Lock, FileText, Scale } from "lucide-react";
+import { MessageCircle, Search, Phone, MapPin, Mail, HelpCircle, ShieldCheck, Truck, RefreshCw, Lock, FileText, ChevronDown } from "lucide-react";
 import Header from "@/components/Header";
 import SEOHead from "@/components/SEOHead";
 import CartDrawer from "@/components/CartDrawer";
@@ -16,11 +16,10 @@ type Info = {
 
 const NAV_TABS = [
   { path: "/faq", label: "FAQ", icon: HelpCircle },
-  { path: "/shipping_policy", label: "Shipping Policy", icon: Truck },
-  { path: "/refund_policy", label: "Refund Policy", icon: RefreshCw },
-  { path: "/return_policy", label: "Return Policy", icon: Scale },
-  { path: "/privacy_policy", label: "Privacy Policy", icon: Lock },
-  { path: "/terms", label: "Terms & Conditions", icon: FileText },
+  { path: "/shipping", label: "Shipping", icon: Truck },
+  { path: "/returns", label: "Returns", icon: RefreshCw },
+  { path: "/privacy", label: "Privacy", icon: Lock },
+  { path: "/terms", label: "Terms", icon: FileText },
   { path: "/contact", label: "Contact Us", icon: Phone },
 ];
 
@@ -37,76 +36,52 @@ const PAGES: Record<string, Info> = {
       ["How can I get help with an order?", "Keep your order ID handy and message us on WhatsApp so our team can help quickly."],
     ],
   },
-  "/shipping_policy": {
+  "/shipping": {
     eyebrow: "Freshly packed, quickly shipped",
     title: "Shipping Policy",
-    intro: "The orders for the user are shipped through registered domestic courier companies and/or speed post only.",
+    intro: "Everything you need to know about dispatch timelines, shipping costs and order tracking.",
     icon: Truck,
     sections: [
-      ["Dispatch & Courier Partners", "The orders for the user are shipped through registered domestic courier companies and/or speed post only."],
-      ["Shipping Timeline", "Orders are shipped within 7 days from the date of the order and/or payment or as per the delivery date agreed at the time of order confirmation and delivering of the shipment, subject to courier company / post office norms."],
-      ["Delivery Responsibility & Delay", "Platform Owner shall not be liable for any delay in delivery by the courier company / postal authority. Delivery of all orders will be made to the address provided by the buyer at the time of purchase."],
-      ["Email Confirmation", "Delivery of our services will be confirmed on your email ID as specified at the time of registration."],
-      ["Non-refundable Shipping Charges", "If there are any shipping cost(s) levied by the seller or the Platform Owner (as the case be), the same is not refundable."],
+      ["Dispatch", "Orders are prepared after confirmation. We’ll share any important update using the contact information entered at checkout."],
+      ["Delivery charges", "Free shipping applies to qualifying orders above ₹999. Any applicable charge is shown before you place the order."],
+      ["Tracking", "Once an order is dispatched, our team can share tracking details and delivery updates."],
+      ["Address changes", "Contact us as soon as possible with your order ID. Changes may not be possible after dispatch."],
     ],
   },
-  "/refund_policy": {
-    eyebrow: "Customer Satisfaction & Quality Assurance",
-    title: "Refund and Cancellation Policy",
-    intro: "This refund and cancellation policy outlines how you can cancel or seek a refund for a product / service that you have purchased through the Platform.",
+  "/returns": {
+    eyebrow: "Eat with confidence",
+    title: "Returns & Refunds",
+    intro: "Our straightforward approach to quality concerns and order support.",
     icon: RefreshCw,
     sections: [
-      ["Order Cancellation Window", "Cancellations will only be considered if the request is made within 7 days of placing the order. However, cancellation requests may not be entertained if the orders have been communicated to such sellers / merchant(s) listed on the Platform and they have initiated the process of shipping them, or the product is out for delivery. In such an event, you may choose to reject the product at the doorstep."],
-      ["Perishable Items", "7995526067 / House of Nuts does not accept cancellation requests for perishable items like flowers, eatables, etc. However, the refund / replacement can be made if the user establishes that the quality of the product delivered is not good."],
-      ["Damaged or Defective Goods", "In case of receipt of damaged or defective items, please report to our customer service team. The request would be entertained once the seller/ merchant listed on the Platform, has checked and determined the same at its own end. This should be reported within 7 days of receipt of products."],
-      ["Expectation & Quality Concerns", "In case you feel that the product received is not as shown on the site or as per your expectations, you must bring it to the notice of our customer service within 7 days of receiving the product. The customer service team after looking into your complaint will take an appropriate decision."],
-      ["Manufacturer Warranty", "In case of complaints regarding the products that come with a warranty from the manufacturers, please refer the issue to them."],
-      ["Refund Processing Timeline", "In case of any refunds approved by 7995526067 / House of Nuts, it will take 7 days for the refund to be processed to you."],
+      ["Perishable products", "For hygiene and food-safety reasons, opened edible products generally cannot be returned. If an item arrives damaged, incorrect or unsuitable, please contact us promptly."],
+      ["Reporting an issue", "Send your order ID and clear photos of the product and package on WhatsApp. We’ll review the issue and discuss the appropriate resolution."],
+      ["Cancellations", "Contact us quickly if you need to cancel. A cancellation can only be considered before an order has been dispatched."],
+      ["Refunds", "Approved refunds are processed to the original payment method. Timing depends on the payment provider and bank."],
     ],
   },
-  "/return_policy": {
-    eyebrow: "Product Returns & Exchanges",
-    title: "Return Policy",
-    intro: "We offer refund / exchange within first 7 days from the date of your purchase.",
-    icon: Scale,
-    sections: [
-      ["Return Window", "We offer refund / exchange within first 7 days from the date of your purchase. If 7 days have passed since your purchase, you will not be offered a return, exchange or refund of any kind."],
-      ["Eligibility Criteria", "In order to become eligible for a return or an exchange, (i) the purchased item should be unused and in the same condition as you received it, (ii) the item must have original packaging, (iii) if the item that you purchased on a sale, then the item may not be eligible for a return / exchange."],
-      ["Defective or Damaged Replacement", "Further, only such items are replaced by us (based on an exchange request), if such items are found defective or damaged."],
-      ["Exempted Categories", "You agree that there may be a certain category of products / items that are exempted from returns or refunds. Such categories of the products would be identified to you at the item of purchase."],
-      ["Inspection & Quality Check", "For exchange / return accepted request(s) (as applicable), once your returned product / item is received and inspected by us, we will send you an email to notify you about receipt of the returned / exchanged product. Further, if the same has been approved after the quality check at our end, your request (i.e. return / exchange) will be processed in accordance with our policies."],
-    ],
-  },
-  "/privacy_policy": {
-    eyebrow: "Your Data Protection",
+  "/privacy": {
+    eyebrow: "Your data privacy",
     title: "Privacy Policy",
-    intro: "This Privacy Policy describes how 7995526067 and its affiliates (collectively '7995526067, we, our, us') collect, use, share, protect or otherwise process your information/ personal data through our website https://houseofnuts.store/.",
+    intro: "How we collect, protect and handle your personal details when shopping with House of Nuts.",
     icon: Lock,
     sections: [
-      ["Introduction & Jurisdiction", "This Privacy Policy describes how 7995526067 and its affiliates process personal data through https://houseofnuts.store/. We do not offer any product/service under this Platform outside India and your personal data will primarily be stored and processed in India."],
-      ["Information Collection", "We collect personal data such as name, date of birth, address, telephone/mobile number, email ID provided during sign-up/registering or using our Platform. Sensitive data like payment details are collected in accordance with applicable laws."],
-      ["Data Usage", "We use personal data to provide requested services, assist sellers in order fulfillment, enhance customer experience, resolve disputes, inform about offers/updates, detect fraud, and enforce terms."],
-      ["Information Sharing", "We may share personal data internally within group entities and with third-party service providers including logistics partners, payment gateways, and law enforcement agencies when required by law."],
-      ["Security Precautions", "To protect your personal data from unauthorized access, loss, or misuse, we adopt reasonable security practices and procedures, adhering to strict security guidelines."],
-      ["Data Retention & Deletion", "You have an option to delete your account by visiting your profile settings. We retain personal data for a period no longer than required for the purpose collected or required under applicable law."],
-      ["User Consent & Withdrawal", "By visiting our Platform, you consent to data collection and processing. You have an option to withdraw consent by writing to the Grievance Officer."],
-      ["Contact Support Hours", "Customer Support & Grievance Team: Monday - Friday (9:00 - 18:00). Email: houseofnutsproddatur@gmail.com | Phone: +91 96525 26920."],
+      ["Information we collect", "We collect the contact, delivery and order information needed to process your purchase and support you."],
+      ["How it is used", "Your information is used for order fulfilment, delivery updates, support and fraud prevention. We do not sell personal data."],
+      ["Storage", "Store only the information necessary for operating the store, and protect administrative access with strong credentials."],
+      ["Your choices", "You can ask us to correct or remove information that is no longer required for an order or applicable legal obligation."],
     ],
   },
   "/terms": {
-    eyebrow: "Platform Terms of Use",
+    eyebrow: "Store terms",
     title: "Terms & Conditions",
-    intro: "This document is an electronic record in terms of Information Technology Act, 2000 and rules there under as applicable.",
+    intro: "The standard guidelines that apply when purchasing products from House of Nuts.",
     icon: FileText,
     sections: [
-      ["Electronic Record", "This document is an electronic record in terms of Information Technology Act, 2000 and rules there under. Generated by a computer system, it does not require physical or digital signatures."],
-      ["Platform Ownership", "The Platform https://houseofnuts.store/ is owned by 7995526067, a company incorporated under Companies Act, 1956, with registered office at 10-155-2, KK Street, Gandhi Road, Proddatur, 516360."],
-      ["Binding Terms of Use", "Your use of the Platform and services are governed by these Terms of Use. Accessing, browsing, or using the Platform indicates your agreement to all terms."],
-      ["User Registration Obligations", "You agree to provide true, accurate, and complete information during registration and accept full responsibility for all acts done through your registered account."],
-      ["No Warranties", "Neither we nor third parties provide any warranty as to the accuracy, timeliness, or suitability of materials on this website for any specific purpose."],
-      ["Intellectual Property Rights", "The contents of the Platform and Services are proprietary to us. You will not have any authority to claim intellectual property rights in its design, layout, look, or graphics."],
-      ["Unlawful Use Restricted", "You agree not to use the Platform or Services for any purpose that is unlawful, illegal, or forbidden by these Terms or Indian/local laws."],
-      ["Force Majeure & Governing Law", "Parties shall not be liable for failure to perform due to force majeure events. These Terms are governed by the laws of India."],
+      ["Product information", "We work to present product descriptions, prices and availability accurately. Small variations in natural food products can occur."],
+      ["Orders", "An order is confirmed only after our store accepts it. Payment and stock may need verification before dispatch."],
+      ["Pricing", "Prices, promotions and availability can change. The final amount is shown before you place an order."],
+      ["Contact", "For any concern about an order or these terms, contact us with your order ID and details."],
     ],
   },
   "/contact": {
@@ -116,37 +91,19 @@ const PAGES: Record<string, Info> = {
     icon: Phone,
     sections: [
       ["Email Support", "houseofnutsproddatur@gmail.com"],
-      ["Phone & WhatsApp", "+91 96525 26920 / 7995526067"],
-      ["Operating Support Hours", "Monday - Friday (9:00 AM - 6:00 PM)"],
-      ["Registered Office Address", "10-155-2, KK Street, Gandhi Road, Proddatur, Andhra Pradesh — 516360"],
-      ["Order Support", "For the fastest help, include your order ID and a short description of your question."],
-      ["Platform Owner Details", "Registered Company / Platform Owner: 7995526067 (House of Nuts), KK Street, Gandhi Road, Proddatur, 516360."],
+      ["Phone & WhatsApp", "+91 96525 26920"],
+      ["Store address", "10-155/2, KK Street, Gandhi Road, Proddatur, Andhra Pradesh — 516360"],
+      ["Order support", "For the fastest help, include your order ID and a short description of your question."],
+      ["Business details", "Registered store location: House of Nuts, Gandhi Road, Proddatur. Contact us directly for GST/wholesale invoices."],
     ],
   },
-};
-
-// Map URL Alias Slugs
-const ALIASES: Record<string, string> = {
-  "/T&C": "/terms",
-  "/terms_and_conditions": "/terms",
-  "/privacy": "/privacy_policy",
-  "/refund_policy": "/refund_policy",
-  "/refund-policy": "/refund_policy",
-  "/return_policy": "/return_policy",
-  "/return-policy": "/return_policy",
-  "/returns": "/return_policy",
-  "/shipping_policy": "/shipping_policy",
-  "/shipping-policy": "/shipping_policy",
-  "/shipping": "/shipping_policy",
 };
 
 const StoreInfo = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-
-  const targetPath = ALIASES[pathname] || pathname;
-  const page = PAGES[targetPath] ?? PAGES["/faq"];
+  const page = PAGES[pathname] ?? PAGES["/faq"];
 
   const filteredSections = page.sections.filter(
     ([heading, body]) =>
@@ -158,8 +115,8 @@ const StoreInfo = () => {
     <div className="min-h-screen bg-background">
       <SEOHead
         title={page.title}
-        description={`${page.intro} — House of Nuts Proddatur, 10-155-2, KK Street, Gandhi Road, Proddatur, Andhra Pradesh 516360.`}
-        keywords={`house of nuts proddatur, house of nuts policies, ${pathname.replace('/', '')} house of nuts`}
+        description={`${page.intro} — House of Nuts Proddatur, Gandhi Road, Proddatur, Andhra Pradesh.`}
+        keywords={`house of nuts proddatur, house of nuts contact, dry fruits store proddatur, ${pathname.replace('/', '')} house of nuts`}
         canonicalUrl={pathname}
       />
       <Header />
@@ -177,12 +134,12 @@ const StoreInfo = () => {
           <div className="flex gap-2 overflow-x-auto pb-3 mb-10 border-b border-border/80 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {NAV_TABS.map((tab) => {
               const Icon = tab.icon;
-              const active = targetPath === tab.path;
+              const active = pathname === tab.path;
               return (
                 <button
                   key={tab.path}
                   onClick={() => navigate(tab.path)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-body uppercase tracking-[0.14em] font-medium transition-all duration-300 whitespace-nowrap cursor-pointer ${
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-body uppercase tracking-[0.14em] font-medium transition-all duration-300 whitespace-nowrap ${
                     active
                       ? "gradient-earth text-primary-foreground shadow-soft"
                       : "border border-border bg-card text-foreground hover:border-accent/60 hover:text-accent"
@@ -202,7 +159,7 @@ const StoreInfo = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search help topics & legal policies..."
+              placeholder="Search help topics..."
               className="w-full pl-11 pr-4 py-3 rounded-full border border-border bg-card text-xs uppercase tracking-wider font-body focus:outline-none focus:border-accent transition-colors"
             />
           </div>
@@ -226,57 +183,12 @@ const StoreInfo = () => {
             )}
           </div>
 
-          {/* Special Contact Form & Map embed on /contact */}
-          {targetPath === "/contact" && (
-            <div className="space-y-8 mb-12">
-              <div className="p-8 md:p-10 rounded-3xl border border-border bg-card shadow-card">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                  <div>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold uppercase tracking-wider mb-2">
-                      <MapPin size={13} /> Physical Store Location
-                    </span>
-                    <h2 className="font-display text-3xl">Visit Us in Proddatur</h2>
-                  </div>
-                  <a
-                    href="https://share.google/MXS8ulw5qZr3b2rEa"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-earth inline-flex items-center gap-2 self-start sm:self-auto"
-                  >
-                    <MapPin size={15} /> Open in Google Maps
-                  </a>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4 mb-6 text-xs text-muted-foreground font-body">
-                  <div className="p-4 rounded-xl bg-secondary/50 border border-border/60">
-                    <strong className="block text-foreground text-sm mb-1 font-display">Store Address</strong>
-                    10-155/2, KK Street, Gandhi Road, Proddatur, AP 516360
-                  </div>
-                  <div className="p-4 rounded-xl bg-secondary/50 border border-border/60">
-                    <strong className="block text-foreground text-sm mb-1 font-display">Store Hours</strong>
-                    Monday – Sunday: 9:00 AM – 9:30 PM
-                  </div>
-                </div>
-
-                <div className="rounded-2xl overflow-hidden border border-border h-64 w-full">
-                  <iframe
-                    title="House of Nuts Map"
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3856.883713028247!2d78.5524!3d14.7526!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bb370b3b4f62083%3A0x6b77c5e21975e53e!2sProddatur%2C%20Andhra%20Pradesh!5e0!3m2!1sen!2sin!4v1710000000000!5m2!1sen!2sin"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen={false}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
-                </div>
-              </div>
-
-              <div className="p-8 md:p-10 rounded-3xl border border-border bg-card shadow-card">
-                <h2 className="font-display text-3xl mb-2">Send Us a Direct Message</h2>
-                <p className="text-muted-foreground font-body text-sm mb-6">Fill out the form below and our team will get back to you within 24 hours.</p>
-                <ContactMessageForm />
-              </div>
+          {/* Special Contact Form embed on /contact */}
+          {pathname === "/contact" && (
+            <div className="mb-12 p-8 md:p-10 rounded-3xl border border-border bg-card shadow-card">
+              <h2 className="font-display text-3xl mb-2">Send Us a Direct Message</h2>
+              <p className="text-muted-foreground font-body text-sm mb-6">Fill out the form below and our team will get back to you within 24 hours.</p>
+              <ContactMessageForm />
             </div>
           )}
 

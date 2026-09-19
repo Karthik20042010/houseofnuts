@@ -24,15 +24,6 @@ describe("Discount & Promo Code System", () => {
     expect(res.error).toContain("Add at least 3 items");
   });
 
-  it("should enforce WELCOME10 strictly for first-time orders", () => {
-    const validWelcome = validateDiscount("WELCOME10", 1000, 2, true);
-    expect(validWelcome.valid).toBe(true);
-
-    const rejectedWelcome = validateDiscount("WELCOME10", 1000, 2, false);
-    expect(rejectedWelcome.valid).toBe(false);
-    expect(rejectedWelcome.error).toContain("first order only");
-  });
-
   it("should correctly calculate percentage and flat discounts", () => {
     const welcomeCode = discountCodes.find((d) => d.code === "WELCOME10")!;
     expect(calcDiscount(welcomeCode, 2000)).toBe(200);

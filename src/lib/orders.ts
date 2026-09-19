@@ -1,4 +1,4 @@
-import { apiPost } from "./api";
+import { apiPost, API_URL } from "./api";
 
 export interface OrderItem {
   name: string;
@@ -21,14 +21,8 @@ export interface Order {
   itemsSummary: string;
   total: number;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
-  paymentStatus: "pending" | "paid" | "refunded" | "failed";
-  paymentMethod?: "cashfree" | "upi" | "card" | "cod" | "bank_transfer";
-  utrReference?: string;
-  cashfreeOrderId?: string;
-  cashfreePaymentId?: string;
+  paymentStatus: "pending" | "paid" | "refunded";
 }
-
-import { getSecureItem, setSecureItem } from "./secureStorage";
 
 const STORAGE_KEY = "hon-orders";
 
@@ -39,11 +33,11 @@ export function generateOrderId(): string {
   return `HON-${dateStr}-${rand}`;
 }
 
-// Encrypted device-only history for the "My Orders" customer page.
-// Source of truth for the shop is the Google Sheet database.
+// Local, device-only history for the "My Orders" customer page.
+// Source of truth for the shop is the Google Sheet.
 export function getOrders(): Order[] {
-  const orders = getSecureItem<Order[]>(STORAGE_KEY);
-  return orders || [];
+  const raw = localStorage.getItem(STORAGE_KEY);
+  return raw ? JSON.parse(raw) : [];
 }
 
 export function getOrder(id: string): Order | undefined {
@@ -53,7 +47,7 @@ export function getOrder(id: string): Order | undefined {
 export function saveOrder(order: Order): void {
   const orders = getOrders();
   orders.unshift(order);
-  setSecureItem(STORAGE_KEY, orders);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
 }
 
 export function updateOrderStatus(id: string, status: Order["status"]): void {
@@ -61,7 +55,7 @@ export function updateOrderStatus(id: string, status: Order["status"]): void {
   const idx = orders.findIndex((o) => o.id === id);
   if (idx !== -1) {
     orders[idx].status = status;
-    setSecureItem(STORAGE_KEY, orders);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
   }
 }
 
@@ -70,7 +64,7 @@ export function cancelOrder(id: string): boolean {
   const idx = orders.findIndex((o) => o.id === id);
   if (idx !== -1 && (orders[idx].status === "pending" || orders[idx].status === "confirmed")) {
     orders[idx].status = "cancelled";
-    setSecureItem(STORAGE_KEY, orders);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
     return true;
   }
   return false;
@@ -90,7 +84,9 @@ export async function placeOrderApi(order: Order): Promise<PlaceOrderResult> {
   try {
     return await apiPost<PlaceOrderResult>("placeOrder", { order });
   } catch (e) {
-    if (import.meta.env.DEV) console.error("placeOrder failed");
+    console.error("placeOrder failed:", e);
+    // A no-cors retry cannot confirm whether the backend accepted an order.
+    // Never report success until the store has returned an authoritative result.
     return { ok: false, error: "network_error" };
   }
 }
@@ -101,25 +97,6 @@ export async function submitToGoogleSheet(order: Order): Promise<void> {
 }
 
 export async function sendOwnerEmailNotification(order: Order): Promise<void> {
-  // Email is sent from Apps Script on placeOrder.
-}
-
-export async function fetchOrderStatus(orderId: string): Promise<{
-  ok: boolean;
-  orderId?: string;
-  status?: Order["status"];
-  paymentStatus?: Order["paymentStatus"];
-  error?: string;
-}> {
-  try {
-    return await apiPost<{
-      ok: boolean;
-      orderId?: string;
-      status?: Order["status"];
-      paymentStatus?: Order["paymentStatus"];
-      error?: string;
-    }>("getOrderStatus", { orderId });
-  } catch {
-    return { ok: false, error: "network_error" };
-  }
+  // Email is now sent from Apps Script on placeOrder. Nothing to do here.
+  void order;
 }

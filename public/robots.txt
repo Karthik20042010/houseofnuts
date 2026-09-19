@@ -1,18 +1,13 @@
 User-agent: *
 Allow: /
-Allow: /shop
-Allow: /category/
-Allow: /product/
-Allow: /gifting
-Allow: /journal
-Allow: /faq
-Allow: /shipping
-Allow: /returns
-Allow: /contact
 
 Disallow: /admin
 Disallow: /admin/
+Disallow: /login
 Disallow: /checkout
 Disallow: /account
+Disallow: /orders
+Disallow: /wishlist
+Disallow: /track
 
 Sitemap: https://houseofnuts.store/sitemap.xml

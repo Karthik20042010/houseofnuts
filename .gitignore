@@ -27,11 +27,3 @@ dist-ssr
 env
 .env.example
 xcels
-.cursor/cashfree-skills/
-.claude/skills/
-.agents/skills/cashfree-skills/
-.opencode/skills/cashfree-skills/
-.github/skills/cashfree-skills/
-.gemini/skills/cashfree-skills/
-.agent/skills/cashfree-skills/
-.kiro/skills/

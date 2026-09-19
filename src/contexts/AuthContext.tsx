@@ -3,8 +3,6 @@ import { UserRole, Permission, ROLE_PERMISSIONS, GoogleUser } from "@/types/auth
 import { getActiveRole, isAdminLoggedIn, adminLogin, adminLogout, setSessionRole } from "@/lib/admin";
 import { apiPost } from "@/lib/api";
 
-import { getSecureItem, setSecureItem, removeSecureItem } from "@/lib/secureStorage";
-
 const GOOGLE_USER_KEY = "hon-google-user";
 
 export function deriveRoleFromEmail(email: string): UserRole {
@@ -44,27 +42,38 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [googleUser, setGoogleUser] = useState<GoogleUser | null>(() => {
-    return getSecureItem<GoogleUser>(GOOGLE_USER_KEY);
+    const raw = localStorage.getItem(GOOGLE_USER_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as GoogleUser;
+    } catch {
+      return null;
+    }
   });
 
   const [role, setRole] = useState<UserRole>(() => {
     const active = getActiveRole();
     if (active && active !== "user") return active;
-    const u = getSecureItem<GoogleUser>(GOOGLE_USER_KEY);
-    if (u && u.email) {
-      return deriveRoleFromEmail(u.email);
+    const raw = localStorage.getItem(GOOGLE_USER_KEY);
+    if (raw) {
+      try {
+        const u = JSON.parse(raw) as GoogleUser;
+        return deriveRoleFromEmail(u.email);
+      } catch {
+        // fallback
+      }
     }
     return "user";
   });
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    return isAdminLoggedIn() || !!getSecureItem<GoogleUser>(GOOGLE_USER_KEY);
+    return isAdminLoggedIn() || !!localStorage.getItem(GOOGLE_USER_KEY);
   });
 
   useEffect(() => {
     const handleAuthChange = (e: Event) => {
       const customEvent = e as CustomEvent<{ role?: UserRole }>;
-      const hasGoogle = !!getSecureItem<GoogleUser>(GOOGLE_USER_KEY);
+      const hasGoogle = !!localStorage.getItem(GOOGLE_USER_KEY);
       setIsLoggedIn(isAdminLoggedIn() || hasGoogle);
       if (customEvent.detail?.role) {
         setRole(customEvent.detail.role);
@@ -95,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       picture: picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2b2419&color=faf7f2`,
       googleId: "g_" + Math.random().toString(36).substring(2, 10),
     };
-    setSecureItem(GOOGLE_USER_KEY, user);
+    localStorage.setItem(GOOGLE_USER_KEY, JSON.stringify(user));
     setGoogleUser(user);
 
     setSessionRole(initialRole);
@@ -151,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logoutGoogle = () => {
-    removeSecureItem(GOOGLE_USER_KEY);
+    localStorage.removeItem(GOOGLE_USER_KEY);
     setGoogleUser(null);
   };
 
