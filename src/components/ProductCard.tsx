@@ -63,6 +63,8 @@ const ProductCard = ({ product, eagerImage = false }: ProductCardProps) => {
       <div className="gradient-linen p-2.5 sm:p-4 aspect-square relative overflow-hidden flex items-center justify-center mb-3 sm:mb-4 rounded-xl shine">
         <Link to={`/product/${product.id}`} className="w-full h-full">
           <ProductImage
+            id={product.id}
+            category={product.category}
             src={imageSrc}
             alt={product.name}
             eager={eagerImage}

@@ -1,6 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { getItemFallbackChain } from "@/lib/productImages";
 
 interface ProductImageProps {
+  id?: string;
+  category?: string;
   src: string;
   alt: string;
   className?: string;
@@ -9,13 +12,14 @@ interface ProductImageProps {
   sizes?: string;
 }
 
-const FALLBACK_IMAGE = "/images/branding/house-of-nuts-logo-hd.png";
-
 /**
- * Image with a shimmer placeholder that fades out once the file decodes.
- * Automatically falls back to high-res brand logo if original image URL fails to load.
+ * Image with a shimmer placeholder.
+ * Automatically rotates through item-specific and category-specific fallback candidate images
+ * if the primary image URL fails to load.
  */
 const ProductImage = ({
+  id,
+  category,
   src,
   alt,
   className = "",
@@ -24,20 +28,26 @@ const ProductImage = ({
   sizes,
 }: ProductImageProps) => {
   const [loaded, setLoaded] = useState(false);
-  const [imgSrc, setImgSrc] = useState(src || FALLBACK_IMAGE);
+  const [chainIndex, setChainIndex] = useState(0);
+
+  const fallbackChain = useMemo(() => {
+    return getItemFallbackChain({ id, name: alt, image: src, category });
+  }, [id, alt, src, category]);
 
   useEffect(() => {
-    setImgSrc(src || FALLBACK_IMAGE);
+    setChainIndex(0);
     setLoaded(false);
-  }, [src]);
+  }, [src, fallbackChain]);
+
+  const currentSrc = fallbackChain[chainIndex] || src || "/images/nuts/walnuts.jpg";
 
   return (
-    <div className={`relative w-full h-full aspect-square overflow-hidden bg-muted/30 ${wrapperClassName}`}>
+    <div className={`relative w-full h-full aspect-square overflow-hidden bg-muted/20 ${wrapperClassName}`}>
       {!loaded && (
         <div className="absolute inset-0 bg-clay animate-pulse" aria-hidden="true" />
       )}
       <img
-        src={imgSrc}
+        src={currentSrc}
         alt={alt}
         sizes={sizes}
         width={600}
@@ -47,12 +57,13 @@ const ProductImage = ({
         decoding="async"
         onLoad={() => setLoaded(true)}
         onError={() => {
-          if (imgSrc !== FALLBACK_IMAGE) {
-            setImgSrc(FALLBACK_IMAGE);
+          if (chainIndex + 1 < fallbackChain.length) {
+            setChainIndex((prev) => prev + 1);
+          } else {
+            setLoaded(true);
           }
-          setLoaded(true);
         }}
-        className={`${className} transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
+        className={`${className} transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
       />
     </div>
   );

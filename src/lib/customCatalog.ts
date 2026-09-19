@@ -535,6 +535,18 @@ export function deleteCustomProduct(productId: string): boolean {
   }
 }
 
+export function restoreAllDeletedBaseProducts(): boolean {
+  try {
+    localStorage.removeItem(CUSTOM_DELETED_PRODUCTS_KEY);
+    localStorage.removeItem(CUSTOM_DELETED_VARIANTS_KEY);
+    window.dispatchEvent(new CustomEvent("hon-catalog-update"));
+    syncCatalogConfigToRemote();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function deleteVariantFromProduct(productId: string, variantId: string): boolean {
   try {
     const deletedVars = getDeletedVariantIds();

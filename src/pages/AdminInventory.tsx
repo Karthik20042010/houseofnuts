@@ -28,6 +28,7 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
+  RotateCcw,
 } from "lucide-react";
 import { adminUpdateInventory, adminUpdatePrices, adminUploadImage } from "@/lib/admin";
 import { fetchInventory, StockMap } from "@/lib/inventory";
@@ -41,6 +42,7 @@ import {
   addCustomProduct,
   deleteCustomProduct,
   deleteVariantFromProduct,
+  restoreAllDeletedBaseProducts,
   getPriceOverrides,
   savePriceOverrides,
   saveProductDisplayOrder,
@@ -818,6 +820,20 @@ export const AdminInventory = () => {
             className="px-3.5 py-2 border border-border hover:bg-secondary rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
           >
             <FolderPlus size={15} className="text-accent" /> + Subcategory
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm("Restore all base catalog items and clear deleted product filters?")) {
+                restoreAllDeletedBaseProducts();
+                refreshCatalogLocal();
+                toast.success("Restored all base catalog products!");
+              }
+            }}
+            className="px-3 py-2 border border-border hover:bg-secondary rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs text-muted-foreground hover:text-foreground"
+            title="Restore any accidentally deleted base catalog products"
+          >
+            <RotateCcw size={14} /> Restore Catalog
           </button>
           <button
             type="button"

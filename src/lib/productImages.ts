@@ -39,37 +39,95 @@ export function getAllOverrides(): Overrides {
   return { ...read() };
 }
 
-const CATEGORY_FALLBACKS: Record<string, string> = {
-  nuts: "/images/nuts/almonds.jpg",
-  "flavored-nuts": "/images/nuts/almonds.jpg",
-  "stuffed-dates": "/images/dry-fruits/dates.jpg",
-  "dry-fruits": "/images/dry-fruits/anjeer.jpg",
-  "solar-dried": "/images/dry-fruits/dried-kiwi.jpg",
-  seeds: "/images/seeds/pumpkin-seeds.jpg",
-  mixes: "/images/mixes/berry-mix.jpg",
-  chocolates: "/images/chocolates/lindt-lindor-red-main.jpeg",
-  spices: "/images/spices/spices-hero.png",
-  honey: "/images/honey/wild-honey-hero.png",
-  gifting: "/images/gifting/gift-box-classic.jpg",
+const CATEGORY_FALLBACKS: Record<string, string[]> = {
+  nuts: ["/images/nuts/almonds.jpg", "/images/catalog/walnuts.jpg", "/images/nuts/cashews.jpg", "/images/nuts/pistachios.jpg"],
+  "flavored-nuts": ["/images/nuts/almonds.jpg", "/images/nuts/cashews.jpg"],
+  "stuffed-dates": ["/images/dry-fruits/dates.jpg", "/images/dry-fruits/anjeer.jpg"],
+  "dry-fruits": ["/images/dry-fruits/anjeer.jpg", "/images/dry-fruits/dates.jpg", "/images/dry-fruits/dried-kiwi.jpg"],
+  "solar-dried": ["/images/dry-fruits/dried-kiwi.jpg"],
+  seeds: ["/images/seeds/pumpkin-seeds.jpg", "/images/seeds/sunflower-seeds.png"],
+  mixes: ["/images/mixes/berry-mix.jpg", "/images/mixes/trail-mix.jpg"],
+  chocolates: ["/images/chocolates/lindt-lindor-red-main.jpeg", "/images/chocolates/godiva-dark-truffe.png"],
+  spices: ["/images/spices/spices-hero.png", "/images/spices/saffron.jpg", "/images/spices/cardamom.jpg"],
+  honey: ["/images/honey/wild-honey-hero.png", "/images/honey/honey-jar.jpg"],
+  gifting: ["/images/gifting/gift-box-classic.jpg", "/images/gifting/gift-hamper-luxury.jpg"],
 };
 
-export function getProductImageSrc(product: { id: string; image: string; category?: string }): string {
-  const override = read()[product.id];
-  const candidate = override || product.image;
+export function getItemFallbackChain(product: { id?: string; name?: string; image?: string; images?: string[]; category?: string }): string[] {
+  const chain: string[] = [];
+  const prodId = product.id || "";
+  const nameLower = (product.name || "").toLowerCase();
+  const idLower = prodId.toLowerCase();
 
-  if (
-    candidate &&
-    typeof candidate === "string" &&
-    (candidate.startsWith("/") || candidate.startsWith("http") || candidate.startsWith("data:"))
-  ) {
-    return candidate;
+  // 1. Staff/Admin single image override
+  const singleOverride = read()[prodId];
+  if (singleOverride && typeof singleOverride === "string" && (singleOverride.startsWith("/") || singleOverride.startsWith("http") || singleOverride.startsWith("data:"))) {
+    chain.push(singleOverride);
   }
 
+  // 2. Staff/Admin custom gallery overrides
+  try {
+    const rawGallery = localStorage.getItem(GALLERY_STORAGE_KEY);
+    if (rawGallery) {
+      const gMap = JSON.parse(rawGallery);
+      if (Array.isArray(gMap[prodId])) {
+        for (const img of gMap[prodId]) {
+          if (typeof img === "string" && (img.startsWith("/") || img.startsWith("http") || img.startsWith("data:"))) {
+            chain.push(img);
+          }
+        }
+      }
+    }
+  } catch {
+    // Ignore storage parse error
+  }
+
+  // 3. Base product image & images array
+  if (product.image && typeof product.image === "string" && (product.image.startsWith("/") || product.image.startsWith("http") || product.image.startsWith("data:"))) {
+    chain.push(product.image);
+  }
+  if (Array.isArray(product.images)) {
+    for (const img of product.images) {
+      if (typeof img === "string" && (img.startsWith("/") || img.startsWith("http") || img.startsWith("data:"))) {
+        chain.push(img);
+      }
+    }
+  }
+
+  // 4. Item-name specific fallback candidates
+  if (nameLower.includes("walnut") || nameLower.includes("akhrot") || idLower.includes("walnut")) {
+    chain.push("/images/nuts/walnuts.jpg", "/images/catalog/walnuts.jpg");
+  } else if (nameLower.includes("almond") || nameLower.includes("badam") || idLower.includes("almond")) {
+    chain.push("/images/nuts/mamra-almonds.jpg", "/images/nuts/almonds.jpg");
+  } else if (nameLower.includes("cashew") || nameLower.includes("kaju") || idLower.includes("cashew")) {
+    chain.push("/images/nuts/cashews.jpg");
+  } else if (nameLower.includes("pista") || nameLower.includes("pistachio") || idLower.includes("pista")) {
+    chain.push("/images/nuts/pistachios.jpg");
+  } else if (nameLower.includes("saffron") || nameLower.includes("kesar")) {
+    chain.push("/images/spices/saffron.jpg", "/images/spices/spices-hero.png");
+  } else if (nameLower.includes("honey")) {
+    chain.push("/images/honey/honey-jar.jpg", "/images/honey/wild-honey-hero.png");
+  } else if (nameLower.includes("date") || nameLower.includes("khajur")) {
+    chain.push("/images/dry-fruits/dates.jpg");
+  } else if (nameLower.includes("fig") || nameLower.includes("anjeer")) {
+    chain.push("/images/dry-fruits/anjeer.jpg");
+  }
+
+  // 5. Category-level candidate list
   if (product.category && CATEGORY_FALLBACKS[product.category]) {
-    return CATEGORY_FALLBACKS[product.category];
+    chain.push(...CATEGORY_FALLBACKS[product.category]);
   }
 
-  return "/images/branding/house-of-nuts-logo-hd.png";
+  // Default fallback
+  chain.push("/images/nuts/almonds.jpg", "/images/branding/house-of-nuts-logo-hd.png");
+
+  // Deduplicate while preserving order
+  return Array.from(new Set(chain));
+}
+
+export function getProductImageSrc(product: { id: string; image: string; name?: string; category?: string }): string {
+  const chain = getItemFallbackChain(product);
+  return chain[0] || "/images/nuts/almonds.jpg";
 }
 
 import { syncCatalogConfigToRemote } from "./customCatalog";
