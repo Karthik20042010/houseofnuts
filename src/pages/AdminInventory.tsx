@@ -62,6 +62,8 @@ import {
 } from "@/lib/productImages";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { moveToRecycleBin, getRecycledProducts, RECYCLE_BIN_EVENT } from "@/lib/recycleBin";
+import RecycleBinModal from "@/components/admin/RecycleBinModal";
 
 const UNTRACKED = -1;
 
@@ -139,6 +141,8 @@ export const AdminInventory = () => {
 
   // Inline Add Variant state (per product)
   const [addingVariantForProductId, setAddingVariantForProductId] = useState<string | null>(null);
+  const [isRecycleBinOpen, setIsRecycleBinOpen] = useState(false);
+  const [recycledCount, setRecycledCount] = useState(() => getRecycledProducts().length);
   const [variantSize, setVariantSize] = useState("250g");
   const [variantPrice, setVariantPrice] = useState<number>(350);
   const [variantMrp, setVariantMrp] = useState<number>(450);
@@ -778,11 +782,12 @@ export const AdminInventory = () => {
   };
 
   const handleDeleteProduct = async (product: Product) => {
-    if (window.confirm(`Are you sure you want to delete "${product.name}" from your catalog?`)) {
+    if (window.confirm(`Are you sure you want to delete "${product.name}" from your catalog? It will be safely moved to the Recycle Bin with its stock levels preserved.`)) {
+      moveToRecycleBin(product, stock, "Admin");
       deleteCustomProduct(product.id);
       await publishCatalog(getAllProducts(baseProducts));
       refreshCatalogLocal();
-      toast.success(`Deleted product "${product.name}"`);
+      toast.success(`Moved "${product.name}" to Recycle Bin with preserved stock inventory.`);
     }
   };
 
@@ -864,6 +869,19 @@ export const AdminInventory = () => {
           </button>
           <button
             type="button"
+            onClick={() => setIsRecycleBinOpen(true)}
+            className="px-3.5 py-2 border border-border hover:bg-secondary rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs relative"
+            title="View deleted products and preserved stock in Recycle Bin"
+          >
+            <Trash2 size={14} className="text-destructive" /> Recycle Bin
+            {recycledCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 bg-destructive/15 text-destructive rounded-full text-[10px] font-bold">
+                {recycledCount}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
             onClick={openAddProductModal}
             className="px-4 py-2 bg-accent text-accent-foreground rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-accent/90 cursor-pointer transition-colors shadow-md"
           >
@@ -879,6 +897,17 @@ export const AdminInventory = () => {
         <Summary label="Low Stock (≤5)" value={lowCount} tone="pending" />
         <Summary label="Out of Stock (0)" value={outCount} tone="cancelled" />
       </div>
+
+      {/* Recycle Bin Modal */}
+      <RecycleBinModal
+        isOpen={isRecycleBinOpen}
+        onClose={() => setIsRecycleBinOpen(false)}
+        onRestored={async (product, restoredStock) => {
+          setStock((prev) => ({ ...prev, ...restoredStock }));
+          await publishCatalog(getAllProducts(baseProducts));
+          refreshCatalogLocal();
+        }}
+      />
 
       {/* STEP 1 & STEP 2 HIERARCHICAL CATEGORY SELECTOR */}
       <div className="bg-card border border-border rounded-2xl p-4 space-y-4 shadow-xs">
