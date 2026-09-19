@@ -39,8 +39,37 @@ export function getAllOverrides(): Overrides {
   return { ...read() };
 }
 
-export function getProductImageSrc(product: { id: string; image: string }): string {
-  return read()[product.id] || product.image;
+const CATEGORY_FALLBACKS: Record<string, string> = {
+  nuts: "/images/nuts/almonds.jpg",
+  "flavored-nuts": "/images/nuts/almonds.jpg",
+  "stuffed-dates": "/images/dry-fruits/dates.jpg",
+  "dry-fruits": "/images/dry-fruits/anjeer.jpg",
+  "solar-dried": "/images/dry-fruits/dried-kiwi.jpg",
+  seeds: "/images/seeds/pumpkin-seeds.jpg",
+  mixes: "/images/mixes/berry-mix.jpg",
+  chocolates: "/images/chocolates/lindt-lindor-red-main.jpeg",
+  spices: "/images/spices/spices-hero.png",
+  honey: "/images/honey/wild-honey-hero.png",
+  gifting: "/images/gifting/gift-box-classic.jpg",
+};
+
+export function getProductImageSrc(product: { id: string; image: string; category?: string }): string {
+  const override = read()[product.id];
+  const candidate = override || product.image;
+
+  if (
+    candidate &&
+    typeof candidate === "string" &&
+    (candidate.startsWith("/") || candidate.startsWith("http") || candidate.startsWith("data:"))
+  ) {
+    return candidate;
+  }
+
+  if (product.category && CATEGORY_FALLBACKS[product.category]) {
+    return CATEGORY_FALLBACKS[product.category];
+  }
+
+  return "/images/branding/house-of-nuts-logo-hd.png";
 }
 
 import { syncCatalogConfigToRemote } from "./customCatalog";
@@ -156,11 +185,11 @@ function subscribe(cb: () => void) {
   };
 }
 
-export function useProductImage(product: Product | { id: string; image: string }): string {
+export function useProductImage(product: Product | { id: string; image: string; category?: string }): string {
   return useSyncExternalStore(
     subscribe,
-    () => read()[product.id] || product.image,
-    () => product.image,
+    () => getProductImageSrc(product),
+    () => getProductImageSrc(product),
   );
 }
 

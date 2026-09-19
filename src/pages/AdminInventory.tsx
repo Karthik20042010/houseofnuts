@@ -1139,7 +1139,10 @@ export const AdminInventory = () => {
                       <img
                         src={getProductImageSrc(p)}
                         alt={p.name}
-                        className="size-16 object-cover rounded-xl border border-border shadow-xs"
+                        onError={(e) => {
+                          e.currentTarget.src = "/images/branding/house-of-nuts-logo-hd.png";
+                        }}
+                        className="size-16 object-cover rounded-xl border border-border shadow-xs bg-muted"
                       />
                       {gallery.length > 1 && (
                         <span className="absolute -bottom-1.5 -right-1.5 bg-accent text-accent-foreground text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ProductImageProps {
   src: string;
@@ -9,9 +9,11 @@ interface ProductImageProps {
   sizes?: string;
 }
 
+const FALLBACK_IMAGE = "/images/branding/house-of-nuts-logo-hd.png";
+
 /**
  * Image with a shimmer placeholder that fades out once the file decodes.
- * Prevents the blank/jumpy feel while product photos load.
+ * Automatically falls back to high-res brand logo if original image URL fails to load.
  */
 const ProductImage = ({
   src,
@@ -22,34 +24,36 @@ const ProductImage = ({
   sizes,
 }: ProductImageProps) => {
   const [loaded, setLoaded] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [imgSrc, setImgSrc] = useState(src || FALLBACK_IMAGE);
+
+  useEffect(() => {
+    setImgSrc(src || FALLBACK_IMAGE);
+    setLoaded(false);
+  }, [src]);
 
   return (
-    <div className={`relative w-full h-full aspect-square overflow-hidden ${wrapperClassName}`}>
-      {!loaded && !failed && (
+    <div className={`relative w-full h-full aspect-square overflow-hidden bg-muted/30 ${wrapperClassName}`}>
+      {!loaded && (
         <div className="absolute inset-0 bg-clay animate-pulse" aria-hidden="true" />
       )}
-      {failed ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-clay-light">
-          <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-body px-4 text-center">
-            {alt}
-          </span>
-        </div>
-      ) : (
-        <img
-          src={src}
-          alt={alt}
-          sizes={sizes}
-          width={600}
-          height={600}
-          loading={eager ? "eager" : "lazy"}
-          fetchpriority={eager ? "high" : "low"}
-          decoding="async"
-          onLoad={() => setLoaded(true)}
-          onError={() => setFailed(true)}
-          className={`${className} transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
-        />
-      )}
+      <img
+        src={imgSrc}
+        alt={alt}
+        sizes={sizes}
+        width={600}
+        height={600}
+        loading={eager ? "eager" : "lazy"}
+        fetchpriority={eager ? "high" : "low"}
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        onError={() => {
+          if (imgSrc !== FALLBACK_IMAGE) {
+            setImgSrc(FALLBACK_IMAGE);
+          }
+          setLoaded(true);
+        }}
+        className={`${className} transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
+      />
     </div>
   );
 };
