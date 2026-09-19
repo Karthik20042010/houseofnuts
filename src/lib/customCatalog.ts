@@ -148,36 +148,45 @@ export function findPotentialDuplicates(products: Product[]): Array<{ original: 
   return potential;
 }
 
+export function cleanProductFields(p: Product): Product {
+  if (!p) return p;
+  const cleanPath = (s?: string) =>
+    s ? s.replace(/["'\\]/g, "").trim() : "";
+  const cleanText = (s?: string) =>
+    s ? s.replace(/^["']|["']$/g, "").trim() : "";
+  return {
+    ...p,
+    name: cleanText(p.name),
+    image: cleanPath(p.image),
+    images: Array.isArray(p.images) ? p.images.map(cleanPath).filter(Boolean) : undefined,
+    variants: Array.isArray(p.variants)
+      ? p.variants.map((v) => ({
+          ...v,
+          price: Number(v.price) || 0,
+          mrp: Number(v.mrp) || (v as unknown as { discountPrice?: number }).discountPrice || Number(v.price) || 0,
+        }))
+      : [],
+  };
+}
+
 export async function fetchRemoteCatalogConfig(): Promise<boolean> {
   if (isFetchingRemote) return false;
   isFetchingRemote = true;
   let hasChanges = false;
   try {
     // 1. Fetch products & Google Drive image URLs from Google Sheets Products tab
+    let rawSheetProducts: Product[] = [];
     try {
       const prodRes = await apiGet<{ ok: boolean; products?: Product[] }>("getProducts");
       if (prodRes && prodRes.ok && Array.isArray(prodRes.products) && prodRes.products.length > 0) {
-        const remoteProducts = dedupeCatalogProducts(prodRes.products);
-        const currentCustomRaw = localStorage.getItem(CUSTOM_PRODUCTS_KEY);
-        const currentCustom: Product[] = currentCustomRaw ? JSON.parse(currentCustomRaw) : [];
-
-        const mergedMap = new Map<string, Product>();
-        for (const p of remoteProducts) {
-          if (p.id) mergedMap.set(p.id, p);
-        }
-        for (const p of currentCustom) {
-          if (p.id && !mergedMap.has(p.id)) mergedMap.set(p.id, p);
-        }
-
-        const mergedList = dedupeCatalogProducts(Array.from(mergedMap.values()));
-        localStorage.setItem(CUSTOM_PRODUCTS_KEY, JSON.stringify(mergedList));
+        rawSheetProducts = prodRes.products.map(cleanProductFields);
 
         // Sync Google Drive CDN image URLs for products
         const currentImgOverridesRaw = localStorage.getItem("hon-product-image-overrides-v1");
         const currentImgOverrides: Record<string, string> = currentImgOverridesRaw ? JSON.parse(currentImgOverridesRaw) : {};
         let imgOverrideChanged = false;
 
-        for (const p of remoteProducts) {
+        for (const p of rawSheetProducts) {
           if (p.id && p.image && (p.image.includes("googleusercontent") || p.image.includes("drive.google"))) {
             if (currentImgOverrides[p.id] !== p.image) {
               currentImgOverrides[p.id] = p.image;
@@ -224,15 +233,25 @@ export async function fetchRemoteCatalogConfig(): Promise<boolean> {
         galleryOverrides,
       } = res.config;
 
-      // Version 2 is written only by the new saveCatalog endpoint.  Until
-      // then, old Sheets installations keep their current catalogue visible
-      // and can be safely migrated from the Inventory page.
-      if (res.config.catalogVersion === 2) {
-        const productsResponse = await apiGet<{ ok: boolean; products?: Product[] }>("getProducts");
-        if (productsResponse.ok && Array.isArray(productsResponse.products)) {
-          localStorage.setItem(REMOTE_CATALOG_KEY, JSON.stringify(dedupeCatalogProducts(productsResponse.products)));
-          hasChanges = true;
-        }
+      // Extract and unify products from Google Sheets database
+      const rawCustomProds: Product[] = Array.isArray(customProducts) ? customProducts.map(cleanProductFields) : [];
+      const combinedDbProductsMap = new Map<string, Product>();
+
+      // Base sheet products first
+      for (const p of rawSheetProducts) {
+        if (p.id) combinedDbProductsMap.set(p.id, p);
+      }
+      // Rich custom configured products override and augment
+      for (const p of rawCustomProds) {
+        if (p.id) combinedDbProductsMap.set(p.id, p);
+      }
+
+      const allDbProducts = Array.from(combinedDbProductsMap.values());
+      if (allDbProducts.length > 0) {
+        const dedupedDb = dedupeCatalogProducts(allDbProducts);
+        localStorage.setItem(REMOTE_CATALOG_KEY, JSON.stringify(dedupedDb));
+        localStorage.setItem(CUSTOM_PRODUCTS_KEY, JSON.stringify(dedupedDb));
+        hasChanges = true;
       }
 
       if (productOrder) {
@@ -249,19 +268,6 @@ export async function fetchRemoteCatalogConfig(): Promise<boolean> {
       }
       if (customSubcategories) {
         localStorage.setItem(CUSTOM_SUBCATEGORIES_KEY, JSON.stringify(customSubcategories));
-        hasChanges = true;
-      }
-      if (customProducts && customProducts.length > 0) {
-        const currentProductsRaw = localStorage.getItem(CUSTOM_PRODUCTS_KEY);
-        const currentProds: Product[] = currentProductsRaw ? JSON.parse(currentProductsRaw) : [];
-        const prodMap = new Map<string, Product>();
-        for (const p of currentProds) {
-          if (p.id) prodMap.set(p.id, p);
-        }
-        for (const p of customProducts) {
-          if (p.id) prodMap.set(p.id, p);
-        }
-        localStorage.setItem(CUSTOM_PRODUCTS_KEY, JSON.stringify(Array.from(prodMap.values())));
         hasChanges = true;
       }
       if (priceOverrides) {
@@ -287,6 +293,11 @@ export async function fetchRemoteCatalogConfig(): Promise<boolean> {
         clearProductImageCache();
         hasChanges = true;
       }
+    } else if (rawSheetProducts.length > 0) {
+      const dedupedDb = dedupeCatalogProducts(rawSheetProducts);
+      localStorage.setItem(REMOTE_CATALOG_KEY, JSON.stringify(dedupedDb));
+      localStorage.setItem(CUSTOM_PRODUCTS_KEY, JSON.stringify(dedupedDb));
+      hasChanges = true;
     }
 
     if (hasChanges) {
@@ -300,6 +311,7 @@ export async function fetchRemoteCatalogConfig(): Promise<boolean> {
   }
   return false;
 }
+
 
 export function syncCatalogConfigToRemote() {
   try {
@@ -537,7 +549,27 @@ export function getAllProducts(baseProducts: Product[]): Product[] {
     const rawRemote = localStorage.getItem(REMOTE_CATALOG_KEY);
     if (rawRemote) {
       const remote = JSON.parse(rawRemote) as Product[];
-      if (Array.isArray(remote)) return dedupeCatalogProducts(remote);
+      if (Array.isArray(remote) && remote.length > 0) {
+        const deletedProductIds = new Set(getDeletedProductIds());
+        const deletedVariantIds = new Set(getDeletedVariantIds());
+        const overrides = getPriceOverrides();
+        const filtered = remote
+          .filter((p) => !deletedProductIds.has(p.id))
+          .map((p) => {
+            const updatedVariants = (p.variants || [])
+              .filter((v) => !deletedVariantIds.has(v.id))
+              .map((v) => {
+                const ov = overrides[v.id];
+                if (ov) {
+                  return { ...v, price: ov.price, mrp: ov.mrp ?? v.mrp };
+                }
+                return v;
+              });
+            return { ...p, variants: updatedVariants };
+          })
+          .filter((p) => p.variants.length > 0);
+        return dedupeCatalogProducts(filtered);
+      }
     }
   } catch {
     localStorage.removeItem(REMOTE_CATALOG_KEY);
@@ -761,7 +793,12 @@ export function useCatalog() {
 
   useEffect(() => {
     // Sync remote central catalog config on mount for all visitors
-    fetchRemoteCatalogConfig();
+    fetchRemoteCatalogConfig().then((hasChanges) => {
+      if (hasChanges) {
+        setCategoriesList(getCustomCategories());
+        setAllProductsList(getAllProducts(defaultProducts));
+      }
+    });
 
     const handleUpdate = () => {
       setCategoriesList(getCustomCategories());

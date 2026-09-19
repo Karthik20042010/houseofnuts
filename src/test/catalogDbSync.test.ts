@@ -137,4 +137,39 @@ describe("Catalog & Product Image Database Synchronization Engine", () => {
     expect(result[0].id).toBe("standard-walnuts-copy");
     expect(result[0].variants[0].price).toBe(409);
   });
+
+  it("should populate REMOTE_CATALOG_KEY when customProducts are returned from remote database and clean escaped quotes in images", async () => {
+    const mockRemoteConfig = {
+      ok: true,
+      config: {
+        customProducts: [
+          {
+            id: "remote-walnuts",
+            name: "Remote Chilean Walnuts",
+            category: "nuts",
+            description: "Fresh walnuts directly from DB",
+            image: '"/images/catalog"/walnuts.jpg',
+            variants: [{ id: "rem-walnut-250", size: "250g", price: 450, discountPrice: 550 }],
+          },
+        ],
+      },
+    };
+
+    vi.spyOn(apiModule, "apiGet").mockImplementation(async (action: string) => {
+      if (action === "getCatalogConfig") return mockRemoteConfig;
+      if (action === "getProducts") return { ok: true, products: [] };
+      return { ok: true };
+    });
+
+    const success = await fetchRemoteCatalogConfig();
+    expect(success).toBe(true);
+
+    const prods = getAllProducts(baseProducts);
+    const remoteProd = prods.find((p) => p.id === "remote-walnuts");
+    expect(remoteProd).toBeDefined();
+    expect(remoteProd?.name).toBe("Remote Chilean Walnuts");
+    expect(remoteProd?.image).toBe("/images/catalog/walnuts.jpg");
+    expect(remoteProd?.variants[0].mrp).toBe(550);
+  });
 });
+

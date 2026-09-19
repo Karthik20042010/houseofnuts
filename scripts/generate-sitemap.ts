@@ -32,15 +32,21 @@ const staticEntries: SitemapEntry[] = [
   { path: "/terms", changefreq: "yearly", priority: "0.3" },
 ];
 
-function getApiUrl(): string | null {
+const DEFAULT_APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbzOt0eUwPlTbge4ZdzfvkJd3sxmDwG-2J9vqt3JAjV79agTJV9ZGgX4YRzFVpSa2P0/exec";
+
+function getApiUrl(): string {
   if (process.env.VITE_APPS_SCRIPT_URL) {
     return process.env.VITE_APPS_SCRIPT_URL.trim();
+  }
+  if (process.env.APPS_SCRIPT_URL) {
+    return process.env.APPS_SCRIPT_URL.trim();
   }
   const envPath = resolve("./.env");
   if (existsSync(envPath)) {
     try {
       const envText = readFileSync(envPath, "utf-8");
-      const match = envText.match(/VITE_APPS_SCRIPT_URL=(.+)/);
+      const match = envText.match(/(?:VITE_)?APPS_SCRIPT_URL=(.+)/);
       if (match && match[1]) {
         return match[1].trim().replace(/^["']|["']$/g, "");
       }
@@ -48,7 +54,7 @@ function getApiUrl(): string | null {
       // ignore
     }
   }
-  return null;
+  return DEFAULT_APPS_SCRIPT_URL;
 }
 
 async function fetchDynamicProductsAndCategories(): Promise<{
