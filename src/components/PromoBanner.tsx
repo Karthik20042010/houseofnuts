@@ -52,7 +52,8 @@ const PromoBanner = () => {
       <div className="max-w-[1600px] mx-auto px-6 py-2.5 flex items-center justify-center gap-3">
         <button
           onClick={() => setCurrent((c) => (c - 1 + promos.length) % promos.length)}
-          className="opacity-60 hover:opacity-100 transition-opacity hidden sm:block"
+          aria-label="Previous promo"
+          className="opacity-60 hover:opacity-100 transition-opacity hidden sm:block min-w-[24px] min-h-[24px]"
         >
           <ChevronLeft size={14} />
         </button>
@@ -74,14 +75,16 @@ const PromoBanner = () => {
 
         <button
           onClick={() => setCurrent((c) => (c + 1) % promos.length)}
-          className="opacity-60 hover:opacity-100 transition-opacity hidden sm:block"
+          aria-label="Next promo"
+          className="opacity-60 hover:opacity-100 transition-opacity hidden sm:block min-w-[24px] min-h-[24px]"
         >
           <ChevronRight size={14} />
         </button>
 
         <button
           onClick={() => setDismissed(true)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 opacity-60 hover:opacity-100 transition-opacity"
+          aria-label="Dismiss promotional banner"
+          className="absolute right-3 top-1/2 -translate-y-1/2 opacity-60 hover:opacity-100 transition-opacity min-w-[24px] min-h-[24px] flex items-center justify-center"
         >
           <X size={14} />
         </button>
@@ -93,7 +96,8 @@ const PromoBanner = () => {
           <button
             key={i}
             onClick={() => setCurrent(i)}
-            className={`w-1 h-1 rounded-full transition-all ${i === current ? "bg-accent-foreground w-3" : "bg-accent-foreground/40"}`}
+            aria-label={`Go to slide ${i + 1}`}
+            className={`h-1.5 rounded-full transition-all ${i === current ? "bg-accent-foreground w-4" : "bg-accent-foreground/40 w-1.5"}`}
           />
         ))}
       </div>

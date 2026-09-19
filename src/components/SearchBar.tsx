@@ -122,6 +122,7 @@ const SearchBar = () => {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder="Search nuts, spices, honey..."
+              aria-label="Search products, nuts, spices, and honey"
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground font-body py-1"
             />
             {query ? (

@@ -128,7 +128,8 @@ const Index = () => {
       <CategoryStrip />
       <CartDrawer />
 
-      {/* Hero — editorial bento */}
+      <main id="main-content">
+        {/* Hero — editorial bento */}
       <section className="px-4 sm:px-6 md:px-12 pt-6 pb-10 md:pt-10 md:pb-16">
         <div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 lg:h-[620px]">
           {/* Main tile */}
@@ -331,8 +332,10 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center w-full md:w-auto">
               {/* Sort */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <label className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground font-body font-medium whitespace-nowrap">Sort:</label>
+                <label htmlFor="home-sort-select" className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground font-body font-medium whitespace-nowrap">Sort:</label>
                 <select
+                  id="home-sort-select"
+                  aria-label="Sort collection"
                   value={sortBy}
                   onChange={(e) => {
                     setSortBy(e.target.value as SortOption);
@@ -595,6 +598,7 @@ const Index = () => {
           </div>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
       <footer className="bg-primary text-primary-foreground/60 py-12 px-6 border-t border-primary-foreground/10">

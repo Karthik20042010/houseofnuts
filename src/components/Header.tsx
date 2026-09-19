@@ -54,7 +54,10 @@ const Header = () => {
         <Link to="/gifting" className="hover:text-accent transition-colors duration-300">Gifting</Link>
         <Link to="/journal" className="hover:text-accent transition-colors duration-300">Journal</Link>
         <div className="relative group">
-          <button className="flex items-center gap-1 hover:text-accent transition-colors duration-300">
+          <button
+            aria-label="Toggle category menu"
+            className="flex items-center gap-1 hover:text-accent transition-colors duration-300"
+          >
             Categories <ChevronDown size={12} />
           </button>
           <div className="absolute left-0 top-full pt-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
@@ -82,7 +85,11 @@ const Header = () => {
         )}
       </nav>
 
-      <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+      <button
+        aria-label="Toggle navigation menu"
+        className="md:hidden min-w-[44px] min-h-[44px] flex items-center justify-center"
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+      >
         {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
@@ -174,8 +181,9 @@ const Header = () => {
         {/* Basket Button */}
         <button
           type="button"
+          aria-label={`Shopping basket with ${totalItems} items`}
           onClick={() => setIsCartOpen(true)}
-          className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] font-medium font-body hover:text-accent transition-colors duration-300 cursor-pointer"
+          className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] font-medium font-body hover:text-accent transition-colors duration-300 cursor-pointer min-h-[44px] min-w-[44px] justify-center"
         >
           <ShoppingBag size={20} />
           <span className="hidden md:inline">Basket</span>
