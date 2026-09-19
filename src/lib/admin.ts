@@ -80,7 +80,7 @@ export async function adminLogin(
 
 function requireAuth(): string {
   const s = readSession();
-  if (s && s.password && s.password !== "oauth-session-token") {
+  if (s && s.password) {
     return s.password;
   }
   return "";

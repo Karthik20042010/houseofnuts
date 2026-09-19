@@ -202,7 +202,9 @@ export async function fetchRemoteCatalogConfig(): Promise<boolean> {
         hasChanges = true;
       }
       if (galleryOverrides) {
-        const cleanedGallery: Record<string, string[]> = {};
+        const currentGalleryRaw = localStorage.getItem("hon-product-gallery-overrides-v1");
+        const currentGallery: Record<string, string[]> = currentGalleryRaw ? JSON.parse(currentGalleryRaw) : {};
+        const cleanedGallery: Record<string, string[]> = { ...currentGallery };
         for (const [k, imgs] of Object.entries(galleryOverrides)) {
           if (Array.isArray(imgs) && imgs.length <= 10) {
             cleanedGallery[k] = imgs;

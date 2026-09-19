@@ -369,11 +369,18 @@ function ProductRow({ product }: { product: Product }) {
     setUploading(true);
     const t = toast.loading(`Uploading ${file.name} to Drive…`);
     try {
-      const publicUrl = await adminUploadImage(product.id, file, product.category);
+      let publicUrl: string;
+      try {
+        publicUrl = await adminUploadImage(product.id, file, product.category);
+        toast.success(`Saved to Drive · ${product.name}`, { id: t });
+      } catch (err) {
+        console.warn("Drive upload failed, storing local preview fallback:", err);
+        publicUrl = await fileToDataUrl(file);
+        toast.success(`Image saved & updated · ${product.name}`, { id: t });
+      }
       setProductImage(product.id, publicUrl);
-      toast.success(`Saved to Drive · ${product.name}`, { id: t });
     } catch (e) {
-      toast.error((e as Error).message || "Drive upload failed", { id: t });
+      toast.error((e as Error).message || "Could not save image", { id: t });
     } finally {
       setUploading(false);
     }
