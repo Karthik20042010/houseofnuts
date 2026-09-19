@@ -156,8 +156,9 @@ const ProductDetail = () => {
       "@type": "Offer",
       "url": `https://houseofnuts.store/product/${product.id}`,
       "priceCurrency": "INR",
-      "price": variant ? variant.price : product.price,
+      "price": variant?.price ?? product.variants[0]?.price,
       "availability": product.inStock !== false ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "itemCondition": "https://schema.org/NewCondition",
       "seller": {
         "@type": "Organization",
         "name": "House of Nuts Proddatur"
@@ -179,7 +180,7 @@ const ProductDetail = () => {
     <div className="min-h-screen">
       <SEOHead
         title={`Buy ${product.name} Online`}
-        description={`Shop premium quality ${product.name} (${variant?.weight || '100% Natural'}) at House of Nuts Proddatur. Best prices, fresh harvest, fast delivery.`}
+        description={`Shop premium quality ${product.name} (${variant?.size || '100% Natural'}) at House of Nuts Proddatur. Freshly packed, with reliable delivery from House of Nuts.`}
         keywords={`${product.name.toLowerCase()}, buy ${product.name.toLowerCase()} online, ${product.name.toLowerCase()} proddatur, house of nuts, dry fruits proddatur`}
         canonicalUrl={`/product/${product.id}`}
         ogImage={activeImageSrc.startsWith("http") ? activeImageSrc : `https://houseofnuts.store${activeImageSrc}`}

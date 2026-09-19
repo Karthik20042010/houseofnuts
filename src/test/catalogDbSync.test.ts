@@ -9,6 +9,7 @@ import {
   fetchRemoteCatalogConfig,
   syncCatalogConfigToRemote,
   getAllProducts,
+  dedupeCatalogProducts,
 } from "@/lib/customCatalog";
 import {
   getProductImageSrc,
@@ -124,5 +125,16 @@ describe("Catalog & Product Image Database Synchronization Engine", () => {
     const calAlmond = allProds.find((p) => p.id === "california-almonds");
     const variant250 = calAlmond?.variants.find((v) => v.id === "cal-almond-250");
     expect(variant250?.price).toBe(399);
+  });
+
+  it("keeps only the latest record when a catalog contains duplicate products", () => {
+    const original = baseProducts.find((product) => product.id === "standard-walnuts")!;
+    const duplicate = { ...original, id: "standard-walnuts-copy", variants: original.variants.map((v) => ({ ...v, price: v.price - 10 })) };
+
+    const result = dedupeCatalogProducts([original, duplicate]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("standard-walnuts-copy");
+    expect(result[0].variants[0].price).toBe(409);
   });
 });

@@ -85,6 +85,29 @@ const REMOTE_CATALOG_KEY = "hon_remote_catalog_v2";
 
 let isFetchingRemote = false;
 
+/**
+ * The Sheets API can contain old rows from before a product was corrected.
+ * Do not show (or re-publish) two cards for the same SKU or the same sellable
+ * item. Later rows win: Sheets appends the most recently saved record last.
+ */
+export function dedupeCatalogProducts(products: Product[]): Product[] {
+  const byId = new Map<string, Product>();
+  for (const product of products) {
+    if (!product?.id || !product?.name || !Array.isArray(product.variants) || product.variants.length === 0) continue;
+    if (byId.has(product.id)) byId.delete(product.id);
+    byId.set(product.id, product);
+  }
+
+  const bySellableIdentity = new Map<string, Product>();
+  for (const product of byId.values()) {
+    const sizes = product.variants.map((variant) => variant.size.trim().toLowerCase()).sort().join("|");
+    const identity = `${product.category}|${product.name.trim().toLowerCase()}|${(product.localName || "").trim().toLowerCase()}|${sizes}`;
+    if (bySellableIdentity.has(identity)) bySellableIdentity.delete(identity);
+    bySellableIdentity.set(identity, product);
+  }
+  return Array.from(bySellableIdentity.values());
+}
+
 export async function fetchRemoteCatalogConfig(): Promise<boolean> {
   if (isFetchingRemote) return false;
   isFetchingRemote = true;
@@ -94,7 +117,7 @@ export async function fetchRemoteCatalogConfig(): Promise<boolean> {
     try {
       const prodRes = await apiGet<{ ok: boolean; products?: Product[] }>("getProducts");
       if (prodRes && prodRes.ok && Array.isArray(prodRes.products) && prodRes.products.length > 0) {
-        const remoteProducts = prodRes.products;
+        const remoteProducts = dedupeCatalogProducts(prodRes.products);
         const currentCustomRaw = localStorage.getItem(CUSTOM_PRODUCTS_KEY);
         const currentCustom: Product[] = currentCustomRaw ? JSON.parse(currentCustomRaw) : [];
 
@@ -106,7 +129,7 @@ export async function fetchRemoteCatalogConfig(): Promise<boolean> {
           if (p.id && !mergedMap.has(p.id)) mergedMap.set(p.id, p);
         }
 
-        const mergedList = Array.from(mergedMap.values());
+        const mergedList = dedupeCatalogProducts(Array.from(mergedMap.values()));
         localStorage.setItem(CUSTOM_PRODUCTS_KEY, JSON.stringify(mergedList));
 
         // Sync Google Drive CDN image URLs for products
@@ -167,7 +190,7 @@ export async function fetchRemoteCatalogConfig(): Promise<boolean> {
       if (res.config.catalogVersion === 2) {
         const productsResponse = await apiGet<{ ok: boolean; products?: Product[] }>("getProducts");
         if (productsResponse.ok && Array.isArray(productsResponse.products)) {
-          localStorage.setItem(REMOTE_CATALOG_KEY, JSON.stringify(productsResponse.products));
+          localStorage.setItem(REMOTE_CATALOG_KEY, JSON.stringify(dedupeCatalogProducts(productsResponse.products)));
           hasChanges = true;
         }
       }
@@ -466,7 +489,7 @@ export function getAllProducts(baseProducts: Product[]): Product[] {
     const rawRemote = localStorage.getItem(REMOTE_CATALOG_KEY);
     if (rawRemote) {
       const remote = JSON.parse(rawRemote) as Product[];
-      if (Array.isArray(remote)) return remote;
+      if (Array.isArray(remote)) return dedupeCatalogProducts(remote);
     }
   } catch {
     localStorage.removeItem(REMOTE_CATALOG_KEY);
@@ -537,7 +560,7 @@ export function getAllProducts(baseProducts: Product[]): Product[] {
     });
   }
 
-  return allList;
+  return dedupeCatalogProducts(allList);
 }
 
 export function deleteCustomProduct(productId: string): boolean {
@@ -653,7 +676,7 @@ export function getCustomSubcategories(): CustomSubcategory[] {
 
 /** Replace the browser cache only after the database confirms a publish. */
 export function setPublishedCatalog(products: Product[]) {
-  localStorage.setItem(REMOTE_CATALOG_KEY, JSON.stringify(products));
+  localStorage.setItem(REMOTE_CATALOG_KEY, JSON.stringify(dedupeCatalogProducts(products)));
   window.dispatchEvent(new CustomEvent("hon-catalog-update"));
 }
 

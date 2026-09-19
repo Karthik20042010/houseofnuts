@@ -418,7 +418,7 @@ function safeJsonArray(value) {
 // Rebuild the catalog master from one validated snapshot. Products and prices
 // change together, which prevents shop/inventory/image records drifting apart.
 function saveCatalog(body) {
-  var products = (body && body.products) || [];
+  var products = dedupeCatalogProducts((body && body.products) || []);
   if (!Array.isArray(products)) return { ok: false, error: "products must be an array" };
   var productRows = [];
   var priceRows = [];
@@ -448,6 +448,24 @@ function saveCatalog(body) {
     customSubcategories: Array.isArray(meta.subcategories) ? meta.subcategories : []
   }});
   return { ok: true, productCount: productRows.length, variantCount: priceRows.length };
+}
+
+// Product ID catches exact duplicates; the second key catches accidental
+// copies created with a different ID but the same name, local name and pack
+// sizes. Keeping the last item matches the latest row saved by the manager.
+function dedupeCatalogProducts(products) {
+  var byId = {};
+  (products || []).forEach(function (p) {
+    if (p && p.id && p.name && Array.isArray(p.variants) && p.variants.length) byId[String(p.id)] = p;
+  });
+  var byIdentity = {};
+  Object.keys(byId).forEach(function (id) {
+    var p = byId[id];
+    var sizes = p.variants.map(function (v) { return String(v.size || "").trim().toLowerCase(); }).sort().join("|");
+    var key = [String(p.category || ""), String(p.name || "").trim().toLowerCase(), String(p.localName || "").trim().toLowerCase(), sizes].join("|");
+    byIdentity[key] = p;
+  });
+  return Object.keys(byIdentity).map(function (key) { return byIdentity[key]; });
 }
 
 // -------- Sheet 4: Prices Tab --------
