@@ -9,15 +9,15 @@ export function AnalyticsTracker() {
 
   useEffect(() => {
     // Only track privacy-preserving pseudonymous pageview/session telemetry without PII
-    trackPageView(location.pathname, document.title, isGoogleAuthenticated);
-    touchSession(location.pathname, true, isGoogleAuthenticated);
+    trackPageView(location.pathname, document.title, String(isGoogleAuthenticated));
+    touchSession(location.pathname, true, String(isGoogleAuthenticated));
   }, [location.pathname, isGoogleAuthenticated]);
 
   // Heartbeat so time-on-site is measured while the visitor stays on a page
   useEffect(() => {
     const beat = () => {
       if (document.visibilityState === "visible") {
-        touchSession(window.location.pathname, false, isGoogleAuthenticated);
+        touchSession(window.location.pathname, false, String(isGoogleAuthenticated));
       }
     };
     const timer = window.setInterval(beat, 15000);

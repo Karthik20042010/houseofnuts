@@ -106,6 +106,36 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://houseofnuts.store/journal/mamra-vs-gurbandi-vs-california-almonds</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://houseofnuts.store/journal/how-to-store-dry-fruits-and-nuts</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://houseofnuts.store/journal/kaju-katli-recipe</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://houseofnuts.store/journal/healthy-trail-mix-recipe</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://houseofnuts.store/journal/how-to-choose-dry-fruits-online</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://houseofnuts.store/journal/raw-wild-honey-guide</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://houseofnuts.store/product/california-almonds</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -352,31 +382,6 @@
   </url>
   <url>
     <loc>https://houseofnuts.store/product/solar-kiwi-coins</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://houseofnuts.store/product/pistachios-salted</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://houseofnuts.store/product/medjool-dates</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://houseofnuts.store/product/berry-trail-mix</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://houseofnuts.store/product/live-test-pecan-nuts</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://houseofnuts.store/product/walnuts</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>

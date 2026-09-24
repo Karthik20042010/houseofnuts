@@ -368,9 +368,9 @@ export function getCustomCategories(): CustomCategory[] {
     const existingIds = new Set(defaultCategories.map((c) => c.id));
     const merged: CustomCategory[] = [...defaultCategories];
     for (const c of stored) {
-      if (!existingIds.has(c.id)) {
+      if (!existingIds.has(c.id as never)) {
         merged.push(c);
-        existingIds.add(c.id);
+        existingIds.add(c.id as never);
       }
     }
 

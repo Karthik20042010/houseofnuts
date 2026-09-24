@@ -47,7 +47,7 @@ const ProductDetail = () => {
     if (product?.id) {
       fetchServerReviews(product.id).then((revs) => {
         if (Array.isArray(revs)) {
-          setServerReviews(revs.filter((r) => r.verified || r.status === "approved"));
+          setServerReviews(revs.filter((r) => r.verified || (r as { status?: string }).status === "approved"));
         }
       });
     }
@@ -175,7 +175,7 @@ const ProductDetail = () => {
       "url": `https://houseofnuts.store/product/${product.id}`,
       "priceCurrency": "INR",
       "price": variant?.price ?? product.variants[0]?.price,
-      "availability": product.inStock !== false ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "availability": (product as { inStock?: boolean }).inStock !== false ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       "itemCondition": "https://schema.org/NewCondition",
       "seller": {
         "@type": "Organization",

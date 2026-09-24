@@ -2,6 +2,7 @@
 import { writeFileSync, existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { products as defaultProducts, categories as defaultCategories } from "../src/data/products";
+import { guides } from "../src/data/guides";
 
 const BASE_URL = "https://houseofnuts.store";
 
@@ -137,7 +138,13 @@ async function main() {
     .filter((p) => p.category ? !EXCLUDED_CATEGORIES.has(p.category) : true)
     .map((p) => ({ path: `/product/${p.id}`, changefreq: "weekly", priority: "0.7" }));
 
-  const entries: SitemapEntry[] = [...staticEntries, ...categoryEntries, ...productEntries];
+  const guideEntries: SitemapEntry[] = guides.map((g) => ({
+    path: `/journal/${g.slug}`,
+    changefreq: "monthly",
+    priority: "0.7",
+  }));
+
+  const entries: SitemapEntry[] = [...staticEntries, ...categoryEntries, ...guideEntries, ...productEntries];
 
   writeFileSync(resolve("public/sitemap.xml"), generateSitemap(entries));
   console.log(`sitemap.xml written (${entries.length} entries)`);

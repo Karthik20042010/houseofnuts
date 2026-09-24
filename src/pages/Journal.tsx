@@ -5,6 +5,8 @@ import CartDrawer from "@/components/CartDrawer";
 import PromoBanner from "@/components/PromoBanner";
 import { GuidesAndRecipes } from "@/components/GuidesAndRecipes";
 import { GUIDES_AND_RECIPES } from "@/data/guidesData";
+import { guides } from "@/data/guides";
+import { Link } from "react-router-dom";
 
 const Journal = () => {
   const collectionJsonLd = {
@@ -53,6 +55,22 @@ const Journal = () => {
         </section>
 
         {/* Guides & Recipes Component with Search and Category Filters */}
+        <section className="max-w-[1500px] mx-auto px-6 md:px-12 py-12">
+          <h2 className="font-display text-3xl sm:text-4xl mb-6">Buying guides & recipes</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {guides.map((g) => (
+              <Link key={g.slug} to={`/journal/${g.slug}`} className="group rounded-2xl overflow-hidden border border-border bg-card hover:shadow-lg transition-shadow">
+                <img src={g.image} alt={g.title} loading="lazy" width={600} height={340} className="w-full aspect-[16/9] object-cover bg-muted" />
+                <div className="p-5">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">{g.kindLabel} · {g.readingMinutes} min</p>
+                  <h3 className="font-display text-xl leading-snug mb-2 group-hover:text-accent">{g.title}</h3>
+                  <p className="text-sm text-muted-foreground font-body">{g.excerpt}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         <GuidesAndRecipes showSearchAndFilters={true} />
       </main>
     </div>

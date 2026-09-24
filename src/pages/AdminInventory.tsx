@@ -388,7 +388,7 @@ export const AdminInventory = () => {
 
   const setRateVal = (id: string, field: "price" | "mrp", val: number) => {
     setPricesMap((prev) => {
-      const current = prev[id] || {};
+      const current = prev[id] || ({} as { price?: number; mrp?: number });
       return {
         ...prev,
         [id]: {

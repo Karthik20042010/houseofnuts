@@ -64,7 +64,7 @@ describe("Recycle Bin & Deleted Inventory Management Engine", () => {
   });
 
   it("should restore a product and push preserved stock counts to the inventory system", async () => {
-    const adminInventorySpy = vi.spyOn(adminModule, "adminUpdateInventory").mockResolvedValue(true);
+    const adminInventorySpy = vi.spyOn(adminModule, "adminUpdateInventory").mockResolvedValue(true as never);
     const syncCatalogSpy = vi.spyOn(customCatalogModule, "syncCatalogConfigToRemote").mockReturnValue();
 
     // Mark as deleted
