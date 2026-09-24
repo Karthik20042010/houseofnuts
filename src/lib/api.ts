@@ -67,9 +67,9 @@ export async function apiGet<T = unknown>(
   }
 }
 
-export async function fetchProductSpecsFromDB(): Promise<Record<string, ProductSpecification>> {
+export async function fetchProductSpecsFromDB(): Promise<Record<string, Record<string, unknown>>> {
   try {
-    const res = await apiGet<{ ok: boolean; specs?: Record<string, ProductSpecification> }>("getProductSpecs");
+    const res = await apiGet<{ ok: boolean; specs?: Record<string, Record<string, unknown>> }>("getProductSpecs");
     if (res && res.ok && res.specs && Object.keys(res.specs).length > 0) {
       const { setDynamicProductSpecs } = await import("./productDetails");
       setDynamicProductSpecs(res.specs);

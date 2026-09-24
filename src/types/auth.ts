@@ -5,6 +5,7 @@ export interface GoogleUser {
   name: string;
   picture?: string;
   googleId?: string;
+  role?: string;
 }
 
 export interface UserSession {

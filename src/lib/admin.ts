@@ -233,7 +233,7 @@ export async function adminUploadImage(
       throw new Error("Missing file or base64 data for upload");
     }
   } else {
-    productId = productIdOrOpts;
+    productId = productIdOrOpts as string;
     category = categoryParam || "";
     if (!fileObj) throw new Error("Missing file object for upload");
     filename = fileObj.name;

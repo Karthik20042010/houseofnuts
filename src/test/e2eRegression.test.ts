@@ -150,13 +150,13 @@ describe("E2E Regression Flow & Reliability Tests", () => {
         total: 1500,
         status: "pending",
         paymentStatus: "pending",
-        paymentNotes: "UPI UTR: 423918273645",
+        ...({ paymentNotes: "UPI UTR: 423918273645" } as object),
       };
 
       expect(mockOrder.items[0].image).toBe("/images/catalog/walnuts.jpg");
       expect(mockOrder.items[0].price).toBe(750);
       expect(mockOrder.paymentStatus).toBe("pending");
-      expect(mockOrder.paymentNotes).toContain("423918273645");
+      expect((mockOrder as { paymentNotes?: string }).paymentNotes).toContain("423918273645");
     });
 
     it("should evaluate free delivery correctly at the ₹999 threshold", () => {
