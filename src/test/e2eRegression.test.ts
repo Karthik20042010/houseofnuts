@@ -150,7 +150,7 @@ describe("E2E Regression Flow & Reliability Tests", () => {
         total: 1500,
         status: "pending",
         paymentStatus: "pending",
-        ...({ paymentNotes: "UPI UTR: 423918273645" } as object),
+        timestamp: new Date().toISOString(), notes: "", ...({ paymentNotes: "UPI UTR: 423918273645" } as object),
       };
 
       expect(mockOrder.items[0].image).toBe("/images/catalog/walnuts.jpg");

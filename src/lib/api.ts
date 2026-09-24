@@ -1,5 +1,6 @@
 import { checkRateLimit } from "./rateLimiter";
 import { obfuscatePayload } from "./encryption";
+import type { ProductSpecification } from "./productDetails";
 export const DEFAULT_APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbzOt0eUwPlTbge4ZdzfvkJd3sxmDwG-2J9vqt3JAjV79agTJV9ZGgX4YRzFVpSa2P0/exec";
 
@@ -67,9 +68,9 @@ export async function apiGet<T = unknown>(
   }
 }
 
-export async function fetchProductSpecsFromDB(): Promise<Record<string, Record<string, unknown>>> {
+export async function fetchProductSpecsFromDB(): Promise<Record<string, ProductSpecification>> {
   try {
-    const res = await apiGet<{ ok: boolean; specs?: Record<string, Record<string, unknown>> }>("getProductSpecs");
+    const res = await apiGet<{ ok: boolean; specs?: Record<string, ProductSpecification> }>("getProductSpecs");
     if (res && res.ok && res.specs && Object.keys(res.specs).length > 0) {
       const { setDynamicProductSpecs } = await import("./productDetails");
       setDynamicProductSpecs(res.specs);
