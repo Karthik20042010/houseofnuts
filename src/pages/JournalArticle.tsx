@@ -21,7 +21,7 @@ const JournalArticle = () => {
     .filter(Boolean) as typeof products;
   const cats = guide.categories
     .map((id) => categories.find((c) => c.id === id))
-    .filter(Boolean) as typeof categories;
+    .filter((c): c is (typeof categories)[number] => Boolean(c));
   const more = guides.filter((g) => g.slug !== guide.slug).slice(0, 3);
 
   const jsonLd = [
@@ -122,7 +122,7 @@ const JournalArticle = () => {
             <div className="flex flex-wrap gap-2">
               {cats.map((c) => (
                 <Link key={c.id} to={`/category/${c.id}`} className="rounded-full border border-border px-4 py-2 text-sm hover:bg-secondary">
-                  {c.name}
+                  {c.label}
                 </Link>
               ))}
             </div>
