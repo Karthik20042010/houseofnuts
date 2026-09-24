@@ -28,6 +28,7 @@ const AccountProfile = lazy(() => import("./pages/AccountProfile.tsx"));
 const Wishlist = lazy(() => import("./pages/Wishlist.tsx"));
 const Gifting = lazy(() => import("./pages/Gifting.tsx"));
 const Journal = lazy(() => import("./pages/Journal.tsx"));
+const JournalArticle = lazy(() => import("./pages/JournalArticle.tsx"));
 const StoreInfo = lazy(() => import("./pages/StoreInfo.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
@@ -80,6 +81,7 @@ const App = () => (
                       <Route path="/wishlist" element={<Wishlist />} />
                       <Route path="/gifting" element={<Gifting />} />
                       <Route path="/journal" element={<Journal />} />
+                      <Route path="/journal/:slug" element={<JournalArticle />} />
                       <Route path="/faq" element={<StoreInfo />} />
                       <Route path="/shipping" element={<StoreInfo />} />
                       <Route path="/returns" element={<StoreInfo />} />
