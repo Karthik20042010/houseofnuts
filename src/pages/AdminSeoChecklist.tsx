@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { adminGetSeoChecklist, adminSaveSeoChecklist } from "@/lib/admin";
 
 const STORAGE_KEY = "hon-seo-checklist";
 const SITE = "https://houseofnuts.store";
@@ -65,10 +66,32 @@ export default function AdminSeoChecklist() {
   const [done, setDone] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
   });
+  const [sync, setSync] = useState<"loading" | "synced" | "saving" | "offline">("loading");
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(done)); }, [done]);
+  useEffect(() => {
+    adminGetSeoChecklist()
+      .then((remote) => {
+        const local = (() => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; } })();
+        if (Object.keys(remote).length === 0 && Object.keys(local).length > 0) {
+          adminSaveSeoChecklist(local).catch(() => {});
+        } else setDone(remote);
+        setSync("synced");
+      })
+      .catch(() => setSync("offline"));
+  }, []);
 
-  const toggle = (id: string) =>
-    setDone((d) => { const n = { ...d }; if (n[id]) delete n[id]; else n[id] = new Date().toLocaleDateString("en-IN"); return n; });
+  const save = (n: Record<string, string>) => {
+    setDone(n);
+    setSync("saving");
+    adminSaveSeoChecklist(n)
+      .then(() => setSync("synced"))
+      .catch(() => { setSync("offline"); toast.error("Couldn't save to your Google Sheet. Saved on this device only."); });
+  };
+  const toggle = (id: string) => {
+    const n = { ...done };
+    if (n[id]) delete n[id]; else n[id] = new Date().toLocaleDateString("en-IN");
+    save(n);
+  };
   const count = allIds.filter((id) => done[id]).length;
   const pct = Math.round((count / allIds.length) * 100);
 
@@ -77,9 +100,9 @@ export default function AdminSeoChecklist() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl">SEO launch checklist</h1>
-          <p className="text-sm text-muted-foreground mt-1">Get houseofnuts.store live and found on Google. Progress is saved on this device.</p>
+          <p className="text-sm text-muted-foreground mt-1">Get houseofnuts.store live and found on Google. {sync === "loading" ? "Loading your saved progress…" : sync === "saving" ? "Saving…" : sync === "synced" ? "Progress is saved to your account and syncs across devices." : "Couldn't reach your Google Sheet — progress is saved on this device only."}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => { if (confirm("Reset all progress?")) setDone({}); }}>
+        <Button variant="outline" size="sm" onClick={() => { if (confirm("Reset all progress?")) save({}); }}>
           <RotateCcw className="size-4 mr-1" /> Reset
         </Button>
       </div>

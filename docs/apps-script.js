@@ -137,6 +137,8 @@ function doPost(e) {
     if (action === "updateMessage") { requireAuth(body, ["admin", "staff"]); return json(updateMessage(body)); }
     if (action === "checkEmailHealth") { requireAuth(body, ["admin", "developer"]); return json(checkEmailHealth()); }
     if (action === "moderateReview") { requireAuth(body, ["admin"]); return json(moderateReview(body)); }
+    if (action === "getSeoChecklist") { requireAuth(body, ["admin", "developer"]); var sc = {}; try { sc = JSON.parse(getConfig().seoChecklist || "{}"); } catch (e) {} return json({ ok: true, done: sc }); }
+    if (action === "saveSeoChecklist") { requireAuth(body, ["admin", "developer"]); setConfigValue("seoChecklist", JSON.stringify(body.done || {})); return json({ ok: true }); }
     if (action === "getAuditLogs") { requireAuth(body, ["admin", "developer"]); return json(getAuditLogs()); }
 
     return json({ ok: false, error: "unknown action: " + action });
@@ -208,6 +210,16 @@ function getConfig() {
     if (rows[i][0]) cfg[String(rows[i][0]).trim()] = String(rows[i][1] || "").trim();
   }
   return cfg;
+}
+
+function setConfigValue(key, value) {
+  getConfig();
+  var sh = SpreadsheetApp.getActive().getSheetByName("Config");
+  var values = sh.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]).trim() === key) { sh.getRange(i + 1, 2).setValue(value); return; }
+  }
+  sh.appendRow([key, value]);
 }
 
 function getCatalogConfig() {
