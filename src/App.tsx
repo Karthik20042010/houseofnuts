@@ -40,6 +40,7 @@ const AdminMessages = lazy(() => import("./pages/AdminMessages.tsx"));
 const AdminImages = lazy(() => import("./pages/AdminImages.tsx"));
 const DeveloperConsole = lazy(() => import("./pages/DeveloperConsole.tsx"));
 const AdminRoleManagement = lazy(() => import("./pages/AdminRoleManagement.tsx"));
+const AdminSeoChecklist = lazy(() => import("./pages/AdminSeoChecklist.tsx"));
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
@@ -148,6 +149,14 @@ const App = () => (
                           element={
                             <ProtectedRoute allowedRoles={["admin", "developer"]}>
                               <AdminImages />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin/seo"
+                          element={
+                            <ProtectedRoute allowedRoles={["admin", "developer"]}>
+                              <AdminSeoChecklist />
                             </ProtectedRoute>
                           }
                         />
