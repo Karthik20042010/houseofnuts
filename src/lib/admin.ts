@@ -304,3 +304,14 @@ export async function adminFetchAuditLogs(): Promise<Array<{ timestamp: string; 
   if (!res.ok) throw new Error(res.error || "Failed to load audit logs");
   return res.logs || [];
 }
+
+export async function adminGetSeoChecklist(): Promise<Record<string, string>> {
+  const res = await apiPost<{ ok: boolean; done?: Record<string, string>; error?: string }>("getSeoChecklist", authPayload());
+  if (!res.ok) throw new Error(res.error || "Failed to load checklist");
+  return res.done || {};
+}
+
+export async function adminSaveSeoChecklist(done: Record<string, string>): Promise<void> {
+  const res = await apiPost<{ ok: boolean; error?: string }>("saveSeoChecklist", authPayload({ done }));
+  if (!res.ok) throw new Error(res.error || "Failed to save checklist");
+}
