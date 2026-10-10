@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Store, LogOut, Nut, Image as ImageIcon, Terminal, ShieldCheck, ReceiptText, BarChart3, MessageSquare, LucideIcon } from "lucide-react";
+import { LayoutDashboard, Package, Store, LogOut, Nut, Image as ImageIcon, Terminal, ShieldCheck, ReceiptText, BarChart3, MessageSquare, Search, LucideIcon } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -32,6 +32,7 @@ const navItems: NavItem[] = [
   { title: "Messages", url: "/admin/messages", icon: MessageSquare, end: true, allowedRoles: ["admin", "developer", "staff"] },
   { title: "Inventory", url: "/admin/inventory", icon: Package, end: false, allowedRoles: ["admin", "developer", "staff"] },
   { title: "Images", url: "/admin/images", icon: ImageIcon, end: false, allowedRoles: ["admin", "developer"] },
+  { title: "SEO Checklist", url: "/admin/seo", icon: Search, end: true, allowedRoles: ["admin", "developer"] },
   { title: "Developer Console", url: "/admin/developer", icon: Terminal, end: false, allowedRoles: ["admin", "developer"] },
   { title: "Role Management", url: "/admin/roles", icon: ShieldCheck, end: false, allowedRoles: ["admin"] },
 ];
