@@ -12,6 +12,8 @@ const titleFor = (path: string) => {
   if (path.startsWith("/admin/analytics")) return "Analytics, Metrics & Logs";
   if (path.startsWith("/admin/inventory")) return "Inventory Management";
   if (path.startsWith("/admin/images")) return "Product Images";
+  if (path.startsWith("/admin/seo")) return "SEO Launch Checklist";
+  if (path.startsWith("/admin/messages")) return "Customer Messages";
   if (path.startsWith("/admin/developer")) return "Developer Console";
   if (path.startsWith("/admin/roles")) return "Role & Permission Management";
   if (path.startsWith("/admin/orders/")) return "Order Detail";
