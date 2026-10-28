@@ -118,7 +118,7 @@ function doPost(e) {
     if (action === "submitReview") return json(submitCustomerReview(body));
     if (action === "registerGoogleUser") return json(registerGoogleUser(body));
     if (action === "submitMessage") return json(addMessage(body));
-    if (action === "wholesaleEnquiry") return json(addMessage({ type: "wholesale", name: body.name, phone: body.phone, email: body.email, subject: (body.business || "") + " · " + (body.city || ""), message: (body.interest || "") + " / " + (body.quantity || "") + " — " + (body.message || "") }));
+    if (action === "wholesaleEnquiry") return json(addMessage({ type: "wholesale", name: body.name, phone: body.phone, email: body.email, subject: (body.businessName || body.business || "") + " · " + (body.city || ""), message: (body.productInterest || body.interest || "") + " / " + (body.quantity || "") + " — " + (body.message || "") }));
     if (action === "healthCheck") return json(runHealthCheck());
     if (action === "logIncident") return json(logIncident(body));
 
