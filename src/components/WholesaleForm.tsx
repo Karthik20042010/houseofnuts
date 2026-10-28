@@ -96,10 +96,12 @@ const WholesaleForm = () => {
       const payload = {
         name: sanitizeInput(form.name),
         businessName: sanitizeInput(form.businessName),
+        business: sanitizeInput(form.businessName),
         phone: sanitizePhone(form.phone),
         email: form.email ? sanitizeInput(form.email) : "",
         city: sanitizeInput(form.city),
         productInterest: form.productInterest,
+        interest: form.productInterest,
         quantity: form.quantity,
         message: sanitizeInput(form.message || ""),
         source: "website_wholesale_form",
